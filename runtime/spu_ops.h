@@ -57,12 +57,11 @@ struct SpuLocal {
     u8* ls;
     u32 pc = 0;
     bool* line_code;
-    u32* line_ver;
     u64& code_writes;
     u32& srr0;
     bool& interrupts;
     explicit SpuLocal(SPUThread& th)
-        : t(th), ls(th.ls), line_code(th.line_code), line_ver(th.line_ver), code_writes(th.code_writes), srr0(th.srr0),
+        : t(th), ls(th.ls), line_code(th.line_code), code_writes(th.code_writes), srr0(th.srr0),
           interrupts(th.interrupts) {}
     u32 pref(int r) const { return gpr[r].w[3]; }
     void set_pref(int r, u32 v) { gpr[r].pi = _mm_setzero_si128(); gpr[r].w[3] = v; }
@@ -112,10 +111,9 @@ template <class S> FORCE_INLINE void stq(S& s, int rt, u32 a) {
         // changes revalidated every block of the SPU (and emptied its dispatch cache) after each interrupt.
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128(p), v)) == 0xFFFF) return;
         _mm_storeu_si128(p, v);
-        s.line_ver[(a >> 7) & 2047]++;
         s.code_writes++;
-        // the blocks on this line are now stale (their version sum changed); the line counts as code again only
-        // when a block is decoded there. Lines stayed marked forever: the stack, where that handler generates its
+        // the line's version is stale; the line counts as code again only when a block there is checked. Lines stayed
+        // marked forever: the stack, where that handler generates its
         // code, then invalidated on every ordinary store (~7 million times per second per SPU)
         s.line_code[(a >> 7) & 2047] = false;
         return;

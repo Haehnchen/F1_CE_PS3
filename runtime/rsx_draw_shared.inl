@@ -66,9 +66,9 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
     auto hash_of = [&](u32 ea, u32 n) {
         u64 memo_key = ((u64)ea << 32) ^ n;
         for (u32 m = 0; m < nmemo; m++) if (memo[m].key == memo_key) return memo[m].h;
-        u64 th = time_usec();
+        u64 th = prof_usec();
         u64 h = hash_range(gmem(ea), n, n > 65536 ? 64 : 8);
-        g_prof.t_hash += time_usec() - th;
+        g_prof.t_hash += prof_usec() - th;
         g_prof.hashed += n;
         if (nmemo < 16) memo[nmemo++] = {memo_key, h};
         return h;
@@ -78,9 +78,9 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
         ptrdiff_t roff;
         u8* rp = ring_alloc(n, &roff);
         if (!rp) return -1;
-        u64 tc = time_usec();
+        u64 tc = prof_usec();
         memcpy(rp, gmem(ea), n);
-        g_prof.t_conv += time_usec() - tc;
+        g_prof.t_conv += prof_usec() - tc;
         return (long long)roff;
     };
     for (u32 i = 0; i < 16; i++) {
@@ -117,7 +117,7 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
                 re.bytes = n;
                 re.first = first; re.count = count;
                 if (re.off == ~0u) return;
-                u64 tc = time_usec();
+                u64 tc = prof_usec();
                 heap_copy_begin();
                 for (u32 done = 0; done < n;) {   // in pieces of at most one ring segment
                     u32 k = std::min(n - done, RING_SEG);
@@ -128,7 +128,7 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
                     heap_copy(roff, re.off + done, k);
                     done += k;
                 }
-                g_prof.t_conv += time_usec() - tc;
+                g_prof.t_conv += prof_usec() - tc;
                 g_prof.conv_verts += count;
             };
             bool covers = re.off != ~0u && min_v >= re.first && max_v < re.first + re.count;
@@ -180,7 +180,7 @@ bool gather_indices(bool indexed, DrawGeom& out) {
     constexpr u32 RESTART = 0xFFFFFFFFu;
     u32 min_v = ~0u, max_v = 0, idx_count = 0;
     ptrdiff_t idx_offset = 0;   // index lists stay absolute: every draw uses base vertex -min_v
-    u64 ti0 = time_usec();
+    u64 ti0 = prof_usec();
     {
         auto& ranges = indexed ? g_index_ranges : g_array_ranges;
         u32 first = ranges[0].first, count = 0;   // the game splits long draws into 256-element commands

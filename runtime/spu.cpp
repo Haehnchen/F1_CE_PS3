@@ -174,6 +174,7 @@ static void pc_log(SPUThread& s) {
 void SPUThread::flush_blocks() {
     for (auto& p : block_pages) p.reset();
     cluster_ver.clear();
+    cluster_ok.clear();
     memset(fast, 0, sizeof(fast));
     blocks_on = true;
     memset(line_code, 0, sizeof(line_code));
@@ -201,13 +202,15 @@ SPUThread::Block* SPUThread::build_block(u32 pc) {
         v->line1 = ((pc + (v->n - 1) * 4) & 0x3FFFF) >> 7;
         v->lines = nullptr;
         v->nlines = 0;
+        v->cluster = -1;
         if (v->aot >= 0 && g_spu_aot[v->aot].cluster >= 0 && !no_cluster) {
             u32 ci = (u32)g_spu_aot[v->aot].cluster;
             const SpuAotCluster& c = g_spu_aot_clusters[ci];
-            // lines are marked first, so any later write to them changes the version sum
-            for (u32 i = 0; i < c.nlines; i++) line_code[c.lines[i]] = true;
-            if (cluster_ver.empty()) cluster_ver.assign(g_spu_aot_cluster_count, 0);
-            u32 ver = lines_ver(c.lines, c.nlines) + 1;   // + 1: 0 means never verified
+            if (cluster_ver.empty()) {
+                cluster_ver.assign(g_spu_aot_cluster_count, 0);
+                cluster_ok.assign(g_spu_aot_cluster_count, 0);
+            }
+            u64 ver = lines_ver(c.lines, c.nlines) + 1;   // + 1: 0 means never verified
             bool ok = cluster_ver[ci] == ver;
             if (!ok) {
                 u64 h = 1469598103934665603ull;
@@ -224,9 +227,9 @@ SPUThread::Block* SPUThread::build_block(u32 pc) {
                 v->count_n = 0;
                 v->lines = c.lines;
                 v->nlines = c.nlines;
+                v->cluster = (s32)ci;
             }
         }
-        for (u32 l = v->line0; ; l = (l + 1) & 2047) { line_code[l] = true; if (l == v->line1) break; }
         v->ver_sum = block_ver(*v);
         return v;
     };
@@ -328,8 +331,10 @@ void SPUThread::run() {
         pc &= 0x3FFFC;
         if (__builtin_expect(pc_trace != nullptr, 0) && pc_trace->size() < 20000) pc_trace->push_back(pc);
         FastEnt& fe = fast[(pc >> 2) & 1023];
-        if (fe.pc == pc && fe.checked == code_writes) {
-            u32 cn = fe.count_n;
+        if (fe.pc == pc && (fe.checked == code_writes ||
+                            ((fe.count_n & FAST_CLUSTER) && cluster_ok[fe.count_n & ~FAST_CLUSTER] == code_writes))) {
+            fe.checked = code_writes;
+            u32 cn = fe.count_n & FAST_CLUSTER ? 0 : fe.count_n;
             fe.fn(*this);
             u64 before_n = instructions;
             instructions += cn;
@@ -339,9 +344,18 @@ void SPUThread::run() {
         Block* b = find_block(pc);
         if (!b || (b->checked != code_writes && b->ver_sum != block_ver(*b))) b = build_block(pc);
         b->checked = code_writes;
+        // debug: F1CE_SPU_VERIFY=1 runs every block through this path and compares it with the LS
+        static const bool verify = getenv("F1CE_SPU_VERIFY") != nullptr;
+        if (__builtin_expect(verify, 0))
+            for (u32 i = 0; i < b->n; i++)
+                if (ls32(pc + 4 * i) != b->ops[i].w) {
+                    LOG_E("SPU verify: %s block %05x word %u is %08x in LS, %08x in the block", name.c_str(), pc, i, ls32(pc + 4 * i), b->ops[i].w);
+                    break;
+                }
         if (b->native) {
             static const bool no_fast = getenv("F1CE_SPU_NOFAST") != nullptr;   // debug
-            if (!no_fast) fe = {code_writes, b->native, pc, b->count_n};
+            if (b->cluster >= 0) cluster_ok[b->cluster] = code_writes;
+            if (!no_fast && !verify) fe = {code_writes, b->native, pc, b->cluster >= 0 ? FAST_CLUSTER | (u32)b->cluster : b->count_n};
             b->native(*this);
             u64 before_n = instructions;
             instructions += b->count_n;

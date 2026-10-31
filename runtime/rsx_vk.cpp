@@ -721,6 +721,7 @@ struct DynState {
     VkBool32 dt, dw; VkCompareOp dop; float bc[4]; VkBool32 blend;
     VkColorBlendEquationEXT eq; VkColorComponentFlags mask; VkBool32 a2c; VkSampleCountFlagBits samples;
     VkPipeline pipe;
+    u32 set0[3];   // dynamic offsets of the bound set 0 (~0u: none in this command buffer)
 } g_dyn;
 
 void begin_pass(Surface* s) {
@@ -961,7 +962,7 @@ void save_pipeline_cache() {
 }
 
 // (swapchain code below)
-void progress_bar(double frac);
+void progress_bar(double frac, const char* what);
 
 Program& program_of(u64 key, u64 vh, u64 fh, u32 tex_used) {
     auto [it, fresh] = g_programs.try_emplace(key);
@@ -1002,12 +1003,12 @@ void precompile_programs() {
     for (Program* p : progs) build_pipeline(p, 0);
     while (g_jobs_left > 0) {
         if (time_usec() - last_bar > 50000) {
-            progress_bar(1.0 - (double)g_jobs_left.load() / progs.size());
+            progress_bar(1.0 - (double)g_jobs_left.load() / progs.size(), "shaders");
             last_bar = time_usec();
         }
         sleep_usec(2000);
     }
-    progress_bar(1.0);
+    progress_bar(1.0, "shaders");
     u32 failed = 0;
     for (Program* p : progs) failed += p->state[0] != 2;
     save_pipeline_cache();
@@ -1216,7 +1217,7 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
     VkFormat vf = base_fmt == 0x86 ? VK_FORMAT_BC1_RGBA_UNORM_BLOCK : base_fmt == 0x87 ? VK_FORMAT_BC2_UNORM_BLOCK : base_fmt == 0x88 ? VK_FORMAT_BC3_UNORM_BLOCK : COLOR_FMT;
     te.tex = make_image(w, h, levels, vf, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | (dxt ? 0 : VK_IMAGE_USAGE_STORAGE_BIT));
     te.w = w; te.h = h; te.fmt = fmt;
-    u64 tc = time_usec();
+    u64 tc = prof_usec();
     if (!dxt) {
         u32 total = 0;
         for (u32 l = 0; l < levels; l++) {
@@ -1241,7 +1242,7 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
             off += lsize;
         }
     }
-    g_prof.t_texdec += time_usec() - tc;
+    g_prof.t_texdec += prof_usec() - tc;
     g_prof.tex_decoded += size;
     return te.tex;
 }
@@ -1474,6 +1475,7 @@ void apply_state(const Surface* target, VkPrimitiveTopology topo) {
 void bind_sets() {
     vkCmdBindDescriptorSets(g_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pl, 1, 1, &g_set1, 0, nullptr);
     vkCmdBindIndexBuffer(g_cb, g_ibuf.buf, 0, VK_INDEX_TYPE_UINT32);
+    g_dyn.set0[0] = ~0u;
 }
 
 u64 g_draws = 0;
@@ -1486,12 +1488,12 @@ ptrdiff_t g_params_off = 0;
 u32 g_params_seg = ~0u;
 
 void draw(bool indexed) {
-    u64 t0 = time_usec();
+    u64 t0 = prof_usec();
     Surface* target = bind_target();
     if (!target) return;
-    std::vector<float> fp_consts;
+    static std::vector<float> fp_consts;
     Program* p = get_program(fp_consts);
-    u64 t1 = time_usec();
+    u64 t1 = prof_usec();
     g_prof.program += t1 - t0;
     if (g_prim < 1 || g_prim > 10) return;
     static const VkPrimitiveTopology topos[11] = {
@@ -1511,7 +1513,7 @@ void draw(bool indexed) {
     for (float& r : dp.remap) r = (float)0xaae4;
     std::fill(dp.tex_scale, dp.tex_scale + 32, 1.0f);
     static int stale_slot[16] = {};   // a disabled unit keeps its last texture, as an OpenGL binding does
-    u64 tu0 = time_usec();
+    u64 tu0 = prof_usec();
     for (u32 u = 0; u < 16; u++) {
         dp.slot[u] = stale_slot[u];
         if (!(reg(0x1A0C + u * 0x20) & 0x80000000)) continue;
@@ -1573,7 +1575,7 @@ void draw(bool indexed) {
         if (depth_func == 0 || depth_func == 12 || depth_func == 9) dp.remap[u] = (float)(reg(0x1A10 + u * 0x20) & 0xFFFF);
         if (depth_func == 0 || depth_func == 12) dp.remap[u] = (float)((u32)dp.remap[u] | (conv << 16));
     }
-    g_prof.t_upload += time_usec() - tu0;
+    g_prof.t_upload += prof_usec() - tu0;
     for (u32 u = 0; u < 4; u++) {
         if (!(reg(0x090C + u * 0x20) & 0x80000000)) continue;
         Img* t = upload_vertex_texture(u);
@@ -1582,13 +1584,13 @@ void draw(bool indexed) {
         k.u = k.v = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         dp.vslot[u] = t ? (int)tex_slot(t, get_sampler(k)) : 0;
     }
-    u64 t2 = time_usec();
+    u64 t2 = prof_usec();
     g_prof.textures += t2 - t1;
 
-    u64 ti0 = time_usec();
+    u64 ti0 = prof_usec();
     DrawGeom geom;
     if (!gather_indices(indexed, geom)) return;
-    g_prof.t_index += time_usec() - ti0;
+    g_prof.t_index += prof_usec() - ti0;
     setup_attrs_gpu(geom.min_v, geom.max_v, dp.va);
 
     bool cube_face = g_cube_faces.count(target->offset) != 0;
@@ -1611,10 +1613,17 @@ void draw(bool indexed) {
 
     // parameters into the uniform ring (the constants only when they changed since the last draw)
     const u32 ua = (u32)g_props.limits.minUniformBufferOffsetAlignment;
-    ptrdiff_t fc_off;
-    u32 fc_bytes = (u32)fp_consts.size() * 4;
-    u8* q = ring_take(g_uring, fc_bytes, ua, &fc_off);
-    memcpy(q, fp_consts.data(), fc_bytes);
+    static ptrdiff_t fc_off = 0;
+    static u32 fc_seg = ~0u;
+    static std::vector<float> last_fc;
+    u8* q;
+    if (fc_seg != g_uring.pos / g_uring.seg || last_fc != fp_consts) {
+        const u32 fc_bytes = (u32)fp_consts.size() * 4;
+        q = ring_take(g_uring, fc_bytes, ua, &fc_off);
+        memcpy(q, fp_consts.data(), fc_bytes);
+        last_fc = fp_consts;
+        fc_seg = (u32)(fc_off / g_uring.seg);
+    }
     if (g_vc_ver != vp_ver || g_vc_seg != g_uring.pos / g_uring.seg) {
         q = ring_take(g_uring, sizeof(vp_consts), ua, &g_vc_off);
         memcpy(q, vp_consts, sizeof(vp_consts));
@@ -1628,16 +1637,19 @@ void draw(bool indexed) {
         g_params_seg = (u32)(g_params_off / g_uring.seg);
     }
     begin_pass(target);
-    u64 ta0 = time_usec();
+    u64 ta0 = prof_usec();
     apply_state(target, topo);
-    g_prof.t_apply += time_usec() - ta0;
+    g_prof.t_apply += prof_usec() - ta0;
     if (g_dyn.pipe != p->pipe[cls]) { vkCmdBindPipeline(g_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipe[cls]); g_dyn.pipe = p->pipe[cls]; }
     const u32 dyn[3] = {(u32)g_vc_off, (u32)g_params_off, (u32)fc_off};
-    vkCmdBindDescriptorSets(g_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pl, 0, 1, &g_set0, 3, dyn);
-    u64 tdr = time_usec();
+    if (memcmp(g_dyn.set0, dyn, sizeof(dyn))) {
+        vkCmdBindDescriptorSets(g_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pl, 0, 1, &g_set0, 3, dyn);
+        memcpy(g_dyn.set0, dyn, sizeof(dyn));
+    }
+    u64 tdr = prof_usec();
     vkCmdDrawIndexed(g_cb, geom.idx_count, 1, (u32)(geom.idx_offset / 4), 0, 0);
-    g_prof.t_draw += time_usec() - tdr;
-    g_prof.vertices += time_usec() - t2;
+    g_prof.t_draw += prof_usec() - tdr;
+    g_prof.vertices += prof_usec() - t2;
     g_prof.draws++;
     g_prof.verts += geom.max_v - geom.min_v + 1;
     if (target->main_ea) target->wb_dirty = true;
@@ -1811,6 +1823,7 @@ VkSurfaceFormatKHR g_swap_fmt;
 VkExtent2D g_swap_ext{};
 
 bool create_swapchain() {
+    if (host::quit_requested()) return false;   // the window goes first while the game shuts down
     VkSurfaceCapabilitiesKHR caps;
     check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_phys, g_surface, &caps), "surface capabilities");
     VkExtent2D ext = caps.currentExtent;
@@ -1911,7 +1924,7 @@ void present_rect(const Surface& s, s32 ww, s32 wh, s32* x, s32* y, s32* w, s32*
     else { *h = (s32)(ww / a + 0.5); *y = (wh - *h) / 2; }
 }
 
-void progress_bar(double frac) {
+void progress_bar(double frac, const char* what) {
     u32 index;
     VkSemaphore sem;
     if (!acquire(&index, &sem)) return;
@@ -1939,6 +1952,7 @@ void progress_bar(double frac) {
     };
     bar(bx - 2, by - 2, bw + 4, bh + 4, 0.35f, 0.35f, 0.38f);
     bar(bx, by, std::max(1, (s32)(bw * frac)), bh, 0.86f, 0.10f, 0.10f);
+    for (const TextRect& t : progress_label(frac, what, ww, wh, by)) bar(t.x, t.y, t.w, t.h, 0.80f, 0.80f, 0.82f);
     vkCmdEndRendering(g_cb);
     image_barrier(g_cb, g_swap_img[index], VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     submit(sem, g_swap_done[index]);

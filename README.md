@@ -56,6 +56,9 @@ the game executes that are not translated yet, run with `F1CE_SPU_DUMP_BLOCKS=<f
 f1ce <path-to>/PS3_GAME [--trace]
 ```
 
+Or use `build-win/f1ce_launcher.exe`: it sets the display and speed options below, remembers them in
+`build-win/f1ce_launcher.ini` and starts the game from the folder above `build-win/`, without a console.
+
 A 1280x720 window opens. Log in `f1ce_recomp.log`, saves in `ps3_data/` (both in the current folder).
 The console shows warnings and errors only; the log file has everything (`F1CE_LOG_CONSOLE=1` prints every line,
 which slows the game noticeably in Git Bash / the Windows console).
@@ -84,6 +87,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_SPU_DUMP_BLOCKS=<file>` | records SPU blocks that have no translation (input of `tools/spu_aot.py`) |
 | `F1CE_SPU_NOAOT=1`, `F1CE_SPU_NOCLUSTER=1` | interpret all SPU code / use single-block translations only |
 | `F1CE_SPU_BENCH=1` | SPU interpreter benchmark and shufb self-test |
+| `F1CE_SPU_VERIFY=1` | compares every SPU block with the LS before it runs and logs mismatches (no dispatch cache, slower) |
 | `F1CE_MAX_FRAMES_AHEAD=<n>` | frames the PPU may queue ahead of the renderer (default 1) |
 | `F1CE_TASK_DMA_LOG=1` | logs each distinct DMA of the SPURS tasks once |
 | `F1CE_SYNC_COMPILE=1` | link shader programs on the render thread instead of the background compile thread |
@@ -142,10 +146,18 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 5. **Vulkan backend** next to OpenGL: lower per-call driver cost, explicit pipeline caches (no stutter on new
    shaders), multithreaded command recording, better Linux support. DirectX 11 is not planned (no gain over OpenGL,
    Windows only). *Working (2026-10-31): `runtime/rsx_vk.cpp` runs the boot, menus and a Silverstone race at scale 2 at the
-   30 fps cap, matching OpenGL by eye; not yet played by hand, and never run with validation layers. It is built with
+   30 fps cap, matching OpenGL by eye; played by hand with `F1CE_60FPS=1`, FXAA and Monaco with no crashes or glitches reported;
+   never run with validation layers. It is built with
    `cmake -DF1CE_VULKAN=ON` (needs `third_party/glslang`, tag vulkan-sdk-1.4.350.1) and selected with
    `F1CE_RENDERER=vulkan`; OpenGL stays the default. Shared with OpenGL: `rsx_common.{h,cpp}` (registers, microcode
    translators, hashes, block heap, program database) and `rsx_draw_shared.inl` (index lists, raw vertex regions).*
+
+6. **Launcher.** *Done 2026-10-31: `build-win/f1ce_launcher.exe` (`launcher/`).* A Windows `.exe` to set the options that are environment variables today (`F1CE_SCALE`,
+   `F1CE_RENDERER`, `F1CE_60FPS`, ...) and start the game, replacing the shell script `launch_decomp_wwin.sh`.
+7. **Shader progress text.** *Done 2026-10-31: "Loading shaders... 42%" above the bar, on both renderers.*
+8. **Performance for 60 fps.** Make the game as fast as possible with `F1CE_60FPS=1`, aiming at a steady 60.
+   *In progress (2026-10-31): Vulkan at scale 2 drives at 46-48 fps (was 38-42), the full grid at 34-35 (was 33). The SPUs
+   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy.*
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
@@ -566,3 +578,18 @@ banks, then waits for SPU work.
     57.7-60.1 ticks/s throughout (54.8 once during loading). `perf` lines and "60 fps:" log lines show flips and ticks per second.
     Physics step size is unchanged because ticks are unchanged. Frames with 1 and 2 ticks alternate below 60 fps, so
     motion may look less even than a locked 30.
+- **Launcher, progress text, first 60 fps work (2026-10-31):**
+  - `launcher/f1ce_launcher.cpp`: plain Win32, no dependencies. Variables are cleared when an option is off, because
+    `F1CE_60FPS` counts as on whatever its value. The game runs without a console; a non-zero exit shows a message
+    pointing at the log. Closing the window under Vulkan used to exit with code 1: the swapchain was rebuilt on the
+    destroyed window, now `create_swapchain` stops once a quit was requested.
+  - The bar's label is drawn from a 5x7 font as clears (`progress_label`): no shader is ready at that point.
+  - RSX thread at scale 2: ~15 clock reads per draw were 6% of the thread, now `prof_usec` (TSC) on both renderers.
+    Vulkan also skips unchanged fragment constants and unchanged set 0 bindings. On their own these did not raise the
+    fps: the time moved to the SPU wait, so the RSX was not the only limit.
+  - SPU: job binaries alternate in one LS buffer, ~310000 line invalidations per second per SPU. A returning binary
+    still needed new lookups and a byte-wise hash of whole clusters. Line versions are now a 64-bit hash of the line's
+    bytes, taken lazily (`line_version`; a write only clears `line_code`), and one verified block revalidates its whole
+    cluster in the dispatch cache. Three identical races: driving 46-48 fps (was 38-42), grid 34-35 (was 33).
+    `F1CE_SPU_VERIFY=1` found no mismatch in a race, but it bypasses the dispatch cache, so the cluster shortcut itself
+    is checked only by normal play.

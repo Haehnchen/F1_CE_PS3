@@ -32,6 +32,9 @@ u64 mem_fingerprint(u32 ea, u32 bytes);
 constexpr u32 MAIN_SURFACE_KEY = 0x80000000;   // g_surfaces key bit for main-memory colour buffers
 bool scaled_glsl();
 u32 res_scale();
+// label of the start-up progress bar as window rectangles (pixels, top-left origin), above the line at y = bar_top
+struct TextRect { s32 x, y, w, h; };
+std::vector<TextRect> progress_label(double frac, const char* what, s32 ww, s32 wh, s32 bar_top);
 
 extern u64 g_frame;
 bool trace_on(long long first);

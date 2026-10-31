@@ -2,6 +2,8 @@
 #pragma once
 #include "ppu_runtime.h"
 
+#include <x86intrin.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <cstdio>
@@ -173,4 +175,8 @@ struct HleRegistrar {
 
 // time
 u64 time_usec();          // monotonic microseconds since start
+// Clock of the per-draw timers: TSC ticks in microseconds (time_usec costs ~40 ns, 6% of the render thread at some 15
+// reads per draw). Its origin is not time_usec's: only differences of two prof_usec values mean anything.
+extern const u64 g_tsc_scale;   // microseconds per tick, 32.32 fixed point
+FORCE_INLINE u64 prof_usec() { return (u64)(((unsigned __int128)__rdtsc() * g_tsc_scale) >> 32); }
 void sleep_usec(u64 us);

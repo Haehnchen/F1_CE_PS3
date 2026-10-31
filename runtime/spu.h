@@ -81,13 +81,15 @@ struct SPUThread {
     // when LS memory holding decoded code is written (stores, DMA)
     struct BlockOp { void (*h)(SPUThread&, u32); u32 w; };
     struct Block {
-        u32 start = 0, n = 0, line0 = 0, line1 = 0, ver_sum = 0;
+        u32 start = 0, n = 0, line0 = 0, line1 = 0;
+        u64 ver_sum = 0;
         u64 checked = 0;   // code_writes when the block was last validated
         void (*native)(SPUThread&) = nullptr;   // ahead-of-time translated version (generated/spu_aot*.cpp)
         s32 aot = -1;                            // its g_spu_aot index
         u32 count_n = 0;                         // instructions counted per dispatch (cluster code counts itself)
         const u16* lines = nullptr;              // cluster code: guarded lines (else line0..line1)
         u32 nlines = 0;
+        s32 cluster = -1;                        // its g_spu_aot_clusters index
         std::vector<BlockOp> ops;
         std::unique_ptr<Block> alt;   // older variants decoded at the same pc (code swapped in and out by DMA)
     };
@@ -105,26 +107,42 @@ struct SPUThread {
         if (!p) p = std::make_unique<BlockPage>();
         return p->b[(pc >> 2) & 255];
     }
-    u32 line_ver[2048] = {};
+    // A line's version is a hash of its bytes, so job code swapped out and back (a few binaries alternate in one LS
+    // buffer, ~2000 times per second per SPU) is valid again at once: with a counter, every return meant new lookups and
+    // hashing whole clusters. line_code[l]: line_ver[l] is current. Writes only clear it, the hash is taken when a block
+    // on the line is checked; an unmarked line is always hashed first, so no write can go unseen.
+    u64 line_ver[2048] = {};
     u64 code_writes = 1;   // bumped whenever a line holding decoded code is written
     bool line_code[2048] = {};
     void ls_written(u32 a, u32 n) {
         if (!blocks_on) return;
         for (u32 l = (a & 0x3FFFF) >> 7, e = ((a + std::max(n, 1u) - 1) & 0x3FFFF) >> 7; ; l = (l + 1) & 2047) {
-            if (line_code[l]) { line_ver[l]++; code_writes++; line_code[l] = false; }   // marked again when decoded
+            if (line_code[l]) { code_writes++; line_code[l] = false; }
             if (l == e) break;
         }
     }
-    std::vector<u32> cluster_ver;   // per cluster: version sum of its lines when its words last matched (0 = never)
-    u32 lines_ver(const u16* l, u32 n) const {
-        u32 v = 0;
-        for (u32 i = 0; i < n; i++) v += line_ver[l[i]];
+    u64 line_version(u32 l) {
+        if (!line_code[l]) {
+            u64 w[16];
+            memcpy(w, ls + l * 128, sizeof(w));
+            u64 h = (l + 1) * 0x9E3779B97F4A7C15ull;
+            for (u64 x : w) { h = (h ^ x) * 0xFF51AFD7ED558CCDull; h ^= h >> 32; }
+            line_ver[l] = h;
+            line_code[l] = true;
+        }
+        return line_ver[l];
+    }
+    std::vector<u64> cluster_ver;   // per cluster: version sum of its lines when its words last matched (0 = never)
+    std::vector<u64> cluster_ok;    // per cluster: code_writes when its lines last matched that sum
+    u64 lines_ver(const u16* l, u32 n) {
+        u64 v = 0;
+        for (u32 i = 0; i < n; i++) v += line_version(l[i]);
         return v;
     }
-    u32 block_ver(const Block& b) const {
+    u64 block_ver(const Block& b) {
         if (b.lines) return lines_ver(b.lines, b.nlines);
-        u32 v = 0;
-        for (u32 l = b.line0; ; l = (l + 1) & 2047) { v += line_ver[l]; if (l == b.line1) break; }
+        u64 v = 0;
+        for (u32 l = b.line0; ; l = (l + 1) & 2047) { v += line_version(l); if (l == b.line1) break; }
         return v;
     }
     // copies into LS and invalidates decoded code only if the bytes change (re-loaded overlays keep their blocks)
@@ -147,7 +165,9 @@ struct SPUThread {
     }
     // dispatch cache: native code of recently run blocks in one compact direct-mapped table, valid while no code was
     // written since the block was verified (the block objects are scattered on the heap, and the cache misses of
-    // the full lookup were the largest single cost of the SPU threads)
+    // the full lookup were the largest single cost of the SPU threads). Cluster code: count_n = FAST_CLUSTER | cluster
+    // index (it counts itself), and the entry stays good once any block of its cluster was verified again.
+    static constexpr u32 FAST_CLUSTER = 0x80000000;
     struct FastEnt { u64 checked; void (*fn)(SPUThread&); u32 pc, count_n; };
     FastEnt fast[1024] = {};
     Block* build_block(u32 pc);

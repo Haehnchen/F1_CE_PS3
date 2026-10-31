@@ -679,9 +679,13 @@ void progress_bar(double frac, const char* what) {
     glScissor(bx, by, std::max(1, (GLint)(bw * frac)), bh);
     glClearColor(0.86f, 0.10f, 0.10f, 1);
     glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.80f, 0.80f, 0.82f, 1);
+    for (const TextRect& t : progress_label(frac, what, ww, wh, wh - by - bh)) {
+        glScissor(t.x, wh - t.y - t.h, t.w, t.h);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
     glDisable(GL_SCISSOR_TEST);
     host::gl_swap();
-    (void)what;
     g_tgt_valid = g_state_valid = false;
 }
 
@@ -1172,7 +1176,7 @@ GLuint upload_texture(u32 unit, bool* is_surface, int* depth_func) {
             u32 lw = std::max(1u, w >> l), lh = std::max(1u, h >> l);
             total += linear ? (pitch ? pitch * (lh - 1) + lw * bpp : lw * lh * bpp) : lw * lh * bpp;
         }
-        u64 tc = time_usec();
+        u64 tc = prof_usec();
         glBindBuffer(GL_TEXTURE_BUFFER, g_tex_staging);
         glBufferData(GL_TEXTURE_BUFFER, (total + 3) & ~3u, gmem(ea), GL_STREAM_DRAW);   // (a new store: no wait)
         glUseProgram(g_tex_cs);
@@ -1189,10 +1193,10 @@ GLuint upload_texture(u32 unit, bool* is_surface, int* depth_func) {
         }
         glMemoryBarrier(0x00000008 /*GL_TEXTURE_FETCH_BARRIER_BIT*/ | 0x00000020 /*GL_SHADER_IMAGE_ACCESS_BARRIER_BIT*/);
         glUseProgram(g_cur_prog);
-        g_prof.t_texdec += time_usec() - tc;
+        g_prof.t_texdec += prof_usec() - tc;
         g_prof.tex_decoded += size;
     }
-    u64 tcpu = time_usec();
+    u64 tcpu = prof_usec();
     bool cpu_decode = !dxt && !tex_gpu();
     for (u32 l = 0; l < levels && (dxt || !tex_gpu()); l++) {
         u32 lw = std::max(1u, w >> l), lh = std::max(1u, h >> l);
@@ -1225,7 +1229,7 @@ GLuint upload_texture(u32 unit, bool* is_surface, int* depth_func) {
         glTexImage2D(GL_TEXTURE_2D, (GLint)l, GL_RGBA8, (GLsizei)lw, (GLsizei)lh, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
         off += lw * lh * bpp;
     }
-    if (cpu_decode) { g_prof.t_texdec += time_usec() - tcpu; g_prof.tex_decoded += size; }
+    if (cpu_decode) { g_prof.t_texdec += prof_usec() - tcpu; g_prof.tex_decoded += size; }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (GLint)levels - 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     g_filter_of.erase(te.tex);   // the level count may have changed: re-apply the sampling state at the next bind
@@ -1403,9 +1407,9 @@ u8* ring_alloc(u32 bytes, ptrdiff_t* off) {
         if (g_ring.fence[cur]) glDeleteSync(g_ring.fence[cur]);
         g_ring.fence[cur] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         if (g_ring.fence[next]) {   // the GPU must be done with the segment's previous contents
-            u64 tw = time_usec();
+            u64 tw = prof_usec();
             glClientWaitSync(g_ring.fence[next], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000ull);
-            g_prof.t_ringwait += time_usec() - tw;
+            g_prof.t_ringwait += prof_usec() - tw;
             g_prof.ring_segs++;
             glDeleteSync(g_ring.fence[next]);
             g_ring.fence[next] = nullptr;
@@ -1478,9 +1482,9 @@ u8* iring_alloc(u32 bytes, ptrdiff_t* off) {
         if (g_iring.fence[cur]) glDeleteSync(g_iring.fence[cur]);
         g_iring.fence[cur] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         if (g_iring.fence[next]) {   // the GPU must be done with the segment's previous lists
-            u64 tw = time_usec();
+            u64 tw = prof_usec();
             glClientWaitSync(g_iring.fence[next], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000ull);
-            g_prof.t_ringwait += time_usec() - tw;
+            g_prof.t_ringwait += prof_usec() - tw;
             g_prof.ring_segs++;
             glDeleteSync(g_iring.fence[next]);
             g_iring.fence[next] = nullptr;
@@ -1639,7 +1643,7 @@ void apply_state() {
 }
 
 void draw(bool indexed) {
-    u64 t0 = time_usec();
+    u64 t0 = prof_usec();
     if (g_no_state_cache) { g_tgt_valid = g_state_valid = false; g_cur_prog = 0; }
     Surface* target = bind_target();
     if (!target) return;
@@ -1668,7 +1672,7 @@ void draw(bool indexed) {
             LOG_I("fc log frame %llu: FC0 = %g %g %g %g", (unsigned long long)g_frame, fp_consts[0], fp_consts[1], fp_consts[2], fp_consts[3]);
         }
     }
-    u64 t1 = time_usec();
+    u64 t1 = prof_usec();
     g_prof.program += t1 - t0;
     bool first_of_prog;
     {
@@ -1749,10 +1753,10 @@ void draw(bool indexed) {
         float ui = target->scale > 1 && !(reg(0x0A74) & 1) ? 1.0f : 0.0f;   // (see sample_unit: no depth test)
         if (p->loc_ui_clamp >= 0 && p->u_ui != ui) { p->u_ui = ui; glUniform1fv(p->loc_ui_clamp, 1, &p->u_ui); }
     }
-    u64 ta0 = time_usec();
+    u64 ta0 = prof_usec();
     g_prof.t_pre += ta0 - t1;
     apply_state();
-    g_prof.t_apply += time_usec() - ta0;
+    g_prof.t_apply += prof_usec() - ta0;
 
     // textures
     float flips[16] = {}, depth_funcs[16] = {}, tex_scale[32], remaps[16];
@@ -1760,7 +1764,7 @@ void draw(bool indexed) {
     bool reads_raw_target = false;   // ... or a colour render target without decode (a copy of raw colour)
     std::fill(remaps, remaps + 16, (float)0xaae4);
     std::fill(tex_scale, tex_scale + 32, 1.0f);
-    u64 tu0 = time_usec();   // (the whole unit loop: a clock read per unit cost ~1 ms per frame)
+    u64 tu0 = prof_usec();   // (the whole unit loop: a clock read per unit cost ~1 ms per frame)
     for (u32 u = 0; u < 16; u++) {
         if (!(reg(0x1A0C + u * 0x20) & 0x80000000)) continue;   // texture control0 enable
         // the unit is selected only before GL calls on it (uploads and binds act on the active unit): with the memo
@@ -1922,7 +1926,7 @@ void draw(bool indexed) {
         }
         um.pver = g_texparam_ver;
     }
-    g_prof.t_upload += time_usec() - tu0;
+    g_prof.t_upload += prof_usec() - tu0;
     static const bool skip_vtex = getenv("F1CE_SKIP_VTEX") != nullptr;   // debug: drop draws that use vertex textures
     if (skip_vtex && p->uses_vtex) return;
     static const std::string skip_progs = getenv("F1CE_SKIP_PROG") ? "," + std::string(getenv("F1CE_SKIP_PROG")) + "," : "";
@@ -1938,20 +1942,20 @@ void draw(bool indexed) {
     uniform_cached(p->loc_depth, p->u_depth, depth_funcs, glUniform1fv, 16);
     uniform_cached(p->loc_remap, p->u_remap, remaps, glUniform1fv, 16);
 
-    u64 t2 = time_usec();
+    u64 t2 = prof_usec();
     g_prof.textures += t2 - t1;
     glBindVertexArray(g_vao);
     static const GLenum modes[11] = {0, GL_POINTS, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_TRIANGLES,
                                      GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES, GL_TRIANGLES, GL_TRIANGLE_FAN};
     if (g_prim < 1 || g_prim > 10) return;
     GLenum mode = modes[g_prim];
-    u64 ti0 = time_usec();
+    u64 ti0 = prof_usec();
     DrawGeom geom;
     if (!gather_indices(indexed, geom)) return;
     const u32 min_v = geom.min_v, max_v = geom.max_v, idx_count = geom.idx_count;
     const GLintptr idx_offset = (GLintptr)geom.idx_offset;
     u32 nverts = max_v - min_v + 1;
-    g_prof.t_index += time_usec() - ti0;
+    g_prof.t_index += prof_usec() - ti0;
 
     u32 vtx_shift = 0;
     u32 input_mask = reg(0x1FF0);
@@ -1959,10 +1963,10 @@ void draw(bool indexed) {
         int va[64];
         setup_attrs_gpu(min_v, max_v, va);
         if (p->loc_va >= 0 && (g_no_state_cache || memcmp(p->u_va, va, sizeof(va)) != 0)) {
-            u64 tb = time_usec();
+            u64 tb = prof_usec();
             memcpy(p->u_va, va, sizeof(va));
             glUniform4iv(p->loc_va, 16, va);
-            g_prof.t_bind += time_usec() - tb;
+            g_prof.t_bind += prof_usec() - tb;
             g_prof.binds++;
         }
     } else {
@@ -2019,20 +2023,20 @@ void draw(bool indexed) {
                 u32 ea = base_ea + first * stride, n = count * stride;
                 u64 memo_key = ((u64)ea << 32) ^ n ^ (1ull << 63);
                 for (u32 m = 0; m < nmemo; m++) if (memo[m].key == memo_key) return memo[m].h;
-                u64 th = time_usec();
+                u64 th = prof_usec();
                 u64 h = hash_range(gmem(ea), n, n > 65536 ? 64 : 8);
-                g_prof.t_hash += time_usec() - th;
+                g_prof.t_hash += prof_usec() - th;
                 g_prof.hashed += n;
                 if (nmemo < 16) memo[nmemo++] = {memo_key, h};
                 return h;
             };
             auto upload = [&](GLuint target, u32 first, u32 count, GLenum usage) {
-                u64 tc = time_usec();
+                u64 tc = prof_usec();
                 std::vector<float> data((size_t)count * 4);
                 convert_attr(i, first, count, data.data());
                 glBindBuffer(GL_ARRAY_BUFFER, target);
                 glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(data.size() * 4), data.data(), usage);
-                g_prof.t_conv += time_usec() - tc;
+                g_prof.t_conv += prof_usec() - tc;
                 g_prof.conv_verts += count;
             };
             bool covers = re.buf && min_v >= re.first && max_v < re.first + re.count;
@@ -2071,9 +2075,9 @@ void draw(bool indexed) {
                 re.seen_frame = g_frame;
                 ptrdiff_t roff;
                 if (u8* rp = ring_alloc(nverts * 16, &roff)) {
-                    u64 tc = time_usec();
+                    u64 tc = prof_usec();
                     convert_attr(i, min_v, nverts, (float*)rp);
-                    g_prof.t_conv += time_usec() - tc;
+                    g_prof.t_conv += prof_usec() - tc;
                     g_prof.conv_verts += nverts;
                     buf = g_ring.buf;
                     want_off[i] = roff;
@@ -2112,9 +2116,9 @@ void draw(bool indexed) {
             } else if (mit) {
                 h = mit->h;
             } else {
-                u64 th = time_usec();
+                u64 th = prof_usec();
                 h = hash_range(p, bytes, step);
-                g_prof.t_hash += time_usec() - th;
+                g_prof.t_hash += prof_usec() - th;
                 memo[nmemo++] = {memo_key, h};
                 g_prof.hashed += bytes / step * 8;
             }
@@ -2141,16 +2145,16 @@ void draw(bool indexed) {
         u8* rp = fresh && (streamed || !cacheable) && stride ? ring_alloc(nverts * 16, &roff) : nullptr;
         if (rp) {
             (cacheable ? g_prof.conv_verts : g_prof.conv_inst) += nverts;
-            u64 tc = time_usec();
+            u64 tc = prof_usec();
             convert_attr(i, min_v, nverts, (float*)rp);
-            g_prof.t_conv += time_usec() - tc;
+            g_prof.t_conv += prof_usec() - tc;
             buf = g_ring.buf;
             want_off[i] = roff;
             fresh = false;
         }
         if (fresh) {
             (cacheable ? g_prof.conv_verts : g_prof.conv_inst) += nverts;
-            u64 tc = time_usec();
+            u64 tc = prof_usec();
             std::vector<float> data((size_t)nverts * 4);
             if (stride) convert_attr(i, min_v, nverts, data.data());
             else for (u32 v = 0; v < nverts; v++) fetch_attr(i, 0, &data[(size_t)v * 4]);
@@ -2160,7 +2164,7 @@ void draw(bool indexed) {
             static const bool no_subdata = getenv("F1CE_VTX_NOSUBDATA") != nullptr;   // debug
             if (cacheable && !streamed && same_size && !no_subdata) glBufferSubData(GL_ARRAY_BUFFER, 0, sz, data.data());
             else glBufferData(GL_ARRAY_BUFFER, sz, data.data(), cacheable && !streamed ? GL_STATIC_DRAW : GL_STREAM_DRAW);
-            g_prof.t_conv += time_usec() - tc;
+            g_prof.t_conv += prof_usec() - tc;
         }
         want_buf[i] = buf;
         active |= 1u << i;
@@ -2184,9 +2188,9 @@ void draw(bool indexed) {
             if (want_buf[i] != attr_buf[i] || want_off[i] != g_attr_off[i]) { lo = std::min(lo, i); hi = i; }
         if (lo <= hi) {
             static const GLsizei strides[16] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16};
-            u64 tb = time_usec();
+            u64 tb = prof_usec();
             glBindVertexBuffers(lo, (GLsizei)(hi - lo + 1), want_buf + lo, want_off + lo, strides);
-            g_prof.t_bind += time_usec() - tb;
+            g_prof.t_bind += prof_usec() - tb;
             g_prof.binds++;
             memcpy(attr_buf + lo, want_buf + lo, (hi - lo + 1) * sizeof(GLuint));
             memcpy(g_attr_off + lo, want_off + lo, (hi - lo + 1) * sizeof(GLintptr));
@@ -2214,7 +2218,7 @@ void draw(bool indexed) {
             LOG_I("   c[%u] = %g %g %g %g", k, vp_consts[k * 4], vp_consts[k * 4 + 1], vp_consts[k * 4 + 2], vp_consts[k * 4 + 3]);
         LOG_I("   shader_window(1d88)=%08x clip=%08x %08x", reg(0x1D88), reg(0x0200), reg(0x0204));
     }
-    u64 t3 = time_usec();
+    u64 t3 = prof_usec();
     g_prof.vertices += t3 - t2;
     g_prof.draws++;
     g_prof.verts += nverts;
@@ -2282,17 +2286,17 @@ void draw(bool indexed) {
         static const u64 ds_n = ds3 ? strtoull(ds3 + 1, nullptr, 10) : 1;
         if (ds && g_frame >= ds_frame && g_frame < ds_frame + ds_n) sleep_usec(ds_us);
     }
-    u64 tdr = time_usec();
+    u64 tdr = prof_usec();
     glDrawElementsBaseVertex(mode, (GLsizei)idx_count, GL_UNSIGNED_INT, (const void*)idx_offset, g_vtx_gpu ? 0 : (GLint)vtx_shift - (GLint)min_v);
     if (g_idx_rebind) { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_iheap.buf); g_idx_rebind = false; }
-    g_prof.t_draw += time_usec() - tdr;
+    g_prof.t_draw += prof_usec() - tdr;
     if (target->main_ea) target->wb_dirty = true;
     g_write_seq++;
     if (reg(0x0324)) target->write_seq = g_write_seq;   // colour mask
     if (target->ms_active) target->ms_dirty = true;
     if (reg(0x0324) && target->width == target->height) g_square_write_seq = g_write_seq;
     if (g_cur_depth && (reg(0x0A74) & 1) && (reg(0x0A70) & 1)) g_cur_depth->write_seq = g_write_seq;   // depth test + mask
-    g_prof.submit += time_usec() - t3;
+    g_prof.submit += prof_usec() - t3;
     if (dump_now) { dump_surface(target->offset, "_out"); glBindFramebuffer(GL_FRAMEBUFFER, target->fbo); }
     {   // debug: F1CE_TRACE_FRAME=<n> logs every draw of frame n
         static const long long trace_frame = getenv("F1CE_TRACE_FRAME") ? atoll(getenv("F1CE_TRACE_FRAME")) : -1;

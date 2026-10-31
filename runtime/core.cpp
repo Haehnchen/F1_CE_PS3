@@ -106,6 +106,13 @@ void fatal(const char* fmt, ...) {
 
 // ------------------------------------------------------------------ time
 static const auto g_start = std::chrono::steady_clock::now();
+const u64 g_tsc_scale = [] {
+    const auto t0 = std::chrono::steady_clock::now();
+    const u64 c0 = __rdtsc();
+    while (std::chrono::steady_clock::now() - t0 < std::chrono::milliseconds(2)) {}
+    const double us = std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t0).count();
+    return (u64)(us * 4294967296.0 / (double)(__rdtsc() - c0));
+}();
 u64 time_usec() {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - g_start).count();
 }
