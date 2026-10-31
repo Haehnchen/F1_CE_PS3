@@ -1,0 +1,95 @@
+cmake_minimum_required(VERSION 3.20)
+project(f1ce_recomp C CXX)
+
+# Static recompilation of Formula One: Championship Edition (PS3) for x86-64 Windows/Linux.
+# Generated sources come from tools/recomp.py (run it first); game data is read at runtime.
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(WIN32)
+  set(F1CE_HOST_DEFAULT SDL)
+else()
+  set(F1CE_HOST_DEFAULT NULL)
+endif()
+set(F1CE_HOST ${F1CE_HOST_DEFAULT} CACHE STRING "Host backend: SDL (window/audio/input) or NULL (headless)")
+option(F1CE_TRACE_PC "Track the guest PC of memory accesses (debugging)" ON)
+if(F1CE_TRACE_PC)
+  add_compile_definitions(F1CE_TRACE_PC)
+endif()
+
+file(GLOB GENERATED_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/generated/ppu_*.cpp)
+if(NOT GENERATED_SOURCES)
+  message(FATAL_ERROR "No generated sources: run 'python tools/recomp.py' first")
+endif()
+
+set(RUNTIME_SOURCES
+  runtime/core.cpp
+  runtime/loader.cpp
+  runtime/lv2.cpp
+  runtime/fs.cpp
+  runtime/hle_sys.cpp
+  runtime/hle_misc.cpp
+  runtime/hle_gcm.cpp
+  runtime/hle_spurs.cpp
+  runtime/hle_savedata.cpp
+  runtime/spu.cpp
+)
+if(F1CE_HOST STREQUAL "SDL")
+  list(APPEND RUNTIME_SOURCES runtime/host_sdl.cpp runtime/rsx_gl.cpp)
+  set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+  set(SDL_STATIC ON CACHE BOOL "" FORCE)
+  set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+  set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_party/SDL3-3.4.18 EXCLUDE_FROM_ALL)
+else()
+  list(APPEND RUNTIME_SOURCES runtime/host_null.cpp runtime/rsx_null.cpp)
+endif()
+
+# x86-64-v3 (AVX2/FMA): needed for fused VMX multiply-add and fast byte swaps.
+# Spelled out as features because zig's driver does not accept -march=x86-64-v3.
+set(ARCH_FLAGS -msse4.2 -mpopcnt -mavx -mavx2 -mfma -mbmi -mbmi2 -mlzcnt -mmovbe -mf16c)
+
+# The generated translation units are huge and branchy; -O1 keeps build times sane while still
+# promoting the guest register file into host registers within basic blocks.
+add_library(ppu_generated OBJECT ${GENERATED_SOURCES})
+target_include_directories(ppu_generated PRIVATE runtime generated)
+target_compile_options(ppu_generated PRIVATE ${ARCH_FLAGS} -O1 -fno-strict-aliasing -Wno-unused-label
+  -Wno-unused-variable -Wno-parentheses-equality -fwrapv)
+
+# Ahead-of-time translated SPU blocks (tools/spu_aot.py): straight-line calls of the instruction handlers with
+# constant words; -O2 folds the decoding away. The table file always exists (empty without translations).
+file(GLOB SPU_AOT_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/generated/spu/*.cpp)
+if(NOT SPU_AOT_SOURCES)
+  file(WRITE ${CMAKE_SOURCE_DIR}/generated/spu/spu_aot_table.cpp
+    "#include \"spu.h\"
+const SpuAotBlock g_spu_aot[1] = {{0, nullptr, -1}};
+const u32 g_spu_aot_count = 0;
+const SpuAotCluster g_spu_aot_clusters[1] = {{0, 0, 0, nullptr, 0, nullptr, nullptr, 0}};
+const u32 g_spu_aot_cluster_count = 0;
+")
+  set(SPU_AOT_SOURCES ${CMAKE_SOURCE_DIR}/generated/spu/spu_aot_table.cpp)
+endif()
+add_library(spu_aot OBJECT ${SPU_AOT_SOURCES})
+target_include_directories(spu_aot PRIVATE runtime generated)
+target_compile_options(spu_aot PRIVATE ${ARCH_FLAGS} -O2 -fno-strict-aliasing -fwrapv -Wno-unused-function)
+
+add_executable(f1ce ${RUNTIME_SOURCES} $<TARGET_OBJECTS:ppu_generated> $<TARGET_OBJECTS:spu_aot>)
+target_include_directories(f1ce PRIVATE runtime generated)
+target_compile_options(f1ce PRIVATE ${ARCH_FLAGS} -fno-strict-aliasing -fwrapv)
+
+if(F1CE_HOST STREQUAL "SDL")
+  target_link_libraries(f1ce PRIVATE SDL3::SDL3-static)
+  if(WIN32)
+    target_link_libraries(f1ce PRIVATE opengl32 winmm)
+  endif()
+endif()
+if(WIN32)
+  target_link_options(f1ce PRIVATE -static -Wl,--stack,8388608 -Wl,-Map=f1ce.map)
+else()
+  find_package(Threads REQUIRED)
+  target_link_libraries(f1ce PRIVATE Threads::Threads)
+endif()

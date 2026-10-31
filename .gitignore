@@ -1,0 +1,35 @@
+# Game data and anything extracted from it (the user supplies their own copy)
+input/
+*.elf
+*.self
+*.wad
+PS3_GAME/
+
+# Ghidra project and its exported pseudo-C (rebuilt from EBOOT.elf)
+ghidra/project/
+out/
+
+# PPU translation: rebuilt by tools/recomp.py
+generated/*
+# SPU translation stays: it needs blocks recorded in play (tools/spu_aot.py)
+!generated/spu/
+
+# Build trees, including the shader cache in build-win/
+build*/
+third_party/
+__pycache__/
+*.pyc
+
+# Runtime output: saves, debug sessions, frame and surface dumps, logs
+ps3_data/
+run/
+dbg/*
+# The recorded input used to replay timing-dependent crashes stays
+!dbg/rec1/
+dbg/rec1/*
+!dbg/rec1/input_rec.txt
+*.log
+*.argb
+fp_*.glsl
+vp_*.glsl
+freeze_task*.bin

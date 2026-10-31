@@ -1,0 +1,757 @@
+// Guest memory, dispatch tables, threads, logging and other host services.
+#include "kernel.h"
+
+#include <chrono>
+#include <cstdarg>
+#include <vector>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <timeapi.h>
+#include <tlhelp32.h>
+#include <set>
+#else
+#include <signal.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
+u8* g_base = nullptr;
+u32 g_watch_line = getenv("F1CE_WATCH_LINE") ? (u32)strtoul(getenv("F1CE_WATCH_LINE"), nullptr, 16) & ~127u : 1;
+
+double watch_after() {
+    static const double t = getenv("F1CE_WATCH_AFTER") ? atof(getenv("F1CE_WATCH_AFTER")) : 0.0;
+    return t;
+}
+void watch_store(u32 ea, u64 value, u32 size) {
+    if (time_usec() / 1e6 < watch_after()) return;
+    static std::atomic<int> n{0};
+    static const int max_n = getenv("F1CE_WATCH_MAX") ? atoi(getenv("F1CE_WATCH_MAX")) : 400;
+    if (n++ > max_n) return;
+    if (t_self)
+        LOG_I("watch PPU store%u [%08x] = %llx  pc=%08x fn=%08x lr=%08x r3-r8=%08x %08x %08x %08x %08x %08x", size * 8, ea,
+              (unsigned long long)value, t_self->ctx.pc, t_self->ctx.cur_fn, (u32)t_self->ctx.lr, (u32)t_self->ctx.r[3],
+              (u32)t_self->ctx.r[4], (u32)t_self->ctx.r[5], (u32)t_self->ctx.r[6], (u32)t_self->ctx.r[7], (u32)t_self->ctx.r[8]);
+    else
+        LOG_I("watch host store%u [%08x] = %llx", size * 8, ea, (unsigned long long)value);
+}
+bool g_log_trace = false;
+thread_local PPUThread* t_self = nullptr;
+
+// ------------------------------------------------------------------ logging
+static std::mutex g_log_mutex;
+static FILE* g_log_file = nullptr;
+
+void log_msg(LogLevel lv, const char* fmt, ...) {
+    if (lv == LogLevel::trace && !g_log_trace) return;
+    char buf[2048];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    static const char* tags[] = {"T", "I", "W", "E"};
+    std::lock_guard lk(g_log_mutex);
+    if (!g_log_file) {
+        g_log_file = fopen("f1ce_recomp.log", "w");
+        if (g_log_file) setvbuf(g_log_file, nullptr, _IOFBF, 1 << 20);
+    }
+    u32 tid = t_self ? t_self->id : 0;
+    // The console gets warnings and errors only (F1CE_LOG_CONSOLE=1: everything). Printing every line to a terminal
+    // (Git Bash / Windows console) took long enough, under this lock, to stall the renderer and the PPU: slow
+    // loading and timing-dependent FIFO faults that did not happen with the output redirected.
+    static const bool console_all = getenv("F1CE_LOG_CONSOLE") != nullptr;
+    if (console_all || lv >= LogLevel::warn) fprintf(stderr, "[%s][%08x] %s\n", tags[(int)lv], tid, buf);
+    if (g_log_file) {
+        fprintf(g_log_file, "[%s][%08x] %s\n", tags[(int)lv], tid, buf);
+        // flushed at once for warnings and errors, else at most once a second (a flush per line is slow too)
+        static u64 last_flush = 0;
+        u64 now = time_usec();
+        if (lv >= LogLevel::warn || now - last_flush > 1000000) { fflush(g_log_file); last_flush = now; }
+    }
+}
+
+void fatal(const char* fmt, ...) {
+    char buf[2048];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    log_msg(LogLevel::error, "FATAL: %s", buf);
+    if (t_self) {
+        auto& c = t_self->ctx;
+        log_msg(LogLevel::error, "  fn=%08x lr=%08x ctr=%08x pc=%08x r1=%08x r2=%08x", c.cur_fn, (u32)c.lr,
+                (u32)c.ctr, c.pc, (u32)c.r[1], (u32)c.r[2]);
+        for (int i = 0; i < 32; i += 4)
+            log_msg(LogLevel::error, "  r%-2d=%016llx r%-2d=%016llx r%-2d=%016llx r%-2d=%016llx", i,
+                    (unsigned long long)c.r[i], i + 1, (unsigned long long)c.r[i + 1], i + 2,
+                    (unsigned long long)c.r[i + 2], i + 3, (unsigned long long)c.r[i + 3]);
+        // PPC64 ABI stack walk: back chain at 0(sp), saved LR at 16(frame)
+        std::string bt;
+        u32 sp = (u32)c.r[1];
+        for (int depth = 0; depth < 24 && sp >= mem::STACK_BASE && sp < mem::STACK_BASE + mem::STACK_SIZE; depth++) {
+            u32 next = (u32)ld64(sp);
+            if (next <= sp || next >= mem::STACK_BASE + mem::STACK_SIZE) break;
+            char buf[16];
+            snprintf(buf, sizeof(buf), " %08x", (u32)ld64(next + 16));
+            bt += buf;
+            sp = next;
+        }
+        log_msg(LogLevel::error, "  backtrace (return addresses):%s", bt.c_str());
+    }
+    fflush(stderr);
+    std::_Exit(1);
+}
+
+// ------------------------------------------------------------------ time
+static const auto g_start = std::chrono::steady_clock::now();
+u64 time_usec() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - g_start).count();
+}
+// Short waits (polling loops of the emulated hardware) must not round up to the OS timer tick (>= 1 ms on
+// Windows): they yield until the deadline instead. Longer ones sleep (timer resolution raised to 1 ms).
+void sleep_usec(u64 us) {
+    if (us <= 200) {
+        u64 end = time_usec() + us;
+        do std::this_thread::yield(); while (time_usec() < end);
+        return;
+    }
+#ifdef _WIN32
+    static const bool period = [] { timeBeginPeriod(1); return true; }();
+    (void)period;
+#endif
+    std::this_thread::sleep_for(std::chrono::microseconds(us));
+}
+u64 ppu_timebase() {  // 79.8 MHz
+    auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - g_start).count();
+    return (u64)((unsigned __int128)ns * 798 / 10000);
+}
+
+// ------------------------------------------------------------------ memory
+namespace mem {
+static std::mutex g_mem_mutex;
+static u32 g_heap_top = MAIN_HEAP;
+static std::map<u32, u32> g_user_blocks;   // addr -> size
+static std::map<u32, u32> g_stack_blocks;
+
+static void commit(u32 addr, u32 size) {
+#ifdef _WIN32
+    if (!VirtualAlloc(g_base + addr, size, MEM_COMMIT, PAGE_READWRITE)) fatal("commit %08x+%x failed", addr, size);
+#else
+    if (mprotect(g_base + addr, size, PROT_READ | PROT_WRITE)) fatal("mprotect %08x+%x failed", addr, size);
+#endif
+}
+
+static void install_fault_handler();
+
+void init() {
+    const u64 span = 0x100000000ull + 0x10000;   // 4 GiB + guard
+#ifdef _WIN32
+    g_base = (u8*)VirtualAlloc(nullptr, span, MEM_RESERVE, PAGE_NOACCESS);
+#else
+    void* p = mmap(nullptr, span, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+    g_base = p == MAP_FAILED ? nullptr : (u8*)p;
+#endif
+    if (!g_base) fatal("cannot reserve guest address space");
+    commit(0x00010000, 0x10000000 - 0x10000);   // ELF image + main memory
+    commit(0x10000000, 0x01000000);             // ELF data segment
+    commit(MAIN_HEAP, MAIN_HEAP_SIZE);
+    commit(USER_BASE, USER_SIZE);
+    commit(RSX_LOCAL, RSX_LOCAL_SIZE);
+    commit(STACK_BASE, STACK_SIZE);
+    install_fault_handler();
+    LOG_I("guest memory reserved at %p", (void*)g_base);
+}
+
+u32 alloc(u32 size, u32 align) {
+    std::lock_guard lk(g_mem_mutex);
+    u32 a = (g_heap_top + align - 1) & ~(align - 1);
+    if (a + size > MAIN_HEAP + MAIN_HEAP_SIZE) fatal("HLE heap exhausted");
+    g_heap_top = a + size;
+    memset(gmem(a), 0, size);
+    return a;
+}
+
+static u32 range_alloc(std::map<u32, u32>& blocks, u32 base, u32 limit, u32 size, u32 align) {
+    u32 cur = base;
+    for (auto& [a, s] : blocks) {
+        u32 cand = (cur + align - 1) & ~(align - 1);
+        if (cand + size <= a) break;
+        cur = a + s;
+    }
+    u32 cand = (cur + align - 1) & ~(align - 1);
+    if ((u64)cand + size > (u64)base + limit) return 0;
+    blocks[cand] = size;
+    memset(gmem(cand), 0, size);
+    return cand;
+}
+
+u32 user_alloc(u32 size, u32 align) {
+    std::lock_guard lk(g_mem_mutex);
+    return range_alloc(g_user_blocks, USER_BASE, USER_SIZE, size, align);
+}
+void user_free(u32 addr) {
+    std::lock_guard lk(g_mem_mutex);
+    g_user_blocks.erase(addr);
+}
+u32 user_available() {
+    std::lock_guard lk(g_mem_mutex);
+    u32 used = 0;
+    for (auto& [a, s] : g_user_blocks) used += s;
+    return USER_SIZE - used;
+}
+u32 stack_alloc(u32 size) {
+    std::lock_guard lk(g_mem_mutex);
+    size = (size + 0xFFFF) & ~0xFFFFu;
+    // leave a 64 KiB gap between stacks to catch overflows in logs
+    u32 a = range_alloc(g_stack_blocks, STACK_BASE + 0x10000, STACK_SIZE - 0x10000, size + 0x10000, 0x10000);
+    if (!a) fatal("out of stack space");
+    return a + 0x10000;
+}
+void stack_free(u32 addr) {
+    std::lock_guard lk(g_mem_mutex);
+    g_stack_blocks.erase(addr - 0x10000);
+}
+
+#ifdef _WIN32
+static LONG CALLBACK fault_handler(PEXCEPTION_POINTERS ep) {
+    auto* rec = ep->ExceptionRecord;
+    if (rec->ExceptionCode != EXCEPTION_ACCESS_VIOLATION) return EXCEPTION_CONTINUE_SEARCH;
+    u8* addr = (u8*)rec->ExceptionInformation[1];
+    // host code offset relative to the image base, to look up in f1ce.map
+    unsigned long long rip_off = ep->ContextRecord->Rip - (unsigned long long)GetModuleHandleW(nullptr);
+    if (addr >= g_base && addr < g_base + 0x100010000ull)
+        fatal("guest memory fault: %s at guest address %08llx (host rip = image+0x%llx)",
+              rec->ExceptionInformation[0] ? "write" : "read", (unsigned long long)(addr - g_base), rip_off);
+    fatal("host access violation at %p (rip=%p)", (void*)addr, (void*)ep->ContextRecord->Rip);
+}
+static void install_fault_handler() { AddVectoredExceptionHandler(1, fault_handler); }
+#else
+static void fault_handler(int, siginfo_t* si, void*) {
+    u8* addr = (u8*)si->si_addr;
+    if (addr >= g_base && addr < g_base + 0x100010000ull)
+        fatal("guest memory fault at guest address %08llx", (unsigned long long)(addr - g_base));
+    fatal("host segmentation fault at %p", (void*)addr);
+}
+static void install_fault_handler() {
+    struct sigaction sa{};
+    sa.sa_sigaction = fault_handler;
+    sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGBUS, &sa, nullptr);
+}
+#endif
+}  // namespace mem
+
+std::string gstr(u32 ea, size_t max) {
+    if (!ea) return {};
+    std::string s;
+    for (size_t i = 0; i < max; i++) {
+        char ch = (char)ld8(ea + (u32)i);
+        if (!ch) break;
+        s += ch;
+    }
+    return s;
+}
+void gstr_write(u32 ea, const std::string& s, size_t max) {
+    size_t n = std::min(s.size(), max - 1);
+    memcpy(gmem(ea), s.data(), n);
+    st8(ea + (u32)n, 0);
+}
+
+// ------------------------------------------------------------------ function dispatch
+static constexpr u32 CODE_LO = 0x10000, CODE_HI = 0x720000;
+static std::vector<PPUFunc> g_dispatch;   // (addr - CODE_LO) / 4
+
+static void build_dispatch() {
+    g_dispatch.assign((CODE_HI - CODE_LO) / 4, nullptr);
+    for (u32 i = 0; i < g_func_count; i++) {
+        u32 a = g_func_table[i].addr;
+        if (a >= CODE_LO && a < CODE_HI) g_dispatch[(a - CODE_LO) / 4] = g_func_table[i].fn;
+    }
+}
+
+// Host functions callable from guest code live at fake code addresses in the (unmapped) low page.
+static constexpr u32 HOST_FN_BASE = 0x1000, HOST_FN_MAX = 1024;
+static HleFnPtr g_host_fns[HOST_FN_MAX];
+static std::atomic<u32> g_host_fn_count{0};
+
+u32 host_func_opd(HleFnPtr fn) {
+    u32 idx = g_host_fn_count++;
+    if (idx >= HOST_FN_MAX) fatal("too many host functions");
+    g_host_fns[idx] = fn;
+    u32 opd = mem::alloc(8, 8);
+    st32(opd, HOST_FN_BASE + idx * 4);
+    st32(opd + 4, 0);
+    return opd;
+}
+
+void call_indirect(PPUContext& c, u32 addr) {
+    if (addr >= CODE_LO && addr < CODE_HI && !(addr & 3)) {
+        if (PPUFunc f = g_dispatch[(addr - CODE_LO) / 4]) return f(c);
+    }
+    if (addr >= HOST_FN_BASE && addr < HOST_FN_BASE + HOST_FN_MAX * 4) {
+        u32 idx = (addr - HOST_FN_BASE) / 4;
+        if (idx < g_host_fn_count) return g_host_fns[idx](c);
+    }
+    fatal("indirect call to unknown address %08x (lr=%08x)", addr, (u32)c.lr);
+}
+
+PPUThread* thread_create_host(const std::string& name, std::function<void(PPUContext&)> body) {
+    static u32 dummy_opd = 0;
+    if (!dummy_opd) {
+        dummy_opd = mem::alloc(8, 8);
+        st32(dummy_opd + 4, 0);
+    }
+    u32 id;
+    PPUThread* t = thread_create(dummy_opd, 0, 1, 0x10000, false, name, &id);
+    t->host = std::thread([t, body = std::move(body)] {
+        t_self = t;
+        try {
+            body(t->ctx);
+        } catch (const ThreadExit&) {
+        }
+    });
+    t->host.detach();
+    return t;
+}
+
+u64 guest_call(PPUContext& c, u32 opd, std::initializer_list<u64> args) {
+    u64 saved_r2 = c.r[2], saved_lr = c.lr;
+    int i = 0;
+    for (u64 a : args) c.r[3 + i++] = a;
+    c.r[2] = ld32(opd + 4);
+    call_indirect(c, ld32(opd));
+    c.r[2] = saved_r2;
+    c.lr = saved_lr;
+    return c.r[3];
+}
+
+// ------------------------------------------------------------------ traps
+void trap_invalid(PPUContext& c, u32 addr, u32 word) {
+    c.pc = addr;
+    fatal("invalid instruction %08x at %08x", word, addr);
+}
+void trap_unsupported(PPUContext& c, u32 addr, const char* what) {
+    c.pc = addr;
+    fatal("unsupported instruction '%s' at %08x", what, addr);
+}
+void trap_hit(PPUContext& c, u32 addr) {
+    c.pc = addr;
+    fatal("trap instruction hit at %08x", addr);
+}
+
+// ------------------------------------------------------------------ reservations (lwarx/stwcx.)
+// A global lock makes the reserve/conditional-store pair atomic with respect to other
+// reservation users; plain stores from other threads are detected by value comparison.
+// shared by PPU lwarx/stwcx. and SPU getllar/putllc so both kinds of atomic update exclude each other; striped by
+// 128-byte line (every user updates a single line under it)
+struct alignas(64) PaddedMutex { std::mutex m; };
+static PaddedMutex g_atomic_locks[64];
+std::mutex& atomic_lock(u32 ea) { return g_atomic_locks[(ea >> 7) & 63].m; }
+
+// Write generation per 128-byte line (hashed; a collision only fails a conditional store, which is retried). Every
+// write made under the line's reservation lock (PPU stwcx./stdcx., SPU PUTLLC/PUTLLUC, the HLE SPURS writers) bumps it,
+// and an SPU PUTLLC fails when it changed since its GETLLAR, as a lost reservation does on the Cell: comparing the
+// data alone missed stores of an unchanged value. The SPURS job manager read ready count 1 and an empty queue, the
+// game queued jobs and stored ready count 1 again (no change), and the PM's PUTLLC of ready 0 succeeded: work queued
+// with nobody scheduled to run it (freeze at the race start: main thread in cellSpursEventFlagWait for ever).
+static std::atomic<u32> g_line_gen[4096];
+u32 line_generation(u32 ea) { return g_line_gen[(ea >> 7) & 4095].load(std::memory_order_relaxed); }
+void line_written(u32 ea) { g_line_gen[(ea >> 7) & 4095].fetch_add(1, std::memory_order_relaxed); }
+
+u32 ppu_lwarx(PPUContext& c, u32 ea) {
+    std::lock_guard lk(atomic_lock(ea));
+    c.res_addr = ea;
+    c.res_value = ld32(ea);
+    return (u32)c.res_value;
+}
+u64 ppu_ldarx(PPUContext& c, u32 ea) {
+    std::lock_guard lk(atomic_lock(ea));
+    c.res_addr = ea | 1;   // low bit marks a doubleword reservation
+    c.res_value = ld64(ea);
+    return c.res_value;
+}
+void ppu_stwcx(PPUContext& c, u32 ea, u32 v) {
+    std::lock_guard lk(atomic_lock(ea));
+    bool ok = c.res_addr == ea && ld32(ea) == (u32)c.res_value;
+    if (ok) { st32(ea, v); line_written(ea); }
+    c.res_addr = 0;
+    c.cr[0] = 0; c.cr[1] = 0; c.cr[2] = ok; c.cr[3] = c.xer_so;
+}
+void ppu_stdcx(PPUContext& c, u32 ea, u64 v) {
+    std::lock_guard lk(atomic_lock(ea));
+    bool ok = c.res_addr == (ea | 1) && ld64(ea) == c.res_value;
+    if (ok) { st64(ea, v); line_written(ea); }
+    c.res_addr = 0;
+    c.cr[0] = 0; c.cr[1] = 0; c.cr[2] = ok; c.cr[3] = c.xer_so;
+}
+
+// ------------------------------------------------------------------ threads
+static IdMap<PPUThread> g_threads(0x01000000);
+extern u32 g_tls_addr, g_tls_filesz, g_tls_memsz;   // from loader
+u32 tls_alloc();                                      // hle_sys.cpp
+
+PPUThread* thread_find(u32 id) { return g_threads.get(id).get(); }
+
+static std::vector<std::shared_ptr<PPUThread>> g_thread_refs;
+static std::mutex g_thread_refs_mutex;
+
+PPUThread* thread_create(u32 entry_opd, u64 arg, s32 prio, u32 stack_size, bool joinable, const std::string& name,
+                         u32* out_id) {
+    auto t = std::make_shared<PPUThread>();
+    t->priority = prio;
+    t->name = name;
+    t->joinable = joinable;
+    t->stack_size = std::max<u32>(stack_size, 0x4000);
+    t->stack_addr = mem::stack_alloc(t->stack_size);
+    t->id = g_threads.add(t);
+    {
+        std::lock_guard lk(g_thread_refs_mutex);
+        g_thread_refs.push_back(t);
+    }
+    auto& c = t->ctx;
+    c.thread = t.get();
+    c.r[1] = (t->stack_addr + t->stack_size - 0x70) & ~0xFu;
+    c.r[2] = ld32(entry_opd + 4);
+    c.r[3] = arg;
+    c.r[13] = tls_alloc();
+    c.lr = 0;
+    c.pc = ld32(entry_opd);
+    c.vscr = 0x10000;   // non-Java mode
+    if (out_id) *out_id = t->id;
+    LOG_I("thread created: id=%08x '%s' entry=%08x prio=%d stack=%08x+%x", t->id, name.c_str(), c.pc, prio,
+          t->stack_addr, t->stack_size);
+    return t.get();
+}
+
+static void thread_body(PPUThread* t) {
+    t_self = t;
+    try {
+        call_indirect(t->ctx, t->ctx.pc);
+        t->exit_status = t->ctx.r[3];
+    } catch (const ThreadExit& e) {
+        t->exit_status = e.status;
+    }
+    LOG_I("thread %08x '%s' exited (status %llx)", t->id, t->name.c_str(), (unsigned long long)t->exit_status);
+    {
+        std::lock_guard lk(t->m);
+        t->finished = true;
+    }
+    t->cv.notify_all();
+}
+
+void thread_start(PPUThread* t) { t->host = std::thread(thread_body, t); t->host.detach(); }
+
+static std::string backtrace_of(const PPUContext& c) {
+    std::string bt;
+    u32 sp = (u32)c.r[1];
+    for (int depth = 0; depth < 16 && sp >= mem::STACK_BASE && sp < mem::STACK_BASE + mem::STACK_SIZE; depth++) {
+        u32 next = (u32)ld64(sp);
+        if (next <= sp || next >= mem::STACK_BASE + mem::STACK_SIZE) break;
+        char buf[16];
+        snprintf(buf, sizeof(buf), " %08x", (u32)ld64(next + 16));
+        bt += buf;
+        sp = next;
+    }
+    return bt;
+}
+
+// Profiling aid (F1CE_PROFILE=1): samples every 2 ms what each guest thread is doing (the HLE call it blocks
+// in, or the guest function it executes) and logs the most frequent states per thread every 10 s.
+void start_profiler() {
+    if (!getenv("F1CE_PROFILE")) return;
+    std::thread([] {
+        std::map<std::string, std::map<std::string, u64>> hist;
+        u64 last = time_usec();
+        for (;;) {
+            sleep_usec(2000);
+            {
+                std::lock_guard lk(g_thread_refs_mutex);
+                for (auto& t : g_thread_refs) {
+                    if (t->finished) continue;
+                    const char* hle = t->in_hle.load();
+                    char b[48];
+                    if (hle) snprintf(b, sizeof(b), "hle %s", hle);
+                    else snprintf(b, sizeof(b), "fn %08x", t->ctx.cur_fn);
+                    hist[t->name][b]++;
+                }
+            }
+            if (time_usec() - last < 10000000) continue;
+            last = time_usec();
+            for (auto& [name, h] : hist) {
+                u64 total = 0;
+                for (auto& [k, v] : h) total += v;
+                std::vector<std::pair<u64, std::string>> v;
+                for (auto& [k, n] : h) v.push_back({n, k});
+                std::sort(v.rbegin(), v.rend());
+                std::string line;
+                for (size_t i = 0; i < v.size() && i < 8; i++) {
+                    char b[80];
+                    snprintf(b, sizeof(b), " %s %.0f%%", v[i].second.c_str(), 100.0 * v[i].first / total);
+                    line += b;
+                }
+                LOG_I("profile %-24s:%s", name.c_str(), line.c_str());
+            }
+            hist.clear();
+        }
+    }).detach();
+}
+
+std::mutex g_prof_threads_mutex;
+std::set<u32> g_prof_threads;   // host thread ids the host profiler samples (SPU workers register themselves)
+void profile_register_thread() {
+#ifdef _WIN32
+    std::lock_guard lk(g_prof_threads_mutex);
+    g_prof_threads.insert(GetCurrentThreadId());
+#endif
+}
+#ifdef _WIN32
+// Profiling aid (F1CE_HOST_PROFILE=<seconds before start>): samples the host instruction pointer of every thread
+// of the process for 10 s and logs the hottest functions (resolved through build-win/f1ce.map).
+void start_host_profiler() {
+    const char* e = getenv("F1CE_HOST_PROFILE");
+    if (!e) return;
+    double delay = atof(e);
+    std::thread([delay] {
+        sleep_usec((u64)(delay * 1e6));
+        LOG_I("host profile: sampling for 10 s");
+        DWORD self = GetCurrentThreadId(), pid = GetCurrentProcessId();
+        std::map<u64, u64> hits;
+        std::map<u64, u64> dll_callers;   // samples outside the executable, by the first executable frame on the stack
+        u64 total = 0, end = time_usec() + 10000000;
+        u64 base = (u64)GetModuleHandleW(nullptr);
+        while (time_usec() < end) {
+            HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+            THREADENTRY32 te{sizeof(te)};
+            for (BOOL ok = Thread32First(snap, &te); ok; ok = Thread32Next(snap, &te)) {
+                if (te.th32OwnerProcessID != pid || te.th32ThreadID == self) continue;
+                {
+                    std::lock_guard lk(g_prof_threads_mutex);
+                    if (!g_prof_threads.empty() && !g_prof_threads.count(te.th32ThreadID)) continue;
+                }
+                HANDLE h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT, FALSE, te.th32ThreadID);
+                if (!h) continue;
+                if (SuspendThread(h) != (DWORD)-1) {
+                    // no allocation while the thread is suspended: it may hold the CRT heap lock (the profiler
+                    // then deadlocked and never printed its results)
+                    CONTEXT c{};
+                    c.ContextFlags = CONTEXT_FULL;
+                    bool got = GetThreadContext(h, &c);
+                    u64 caller = 0;
+                    auto* nt = (IMAGE_NT_HEADERS*)(base + ((IMAGE_DOS_HEADER*)base)->e_lfanew);
+                    u64 image_size = nt->OptionalHeader.SizeOfImage;
+                    if (got) {
+                        CONTEXT u = c;
+                        for (int depth = 0; depth < 32 && u.Rip - base >= image_size; depth++) {
+                            DWORD64 img = 0;
+                            RUNTIME_FUNCTION* fe = RtlLookupFunctionEntry(u.Rip, &img, nullptr);
+                            if (!fe) { u.Rip = *(DWORD64*)u.Rsp; u.Rsp += 8; continue; }   // leaf function
+                            void* hd = nullptr;
+                            DWORD64 est = 0;
+                            RtlVirtualUnwind(UNW_FLAG_NHANDLER, img, u.Rip, fe, &u, &hd, &est, nullptr);
+                            if (!u.Rip) break;
+                        }
+                        if (c.Rip - base >= image_size && u.Rip - base < image_size) caller = u.Rip - base;
+                    }
+                    ResumeThread(h);
+                    if (got) {
+                        hits[c.Rip - base]++;
+                        total++;
+                        if (caller) dll_callers[caller]++;
+                    }
+                }
+                CloseHandle(h);
+            }
+            CloseHandle(snap);
+            Sleep(1);
+        }
+        LOG_I("host profile: %llu samples", (unsigned long long)total);
+        // resolve: map file lines "address size align out in symbol" (symbols are the lines with 4+ fields)
+        std::vector<std::pair<u64, std::string>> syms;
+        if (FILE* f = fopen("../../build-win/f1ce.map", "r")) {
+            char line[1024];
+            while (fgets(line, sizeof(line), f)) {
+                unsigned long long a, sz;
+                unsigned al;
+                int n = 0;
+                if (sscanf(line, "%llx %llx %u%n", &a, &sz, &al, &n) == 3) {
+                    const char* p = line + n;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (*p && *p != '.' && *p != '<' && strncmp(p, "C:", 2) != 0) {
+                        std::string nm(p);
+                        while (!nm.empty() && (nm.back() == '\n' || nm.back() == '\r')) nm.pop_back();
+                        syms.push_back({a - 0x1000 + 0x1000, nm});
+                    }
+                }
+            }
+            fclose(f);
+        }
+        std::sort(syms.begin(), syms.end());
+        std::map<std::string, u64> by_fn;
+        u64 image_end = syms.empty() ? 0 : syms.back().first + 0x10000;
+        for (auto& [rva, n] : hits) {
+            std::string nm;
+            if (rva >= image_end) {   // outside the executable: name the module (system DLLs: waits, yields, copies)
+                HMODULE mod = nullptr;
+                char path[MAX_PATH] = "?";
+                if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                       (LPCSTR)(rva + base), &mod))
+                    GetModuleFileNameA(mod, path, sizeof(path));
+                const char* slash = strrchr(path, '\\');
+                nm = std::string("[dll] ") + (slash ? slash + 1 : path);
+            } else {
+                auto it = std::upper_bound(syms.begin(), syms.end(), std::make_pair(rva, std::string("\xff")));
+                nm = it == syms.begin() ? "?" : std::prev(it)->second;
+            }
+            by_fn[nm.substr(0, 90)] += n;
+        }
+        std::vector<std::pair<u64, std::string>> v;
+        for (auto& [k, n] : by_fn) v.push_back({n, k});
+        std::sort(v.rbegin(), v.rend());
+        for (size_t i = 0; i < v.size() && i < 40; i++)
+            LOG_I("host profile %5.1f%% %s", 100.0 * v[i].first / std::max<u64>(total, 1), v[i].second.c_str());
+        {   // where the time outside the executable comes from
+            std::map<std::string, u64> by_caller;
+            for (auto& [rva, n] : dll_callers) {
+                auto it = std::upper_bound(syms.begin(), syms.end(), std::make_pair(rva, std::string("ÿ")));
+                by_caller[(it == syms.begin() ? std::string("?") : std::prev(it)->second).substr(0, 90)] += n;
+            }
+            std::vector<std::pair<u64, std::string>> w;
+            for (auto& [k, n] : by_caller) w.push_back({n, k});
+            std::sort(w.rbegin(), w.rend());
+            for (size_t i = 0; i < w.size() && i < 15; i++)
+                LOG_I("host profile dll time from %5.1f%% %s", 100.0 * w[i].first / std::max<u64>(total, 1), w[i].second.c_str());
+            std::vector<std::pair<u64, u64>> top;
+            for (auto& [rva, n] : dll_callers) top.push_back({n, rva});
+            std::sort(top.rbegin(), top.rend());
+            for (size_t i = 0; i < top.size() && i < 10; i++)
+                LOG_I("host profile dll caller rva %llx %5.2f%%", (unsigned long long)top[i].second, 100.0 * top[i].first / std::max<u64>(total, 1));
+        }
+        // hottest single addresses (for disassembly when a symbol hides static helpers)
+        std::vector<std::pair<u64, u64>> top;
+        for (auto& [rva, n] : hits) if (rva < image_end) top.push_back({n, rva});
+        std::sort(top.rbegin(), top.rend());
+        for (size_t i = 0; i < top.size() && i < 25; i++)
+            LOG_I("host profile rva %llx %5.2f%%", (unsigned long long)top[i].second, 100.0 * top[i].first / std::max<u64>(total, 1));
+    }).detach();
+}
+#else
+void start_host_profiler() {}
+#endif
+
+// Debug aid: periodically dumps where every guest thread is (racy snapshot, diagnostics only).
+void start_watchdog(u32 period_s) {
+    std::thread([period_s] {
+        for (;;) {
+            sleep_usec(period_s * 1000000ull);
+            std::lock_guard lk(g_thread_refs_mutex);
+            LOG_I("---- watchdog: %zu threads ----", g_thread_refs.size());
+            if (const char* e = getenv("F1CE_WATCH_MEM")) {   // debug: dump 0x200 bytes at a guest address
+                u32 a = (u32)strtoul(e, nullptr, 16) & ~15u;
+                u32 n = getenv("F1CE_WATCH_MEM_SIZE") ? (u32)strtoul(getenv("F1CE_WATCH_MEM_SIZE"), nullptr, 16) : 0x200;
+                for (u32 k = 0; k < n; k += 32) {
+                    std::string h;
+                    for (u32 j = 0; j < 32; j += 4) { char b[12]; snprintf(b, sizeof(b), " %08x", ld32(a + k + j)); h += b; }
+                    LOG_I("  mem %08x:%s", a + k, h.c_str());
+                }
+            }
+            for (auto& t : g_thread_refs) {
+                if (t->finished) continue;
+                const auto& c = t->ctx;
+                const char* hle = t->in_hle.load();
+                LOG_I("  %08x %-28s fn=%08x pc=%08x lr=%08x r3=%08x r4=%08x r5=%08x r31=%08x%s%s bt:%s", t->id,
+                      t->name.c_str(), c.cur_fn, c.pc, (u32)c.lr, (u32)c.r[3], (u32)c.r[4], (u32)c.r[5], (u32)c.r[31],
+                      hle ? " in " : "", hle ? hle : "", backtrace_of(c).c_str());
+                u32 p = (u32)c.r[3];
+                if (mem::readable(p & ~15u, 64)) {
+                    std::string mem;
+                    for (u32 k = 0; k < 64; k += 4) { char b[12]; snprintf(b, sizeof(b), " %08x", ld32((p & ~15u) + k)); mem += b; }
+                    LOG_I("      [r3 & ~15] =%s", mem.c_str());
+                    u32 tbl = c.cur_fn == 0x5513b8 && mem::readable(p, 40) ? ld32(p + 4) : 0;
+                    if (mem::readable(tbl, 0x20 + 8 * 0x10000 + 8)) {   // job manager wait: control block layout from fn 0x55221c
+                        // (racy diagnostics: the pointer is only followed when it points into guest memory)
+                        std::string cs;
+                        for (u32 k = 0; k < 6; k++) cs += " " + std::to_string(ld16(tbl + 0x14 + 2 * k));
+                        u32 base = ld16(tbl + 0x12);
+                        std::string jobs;
+                        for (u32 j = (base > 3 ? base - 3 : 0); j < base + 5; j++) {
+                            char b[40];
+                            snprintf(b, sizeof(b), " [%u]%08x%08x", j, ld32(tbl + 0x20 + 8 * j), ld32(tbl + 0x24 + 8 * j));
+                            jobs += b;
+                        }
+                        LOG_I("      job wait: target=%u ctrl=%08x submitted=%u base=%u spu_slots:%s", ld16(p + 38), tbl,
+                              ld16(tbl + 0x10), base, cs.c_str());
+                        LOG_I("      jobs:%s", jobs.c_str());
+                    }
+                }
+            }
+        }
+    }).detach();
+}
+
+void thread_exit(PPUContext& c, u64 status) { throw ThreadExit{status}; }
+
+void run_main_thread(u32 entry_opd, u32 stack_size, s32 prio) {
+    build_dispatch();
+    u32 id;
+    PPUThread* t = thread_create(entry_opd, 0, prio, stack_size, true, "main", &id);
+    auto& c = t->ctx;
+    // crt0 register contract (see crt0 analysis): argc/argv/envp, then TLS info for sys_initialize_tls
+    // argv/envp are arrays of 64-bit big-endian pointers (crt0 copies the low words)
+    u32 argv = mem::alloc(32, 16);
+    u32 arg0 = mem::alloc(64);
+    gstr_write(arg0, "/app_home/EBOOT.BIN", 64);
+    st64(argv, arg0);
+    st64(argv + 8, 0);
+    st64(argv + 16, 0);   // envp terminator
+    c.r[3] = 1;
+    c.r[4] = argv;
+    c.r[5] = argv + 16;
+    c.r[6] = 0;
+    c.r[7] = id;
+    c.r[8] = g_tls_addr;
+    c.r[9] = g_tls_filesz;
+    c.r[10] = g_tls_memsz;
+    c.r[11] = ld32(entry_opd);
+    extern u32 g_malloc_pagesize;
+    c.r[12] = g_malloc_pagesize;
+    c.r[13] = 0;   // set by sys_initialize_tls
+    thread_body(t);
+}
+
+// ------------------------------------------------------------------ HLE registry
+static std::unordered_map<std::string, HleFn>& hle_registry() {
+    static std::unordered_map<std::string, HleFn> r;
+    return r;
+}
+HleRegistrar::HleRegistrar(const char* name, HleFn fn) { hle_registry()[name] = fn; }
+
+void hle_call(PPUContext& c, u32 idx) {
+    static std::vector<HleFn> resolved;
+    static std::vector<std::atomic<bool>> warned(g_import_count);
+    static std::once_flag once;
+    std::call_once(once, [] {
+        resolved.resize(g_import_count);
+        u32 missing = 0;
+        for (u32 i = 0; i < g_import_count; i++) {
+            auto it = hle_registry().find(g_imports[i].name);
+            resolved[i] = it == hle_registry().end() ? nullptr : it->second;
+            missing += !resolved[i];
+        }
+        LOG_I("HLE: %u/%u imports implemented", g_import_count - missing, g_import_count);
+    });
+    if (HleFn f = resolved[idx]) {
+        LOG_T("HLE %s(%llx, %llx, %llx, %llx)", g_imports[idx].name, (unsigned long long)c.r[3],
+              (unsigned long long)c.r[4], (unsigned long long)c.r[5], (unsigned long long)c.r[6]);
+        if (t_self) t_self->in_hle = g_imports[idx].name;
+        f(c);
+        if (t_self) t_self->in_hle = nullptr;
+        return;
+    }
+    if (!warned[idx].exchange(true))
+        LOG_W("unimplemented HLE function %s::%s (r3=%llx r4=%llx) -> CELL_OK", g_imports[idx].library,
+              g_imports[idx].name, (unsigned long long)c.r[3], (unsigned long long)c.r[4]);
+    c.r[3] = 0;
+}

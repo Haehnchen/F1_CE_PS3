@@ -1,0 +1,286 @@
+// SDL3 host backend: OpenGL window, keyboard/gamepad input, audio output.
+//
+// The guest's main thread runs on the process main thread, so the window and its event loop live
+// on a dedicated UI thread. The RSX thread owns the OpenGL context (created for that window).
+#include "host.h"
+#include "kernel.h"
+
+#include <SDL3/SDL.h>
+
+#include <vector>
+
+namespace host {
+namespace {
+std::mutex g_pad_mutex;
+PadState g_pad;
+std::atomic<bool> g_quit{false};
+
+std::mutex g_win_mutex;
+std::condition_variable g_win_cv;
+SDL_Window* g_window = nullptr;
+bool g_window_failed = false;
+SDL_GLContext g_gl = nullptr;
+
+SDL_AudioStream* g_audio = nullptr;
+
+// CELL_PAD_CTRL_* bit layout
+enum : u16 {
+    D1_LEFT = 0x80, D1_DOWN = 0x40, D1_RIGHT = 0x20, D1_UP = 0x10, D1_START = 0x08, D1_R3 = 0x04, D1_L3 = 0x02,
+    D1_SELECT = 0x01,
+    D2_SQUARE = 0x80, D2_CROSS = 0x40, D2_CIRCLE = 0x20, D2_TRIANGLE = 0x10, D2_R1 = 0x08, D2_L1 = 0x04,
+    D2_R2 = 0x02, D2_L2 = 0x01,
+};
+
+u16 axis8(Sint16 v) { return (u16)std::clamp((v + 32768) >> 8, 0, 255); }
+
+void update_pad(SDL_Gamepad* gp) {
+    const bool* k = SDL_GetKeyboardState(nullptr);
+    PadState p;
+    auto set1 = [&](bool on, u16 bit) { if (on) p.digital1 |= bit; };
+    auto set2 = [&](bool on, u16 bit) { if (on) p.digital2 |= bit; };
+    // keyboard: arrows = d-pad, Z/X/A/S = cross/circle/square/triangle, Q/W = L1/R1, 1/2 = L2/R2,
+    // Enter = start, Backspace = select
+    set1(k[SDL_SCANCODE_LEFT], D1_LEFT); set1(k[SDL_SCANCODE_RIGHT], D1_RIGHT);
+    set1(k[SDL_SCANCODE_UP], D1_UP); set1(k[SDL_SCANCODE_DOWN], D1_DOWN);
+    set1(k[SDL_SCANCODE_RETURN], D1_START); set1(k[SDL_SCANCODE_BACKSPACE], D1_SELECT);
+    set2(k[SDL_SCANCODE_Z], D2_CROSS); set2(k[SDL_SCANCODE_X], D2_CIRCLE);
+    set2(k[SDL_SCANCODE_A], D2_SQUARE); set2(k[SDL_SCANCODE_S], D2_TRIANGLE);
+    set2(k[SDL_SCANCODE_Q], D2_L1); set2(k[SDL_SCANCODE_W], D2_R1);
+    set2(k[SDL_SCANCODE_1], D2_L2); set2(k[SDL_SCANCODE_2], D2_R2);
+    if (gp) {
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_DPAD_LEFT), D1_LEFT);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_DPAD_RIGHT), D1_RIGHT);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_DPAD_UP), D1_UP);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_DPAD_DOWN), D1_DOWN);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_START), D1_START);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_BACK), D1_SELECT);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_LEFT_STICK), D1_L3);
+        set1(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_RIGHT_STICK), D1_R3);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_SOUTH), D2_CROSS);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_EAST), D2_CIRCLE);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_WEST), D2_SQUARE);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_NORTH), D2_TRIANGLE);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER), D2_L1);
+        set2(SDL_GetGamepadButton(gp, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER), D2_R1);
+        Sint16 lt = SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+        Sint16 rt = SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+        set2(lt > 8000, D2_L2);
+        set2(rt > 8000, D2_R2);
+        p.lx = axis8(SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_LEFTX));
+        p.ly = axis8(SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_LEFTY));
+        p.rx = axis8(SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_RIGHTX));
+        p.ry = axis8(SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_RIGHTY));
+        p.pressure[10] = (u16)std::clamp(lt >> 7, 0, 255);   // L2 / R2 pressure
+        p.pressure[11] = (u16)std::clamp(rt >> 7, 0, 255);
+    }
+    // digital buttons report full pressure when pressed
+    static const struct { int word; u16 bit; int idx; } press[] = {
+        {1, D1_RIGHT, 0}, {1, D1_LEFT, 1}, {1, D1_UP, 2}, {1, D1_DOWN, 3}, {2, D2_TRIANGLE, 4}, {2, D2_CIRCLE, 5},
+        {2, D2_CROSS, 6}, {2, D2_SQUARE, 7}, {2, D2_L1, 8}, {2, D2_R1, 9},
+    };
+    for (auto& e : press)
+        if ((e.word == 1 ? p.digital1 : p.digital2) & e.bit) p.pressure[e.idx] = 255;
+    if ((p.digital2 & D2_L2) && !p.pressure[10]) p.pressure[10] = 255;
+    if ((p.digital2 & D2_R2) && !p.pressure[11]) p.pressure[11] = 255;
+    std::lock_guard lk(g_pad_mutex);
+    g_pad = p;
+}
+
+void ui_thread() {
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    // F1CE_FULLSCREEN=1 starts in (desktop) full screen; F11 or Alt+Enter toggles it at any time
+    const bool full = getenv("F1CE_FULLSCREEN") && atoi(getenv("F1CE_FULLSCREEN")) != 0;
+    int win_w = 1280, win_h = 720;   // F1CE_WINDOW=<w>x<h>: initial window size
+    if (const char* e = getenv("F1CE_WINDOW")) {
+        int a = 0, b = 0;
+        if (sscanf(e, "%dx%d", &a, &b) == 2 && a >= 320 && b >= 180) { win_w = a; win_h = b; }
+    }
+    SDL_Window* win = SDL_CreateWindow("Formula One: Championship Edition (recompiled)", win_w, win_h,
+                                       SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | (full ? SDL_WINDOW_FULLSCREEN : 0));
+    {
+        std::lock_guard lk(g_win_mutex);
+        g_window = win;
+        g_window_failed = !win;
+    }
+    g_win_cv.notify_all();
+    if (!win) { LOG_E("SDL window creation failed: %s", SDL_GetError()); return; }
+    SDL_Gamepad* gp = nullptr;
+    while (!g_quit) {
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_EVENT_QUIT) g_quit = true;
+            if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat &&
+                (e.key.key == SDLK_F11 || (e.key.key == SDLK_RETURN && (e.key.mod & SDL_KMOD_ALT))))
+                SDL_SetWindowFullscreen(win, (SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN) == 0);
+            if (e.type == SDL_EVENT_GAMEPAD_ADDED && !gp) gp = SDL_OpenGamepad(e.gdevice.which);
+            if (e.type == SDL_EVENT_GAMEPAD_REMOVED && gp && SDL_GetGamepadID(gp) == e.gdevice.which) {
+                SDL_CloseGamepad(gp);
+                gp = nullptr;
+            }
+        }
+        update_pad(gp);
+        SDL_Delay(4);
+    }
+}
+}  // namespace
+
+void init() {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
+        LOG_E("SDL_Init failed: %s", SDL_GetError());
+        return;
+    }
+    SDL_AudioSpec spec{SDL_AUDIO_F32, 2, 48000};
+    g_audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+    if (g_audio) SDL_ResumeAudioStreamDevice(g_audio);
+    else LOG_W("SDL audio unavailable: %s", SDL_GetError());
+    std::thread(ui_thread).detach();
+    LOG_I("host: SDL3 backend (keyboard: arrows, Z=cross X=circle A=square S=triangle, Enter=start, F11=full screen)");
+}
+
+// Scripted input for automated tests: F1CE_INPUT="12:cross,16.5:down,20:start" presses each button
+// for 200 ms at the given time (seconds since start); "60:r2:120" holds R2 for 120 s.
+static std::atomic<u64> input_clock_start{0};
+void input_clock_reset() { input_clock_start = time_usec(); }
+
+namespace {
+struct ScriptedPress { double t; int word; u16 bit; double dur; };
+std::vector<ScriptedPress> parse_script() {
+    std::vector<ScriptedPress> v;
+    const char* env = getenv("F1CE_INPUT");
+    if (!env) return v;
+    static const struct { const char* n; int word; u16 bit; } names[] = {
+        {"left", 1, D1_LEFT}, {"right", 1, D1_RIGHT}, {"up", 1, D1_UP}, {"down", 1, D1_DOWN}, {"start", 1, D1_START},
+        {"select", 1, D1_SELECT}, {"cross", 2, D2_CROSS}, {"circle", 2, D2_CIRCLE}, {"square", 2, D2_SQUARE},
+        {"triangle", 2, D2_TRIANGLE}, {"l1", 2, D2_L1}, {"r1", 2, D2_R1}, {"l2", 2, D2_L2}, {"r2", 2, D2_R2},
+    };
+    std::string s = env;
+    size_t pos = 0;
+    while (pos < s.size()) {
+        size_t end = s.find(',', pos);
+        std::string item = s.substr(pos, end == std::string::npos ? std::string::npos : end - pos);
+        size_t colon = item.find(':');
+        if (colon != std::string::npos) {
+            double t = atof(item.substr(0, colon).c_str());
+            std::string b = item.substr(colon + 1);
+            double dur = 0.2;
+            if (size_t c2 = b.find(':'); c2 != std::string::npos) { dur = atof(b.substr(c2 + 1).c_str()); b = b.substr(0, c2); }
+            for (auto& n : names)
+                if (b == n.n) v.push_back({t, n.word, n.bit, dur});
+        }
+        if (end == std::string::npos) break;
+        pos = end + 1;
+    }
+    LOG_I("host: %zu scripted button presses", v.size());
+    return v;
+}
+}  // namespace
+
+PadState pad_state() {
+    static const std::vector<ScriptedPress> script = parse_script();
+    PadState p;
+    {
+        std::lock_guard lk(g_pad_mutex);
+        p = g_pad;
+    }
+    // (scripted times count from the end of the start-up shader phase, whose length varies)
+    double now = (time_usec() - input_clock_start.load()) / 1e6;
+    {   // F1CE_INPUT_RECORD=<file>: writes the player's presses in F1CE_INPUT syntax ("t:button:duration,") for replay
+        static FILE* rec = getenv("F1CE_INPUT_RECORD") ? fopen(getenv("F1CE_INPUT_RECORD"), "w") : nullptr;
+        if (rec) {
+            static const struct { const char* n; int word; u16 bit; } names[] = {
+                {"left", 1, D1_LEFT}, {"right", 1, D1_RIGHT}, {"up", 1, D1_UP}, {"down", 1, D1_DOWN}, {"start", 1, D1_START},
+                {"select", 1, D1_SELECT}, {"cross", 2, D2_CROSS}, {"circle", 2, D2_CIRCLE}, {"square", 2, D2_SQUARE},
+                {"triangle", 2, D2_TRIANGLE}, {"l1", 2, D2_L1}, {"r1", 2, D2_R1}, {"l2", 2, D2_L2}, {"r2", 2, D2_R2},
+            };
+            static double down_at[14] = {};
+            static std::mutex m;
+            std::lock_guard lk(m);
+            for (int i = 0; i < 14; i++) {
+                bool on = ((names[i].word == 1 ? p.digital1 : p.digital2) & names[i].bit) != 0;
+                if (on && down_at[i] == 0) down_at[i] = now;
+                else if (!on && down_at[i] != 0) {
+                    fprintf(rec, "%.2f:%s:%.2f,", down_at[i], names[i].n, std::max(0.1, now - down_at[i]));
+                    fflush(rec);
+                    LOG_I("input record: %.2f %s (%.2f s)", down_at[i], names[i].n, now - down_at[i]);
+                    down_at[i] = 0;
+                }
+            }
+        }
+    }
+    for (auto& e : script)
+        if (now >= e.t && now < e.t + e.dur) {
+            if (e.word == 1) p.digital1 |= e.bit;
+            else p.digital2 |= e.bit;
+            // full pressure too: the game reads analog values (the throttle is the pressure of cross)
+            static const struct { int word; u16 bit; int idx; } press[] = {
+                {1, D1_RIGHT, 0}, {1, D1_LEFT, 1}, {1, D1_UP, 2}, {1, D1_DOWN, 3}, {2, D2_TRIANGLE, 4}, {2, D2_CIRCLE, 5},
+                {2, D2_CROSS, 6}, {2, D2_SQUARE, 7}, {2, D2_L1, 8}, {2, D2_R1, 9}, {2, D2_L2, 10}, {2, D2_R2, 11},
+            };
+            for (auto& q : press)
+                if (q.word == e.word && q.bit == e.bit) p.pressure[q.idx] = 255;
+        }
+    return p;
+}
+
+bool quit_requested() { return g_quit; }
+
+void audio_push(const float* stereo, u32 frames) {
+    if (!g_audio) return;
+    // keep latency bounded: drop if more than ~100 ms is already queued
+    if (SDL_GetAudioStreamQueued(g_audio) > 48000 * 8 / 10) return;
+    SDL_PutAudioStreamData(g_audio, stereo, (int)(frames * 2 * sizeof(float)));
+}
+
+void dump_frame(const u32* argb, u32 width, u32 height) {
+    // debug aid: F1CE_DUMP_FRAMES=N dumps every N-th frame as raw ARGB (tools/frames_to_png.py)
+    static const char* env = getenv("F1CE_DUMP_FRAMES");
+    // F1CE_DUMP_FROM / F1CE_DUMP_COUNT limit the dump to a window of frames (e.g. to catch flicker)
+    static const u32 from = getenv("F1CE_DUMP_FROM") ? (u32)atoi(getenv("F1CE_DUMP_FROM")) : 0;
+    static const u32 limit = getenv("F1CE_DUMP_COUNT") ? (u32)atoi(getenv("F1CE_DUMP_COUNT")) : ~0u;
+    static u32 count = 0;
+    if (!env || atoi(env) <= 0 || ++count % (u32)atoi(env) != 0) return;
+    if (count < from || count - from >= limit) return;
+    char name[64];
+    snprintf(name, sizeof(name), "frame_%05u_%ux%u.argb", count, width, height);
+    if (FILE* f = fopen(name, "wb")) {
+        fwrite(argb, 4, (size_t)width * height, f);
+        fclose(f);
+    }
+}
+
+void present(u32 ea, u32 pitch, u32 width, u32 height) {
+    // CPU path (used only without the GPU renderer): just make the frame available for dumping
+    if (!width || !height || width > 4096 || height > 4096) return;
+    std::vector<u32> img((size_t)width * height);
+    for (u32 y = 0; y < height; y++)
+        for (u32 x = 0; x < width; x++) img[(size_t)y * width + x] = ld32(ea + y * pitch + x * 4) | 0xFF000000u;
+    dump_frame(img.data(), width, height);
+}
+
+bool gl_begin() {
+    std::unique_lock lk(g_win_mutex);
+    g_win_cv.wait(lk, [] { return g_window || g_window_failed; });
+    if (!g_window) return false;
+    g_gl = SDL_GL_CreateContext(g_window);
+    if (!g_gl) { LOG_E("OpenGL 3.3 context creation failed: %s", SDL_GetError()); return false; }
+    SDL_GL_MakeCurrent(g_window, g_gl);
+    SDL_GL_SetSwapInterval(0);   // the game paces itself on vblank
+    return true;
+}
+void* gl_proc(const char* name) { return (void*)SDL_GL_GetProcAddress(name); }
+void* gl_create_shared_context(bool share) {
+    if (!g_window || !g_gl) return nullptr;
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, share ? 1 : 0);
+    SDL_GLContext ctx = SDL_GL_CreateContext(g_window);   // becomes current: switch back
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+    SDL_GL_MakeCurrent(g_window, g_gl);
+    if (!ctx) LOG_W("shared GL context: %s", SDL_GetError());
+    return ctx;
+}
+bool gl_make_current(void* ctx) { return SDL_GL_MakeCurrent(g_window, (SDL_GLContext)ctx); }
+void gl_swap() { if (g_window) SDL_GL_SwapWindow(g_window); }
+void gl_drawable_size(int* w, int* h) { SDL_GetWindowSizeInPixels(g_window, w, h); }
+}  // namespace host
