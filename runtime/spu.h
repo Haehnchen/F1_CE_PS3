@@ -21,6 +21,15 @@ struct SpuAotCluster {
 extern const SpuAotCluster g_spu_aot_clusters[];
 extern const u32 g_spu_aot_cluster_count;
 
+// the C library's memcmp compares bytes; these are at most 128 bytes
+FORCE_INLINE bool same_bytes(const u8* a, const u8* b, u32 n) {
+    for (; n >= 32; a += 32, b += 32, n -= 32)
+        if (_mm256_movemask_epi8(_mm256_cmpeq_epi8(_mm256_loadu_si256((const __m256i*)a), _mm256_loadu_si256((const __m256i*)b))) != -1)
+            return false;
+    for (; n; a++, b++, n--) if (*a != *b) return false;
+    return true;
+}
+
 struct SPUThread {
     // Registers use the same byte-reversed layout as VMX registers: BE word i lives in w[3-i],
     // so the preferred slot (BE word 0) is w[3].
@@ -132,6 +141,7 @@ struct SPUThread {
         }
         return line_ver[l];
     }
+    u64 st_fast = 0, st_slow = 0, st_build = 0;   // dispatch statistics (logged with the SPURS report)
     std::vector<u64> cluster_ver;   // per cluster: version sum of its lines when its words last matched (0 = never)
     std::vector<u64> cluster_ok;    // per cluster: code_writes when its lines last matched that sum
     u64 lines_ver(const u16* l, u32 n) {
@@ -148,15 +158,19 @@ struct SPUThread {
     // copies into LS and invalidates decoded code only if the bytes change (re-loaded overlays keep their blocks)
     void write_ls(u32 lsa, const void* src, u32 n) {
         lsa &= 0x3FFFF;
-        bool code = false;
-        if (blocks_on)
-            for (u32 l = lsa >> 7, e = ((lsa + std::max(n, 1u) - 1) & 0x3FFFF) >> 7; ; l = (l + 1) & 2047) {
-                code |= line_code[l];
-                if (l == e) break;
-            }
-        if (code && memcmp(ls + lsa, src, n) == 0) return;
-        memmove(ls + lsa, src, n);
-        if (code) ls_written(lsa, n);
+        const u8* p = (const u8*)src;
+        if (!blocks_on || lsa + n > 0x40000) {   // (wrapping writes are not expected: the slow path covers them)
+            memmove(ls + lsa, p, n);
+            if (blocks_on) ls_written(lsa, n);
+            return;
+        }
+        // per line: a binary that shares lines with the previous one keeps the blocks on those lines
+        while (n) {
+            u32 k = std::min(n, 128 - (lsa & 127)), l = lsa >> 7;
+            if (!line_code[l]) memcpy(ls + lsa, p, k);
+            else if (!same_bytes(ls + lsa, p, k)) { memcpy(ls + lsa, p, k); code_writes++; line_code[l] = false; }
+            lsa += k; p += k; n -= k;
+        }
     }
     // a direct jump inside translated cluster code may skip the dispatcher only when the dispatcher would not act:
     // no code was written since entry, the target is not a kernel call and no interrupt is pending
@@ -169,7 +183,7 @@ struct SPUThread {
     // index (it counts itself), and the entry stays good once any block of its cluster was verified again.
     static constexpr u32 FAST_CLUSTER = 0x80000000;
     struct FastEnt { u64 checked; void (*fn)(SPUThread&); u32 pc, count_n; };
-    FastEnt fast[1024] = {};
+    FastEnt fast[4096] = {};
     Block* build_block(u32 pc);
     void flush_blocks();
     std::function<void(SPUThread&, u32 cmd, u32 lsa, u32 ea, u32 size)> on_dma;

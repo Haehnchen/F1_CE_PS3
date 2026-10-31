@@ -16,7 +16,6 @@
 
 double watch_after();   // core.cpp (debug)
 u64 dma_count(int k);   // spu.cpp (profiling)
-std::mutex& atomic_lock(u32 ea);   // core.cpp: per-line reservation lock
 void line_written(u32 ea);         // core.cpp: a write under the lock (fails SPU PUTLLCs on the line)
 void profile_register_thread();   // core.cpp (host profiler)
 
@@ -125,7 +124,8 @@ u64 run_workload(SPUThread& spu, u32 wid, const Workload& w) {
         return false;
     };
     // diagnostics: atomic traffic of jobs that run for very long (spin detection)
-    spu.on_dma = [wid](SPUThread& s, u32 cmd, u32 lsa, u32 ea, u32 size) {
+    static const bool dma_diag = getenv("F1CE_SPU_DMA_DIAG") != nullptr;   // (a shared counter on every DMA: costly)
+    if (dma_diag) spu.on_dma = [wid](SPUThread& s, u32 cmd, u32 lsa, u32 ea, u32 size) {
         static std::atomic<int> budget{60};
         u32 c8 = cmd & 0xFF;
         // diagnostics: the PM's ready-count swap (LS 0x3480: index r3 -> r7 = r3 - 3, value r4 -> r9) on another
@@ -325,6 +325,13 @@ void spu_worker(u32 num) {
                             cw += b; last_cw[k] = t->code_writes;
                         }
                     LOG_I("SPU code invalidations per second:%s", cw.c_str());
+                    static u64 last_st[3] = {};
+                    u64 st[3] = {};
+                    for (u32 k = 0; k < 8; k++)
+                        if (SPUThread* t = g_worker_spu[k]) { st[0] += t->st_fast; st[1] += t->st_slow; st[2] += t->st_build; }
+                    LOG_I("SPU dispatches per second: fast %llu slow %llu rebuilt %llu", (unsigned long long)((st[0] - last_st[0]) / 5),
+                          (unsigned long long)((st[1] - last_st[1]) / 5), (unsigned long long)((st[2] - last_st[2]) / 5));
+                    for (int k = 0; k < 3; k++) last_st[k] = st[k];
                 }
                 LOG_I("SPURS runs/instructions:%s  ready=%02x%02x%02x%02x%02x%02x%02x%02x%02x", r.c_str(),
                       ld8(g_sp.ea), ld8(g_sp.ea + 1), ld8(g_sp.ea + 2), ld8(g_sp.ea + 3), ld8(g_sp.ea + 4),

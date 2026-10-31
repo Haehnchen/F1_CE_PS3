@@ -79,6 +79,8 @@ class FuncGen:
         self.rc, self.start, self.end = rc, start, end
         self.elf = rc.elf
         self.labels = set()
+        self.loop_heads = set()   # targets of backward branches: guest memory must be read again (spin loops)
+        self.cur = self.start
         self.lines = []
         self.dispatch_all = False
 
@@ -109,6 +111,8 @@ class FuncGen:
         """Unconditional transfer to t (no link)."""
         if self.in_func(t):
             self.labels.add(t)
+            if t <= self.cur:
+                self.loop_heads.add(t)
             return f"goto L_{t:X};"
         name = self.rc.func_name(t)
         if name is None:
@@ -133,6 +137,7 @@ class FuncGen:
         while a < self.end:
             w = self.elf.u32(a)
             m = ppc.decode(w)
+            self.cur = a
             code = self.translate(a, w, m) if m else None
             if code is None:
                 if m is None:
@@ -159,6 +164,8 @@ class FuncGen:
         for a, code, m in body:
             if a in self.labels or self.dispatch_all:
                 out.append(f"L_{a:X}:")
+            if a in self.loop_heads or self.dispatch_all:
+                out.append("\tPPU_LOOP();")
             out.append(f"\t{code}")
         if tail:
             out.append(f"\t{tail}")
@@ -490,6 +497,8 @@ class FuncGen:
             for t in sorted(set(targets)):
                 if self.in_func(t):
                     self.labels.add(t)
+                    if t <= self.cur:
+                        self.loop_heads.add(t)
                     cases.append(f"case 0x{t:X}: goto L_{t:X};")
                 else:
                     name = self.rc.func_name(t)

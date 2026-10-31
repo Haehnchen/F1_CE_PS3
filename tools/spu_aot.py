@@ -114,7 +114,7 @@ def branch_target(pc, w, h):
 
 def emit_block(key, pc, words, table):
     out = [f"// block {pc:05x}:" + "".join(f" {w:08x}" for w in words),
-           f"void spu_aot_{key:016x}(SPUThread& s) {{"]
+           f"void spu_aot_{key:016x}(SPUThread& __restrict s) {{"]
     names = [table[w >> 21] for w in words]
     end = (pc + 4 * (len(words) - 1)) & 0x3FFFC
     loop = branch_target(end, words[-1], names[-1]) == pc and not any(h in LOOP_UNSAFE for h in names)
@@ -235,7 +235,7 @@ def emit_cluster(idx, c, blocks, links, names):
     x = "L" if local else "s"
     wb = " ".join(f"s.gpr[{r}] = L.gpr[{r}];" for r in sorted(written))
     rl = " ".join(f"L.gpr[{r}] = s.gpr[{r}];" for r in sorted(used))
-    out = [f"void spu_aotc_{idx}(SPUThread& s) {{",
+    out = [f"void spu_aotc_{idx}(SPUThread& __restrict s) {{",
            "\tconst u64 cw = s.code_writes;",
            f"\tu32 budget = {CLUSTER_BUDGET};"]
     if local:

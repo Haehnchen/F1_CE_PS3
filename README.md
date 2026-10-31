@@ -48,7 +48,8 @@ the game executes that are not translated yet, run with `F1CE_SPU_DUMP_BLOCKS=<f
 `python -I tools/spu_aot.py <file>` (blocks already translated are kept), and rebuild.
 
 `F1CE_HOST` selects the platform backend (`SDL` default on Windows, `NULL` = headless).
-`F1CE_TRACE_PC` (on by default) records the guest PC of memory accesses for crash reports.
+`-DF1CE_TRACE_PC=ON` (off by default since 2026-10-31) records the guest PC of memory accesses for crash reports and
+enables `F1CE_WATCH_LINE` on PPU stores; without it crash reports give the function and LR only.
 
 ## Run
 
@@ -100,11 +101,14 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_COMPILE_THREADS=<n>`, `F1CE_NATIVE_GLSL=1` | shader compile threads (default 1) / the scale-1 shader sources of before |
 | `F1CE_NO_PRECOMPILE=1` | skips the start-up shader phase (the program database is still recorded) |
 | `F1CE_NO_LINEGEN=1` | SPU PUTLLC compares the line data only (no write generation: the old behaviour) |
-| `F1CE_SCALE=1..4` | internal resolution (x 1280x720; 3 = 3840x2160): supersampled to the window |
+| `F1CE_SCALE=1..4` | internal resolution (x 1280x720; 1.5 = 1920x1080, 3 = 3840x2160): fractions allowed, supersampled to the window |
 | `F1CE_MSAA=2/4/8` | samples of the targets the game antialiases (default 4, as on the RSX) |
 | `F1CE_FXAA=1` | FXAA on the final image |
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
 | `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time) |
+| `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX) |
+| `F1CE_SPURS_SPUS=<n>` | SPU worker threads (default 5; 6 works, 7 and 8 hang at boot; 3 halves the grid fps) |
+| `F1CE_SPU_DMA_DIAG=1` | the per-DMA diagnostics of the SPURS workloads (off: they cost a shared atomic on every DMA) |
 | `F1CE_DUMP_WINDOW=<n>` | saves the window after presentation every n-th frame (`frame_w_*`) |
 | `F1CE_TEX_CPU=1`, `F1CE_NO_IDX_ARENA=1`, `F1CE_TEX_NOMEMO=1` | texture decoding on the CPU / an element buffer per index list / no per-unit texture memo (comparisons) |
 | `F1CE_VTX_CPU=1` | converts vertex attributes on the CPU into float4 buffers (the path before vertex pulling) |
@@ -157,7 +161,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 7. **Shader progress text.** *Done 2026-10-31: "Loading shaders... 42%" above the bar, on both renderers.*
 8. **Performance for 60 fps.** Make the game as fast as possible with `F1CE_60FPS=1`, aiming at a steady 60.
    *In progress (2026-10-31): Vulkan at scale 2 drives at 46-48 fps (was 38-42), the full grid at 34-35 (was 33). The SPUs
-   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy.*
+   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35, see the progress log.*
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
@@ -593,3 +597,20 @@ banks, then waits for SPU work.
     cluster in the dispatch cache. Three identical races: driving 46-48 fps (was 38-42), grid 34-35 (was 33).
     `F1CE_SPU_VERIFY=1` found no mismatch in a race, but it bypasses the dispatch cache, so the cluster shortcut itself
     is checked only by normal play.
+- **60 fps work, part 2 and Steam Deck estimate (2026-10-31, Vulkan, scale 1.5, `F1CE_60FPS=1`, Silverstone):**
+  - Build: PPU code at -O2, `F1CE_TRACE_PC` off, `__restrict` on the PPU and SPU contexts (guest loads and stores are char
+    accesses that otherwise force registers back to memory). `__restrict` also allows hoisting guest loads out of
+    loops, so `tools/recomp.py` puts `PPU_LOOP()` (a compiler barrier) on backward branch targets: spin loops must read again.
+    No measurable fps change on its own; no hang in any run.
+  - SPU: guest atomics use a spin lock, `write_ls` compares per line with AVX2, shorter `shufb` and `cflts` (checked against
+    the old code: 8 million `shufb` cases, 160 million `cflts` values, no mismatch), the per-DMA diagnostic needs
+    `F1CE_SPU_DMA_DIAG`. Dispatch cache 4096 entries: no change in slow dispatches, so these come from code invalidations
+    (75-90 million dispatches/s, ~20% slow), not collisions.
+  - SPU work is real: 3 workers give ~17 fps on the grid, 5 give ~31. 6 workers + 2 faces give 34; 7 and 8 hang at boot.
+  - Draws per target on the grid (~3400): main 1639, cube map 879 (six 256x256 faces), two 1024x2048 shadow maps 712.
+    `F1CE_CUBE_FACES=2` takes the renderer from ~20 to ~14 ms per frame, draws from ~2970 to ~2680; the image looks the same.
+  - Results: grid 28-33 fps -> 32-35 with 2 faces, driving 41-54 in these runs (varies a lot with the track position). A steady 60
+    is **not** reached: the SPU workers are at 94% and main spends ~40% in the job wait 0x551228.
+  - Steam Deck estimate: this machine limited to 8 logical CPUs, scale 1, 2 faces: grid 26-30, driving 35-38. The Deck's cores
+    are slower (Zen 2, 3.5 GHz against Zen 3, 4.4 GHz) and it has never been run there, so expect less. 60 fps there needs a
+    lower SPU workload (fewer cars or LOD, shadow and cube culling in the game's jobs), not just a faster runtime.

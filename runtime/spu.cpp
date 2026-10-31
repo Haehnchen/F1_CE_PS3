@@ -330,10 +330,11 @@ void SPUThread::run() {
         }
         pc &= 0x3FFFC;
         if (__builtin_expect(pc_trace != nullptr, 0) && pc_trace->size() < 20000) pc_trace->push_back(pc);
-        FastEnt& fe = fast[(pc >> 2) & 1023];
+        FastEnt& fe = fast[(pc >> 2) & 4095];
         if (fe.pc == pc && (fe.checked == code_writes ||
                             ((fe.count_n & FAST_CLUSTER) && cluster_ok[fe.count_n & ~FAST_CLUSTER] == code_writes))) {
             fe.checked = code_writes;
+            st_fast++;
             u32 cn = fe.count_n & FAST_CLUSTER ? 0 : fe.count_n;
             fe.fn(*this);
             u64 before_n = instructions;
@@ -342,7 +343,8 @@ void SPUThread::run() {
             continue;
         }
         Block* b = find_block(pc);
-        if (!b || (b->checked != code_writes && b->ver_sum != block_ver(*b))) b = build_block(pc);
+        st_slow++;
+        if (!b || (b->checked != code_writes && b->ver_sum != block_ver(*b))) { b = build_block(pc); st_build++; }
         b->checked = code_writes;
         // debug: F1CE_SPU_VERIFY=1 runs every block through this path and compares it with the LS
         static const bool verify = getenv("F1CE_SPU_VERIFY") != nullptr;
@@ -381,7 +383,6 @@ void SPUThread::run() {
 }
 
 // MFC command execution (synchronous)
-std::mutex& atomic_lock(u32 ea);   // core.cpp: per-line lock shared with PPU reservations
 u32 line_generation(u32 ea);       // core.cpp: write generation of a line (lost reservations)
 void line_written(u32 ea);
 
@@ -397,11 +398,12 @@ u64 dma_count(int k) {
 void SPUThread::dma(u32 cmd) {
     u32 lsa = mfc_lsa & 0x3FFFF, ea = mfc_eal, size = mfc_size;
     std::atomic<u64>* counts = g_dma_counters[id & 15].c;
+    auto bump = [](std::atomic<u64>& n) { n.store(n.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed); };
     switch (cmd & 0xFF) {
-        case 0x40: case 0x41: case 0x42: case 0x44: counts[0].fetch_add(1, std::memory_order_relaxed); break;
-        case 0x20: case 0x21: case 0x22: case 0x24: counts[1].fetch_add(1, std::memory_order_relaxed); break;
-        case 0xD0: counts[2].fetch_add(1, std::memory_order_relaxed); break;
-        case 0xB4: counts[3].fetch_add(1, std::memory_order_relaxed); break;
+        case 0x40: case 0x41: case 0x42: case 0x44: bump(counts[0]); break;
+        case 0x20: case 0x21: case 0x22: case 0x24: bump(counts[1]); break;
+        case 0xD0: bump(counts[2]); break;
+        case 0xB4: bump(counts[3]); break;
     }
     if (on_dma) on_dma(*this, cmd, lsa, ea, size);
     // debug ring of recent DMA commands (printed with F1CE_WATCH_LINE hits when F1CE_WATCH_HISTORY is set)
@@ -523,7 +525,7 @@ void SPUThread::dma(u32 cmd) {
             std::lock_guard lk(atomic_lock(ea));
             ea &= ~127u;
             static const bool no_gen = getenv("F1CE_NO_LINEGEN") != nullptr;   // debug: data comparison only
-            bool ok = has_reservation && res_addr == ea && (no_gen || res_gen == line_generation(ea)) && memcmp(gmem(ea), res_data, 128) == 0;
+            bool ok = has_reservation && res_addr == ea && (no_gen || res_gen == line_generation(ea)) && same_bytes(gmem(ea), res_data, 128);
             if (ok) { memcpy(gmem(ea), ls + (lsa & 0x3FF80), 128); line_written(ea); }
             if (!ok) g_dma_counters[id & 15].c[4].fetch_add(1, std::memory_order_relaxed);
             has_reservation = false;

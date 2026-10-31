@@ -15,6 +15,21 @@
 #include <thread>
 #include <unordered_map>
 
+// Held only around 128-byte copies, about 1.5 million times per second: much cheaper than a mutex. It yields after a
+// while because the holder may be preempted when threads outnumber cores.
+struct SpinLock {
+    std::atomic<bool> held{false};
+    void lock() {
+        while (held.exchange(true, std::memory_order_acquire))
+            for (u32 n = 0; held.load(std::memory_order_relaxed); n++) {
+                _mm_pause();
+                if (n >= 256) { std::this_thread::yield(); n = 0; }
+            }
+    }
+    void unlock() { held.store(false, std::memory_order_release); }
+};
+SpinLock& atomic_lock(u32 ea);   // per-line reservation lock (core.cpp)
+
 // ------------------------------------------------------------------ error codes
 enum : s32 {
     CELL_OK = 0,

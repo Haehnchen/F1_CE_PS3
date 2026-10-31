@@ -25,8 +25,9 @@ struct Check {
 Combo g_combos[] = {
     {L"Renderer", L"F1CE_RENDERER", {{L"OpenGL", nullptr}, {L"Vulkan", L"vulkan"}}, 0},
     {L"Internal resolution", L"F1CE_SCALE",
-     {{L"1280x720 (original)", nullptr}, {L"2560x1440", L"2"}, {L"3840x2160", L"3"}, {L"5120x2880", L"4"}}, 0},
+     {{L"1280x720 (original)", nullptr}, {L"1920x1080", L"1.5"}, {L"2560x1440", L"2"}, {L"3840x2160", L"3"}, {L"5120x2880", L"4"}}, 0},
     {L"Anti-aliasing (MSAA)", L"F1CE_MSAA", {{L"2x", L"2"}, {L"4x (original)", nullptr}, {L"8x", L"8"}}, 1},
+    {L"Reflection faces per frame", L"F1CE_CUBE_FACES", {{L"6 (original)", nullptr}, {L"3", L"3"}, {L"2 (faster)", L"2"}, {L"1 (fastest)", L"1"}}, 0},
     {L"Vertical sync", L"F1CE_VSYNC", {{L"On", nullptr}, {L"Off", L"0"}, {L"Adaptive", L"-1"}}, 0},
     {L"Window size", L"F1CE_WINDOW",
      {{L"1280x720", nullptr}, {L"1600x900", L"1600x900"}, {L"1920x1080", L"1920x1080"}, {L"2560x1440", L"2560x1440"}}, 0},
@@ -68,9 +69,11 @@ void load_settings() {
     GetPrivateProfileStringW(L"game", L"path", def.c_str(), b, MAX_PATH * 2, g_ini.c_str());
     SetWindowTextW(g_path, b);
     for (Combo& c : g_combos) {
-        int i = GetPrivateProfileIntW(L"options", c.env, c.def, g_ini.c_str());
-        if (i < 0 || i >= (int)c.choices.size()) i = c.def;
-        SendMessageW(c.h, CB_SETCURSEL, i, 0);
+        GetPrivateProfileStringW(L"options", c.env, L"", b, MAX_PATH * 2, g_ini.c_str());
+        int sel = c.def;
+        for (size_t i = 0; i < c.choices.size(); i++)
+            if (c.choices[i].value && !wcscmp(c.choices[i].value, b)) sel = (int)i;
+        SendMessageW(c.h, CB_SETCURSEL, sel, 0);
     }
     for (Check& c : g_checks)
         SendMessageW(c.h, BM_SETCHECK, GetPrivateProfileIntW(L"options", c.env, 0, g_ini.c_str()) ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -79,8 +82,8 @@ void load_settings() {
 void save_settings() {
     WritePrivateProfileStringW(L"game", L"path", window_text(g_path).c_str(), g_ini.c_str());
     for (Combo& c : g_combos) {
-        int i = (int)SendMessageW(c.h, CB_GETCURSEL, 0, 0);
-        WritePrivateProfileStringW(L"options", c.env, std::to_wstring(i).c_str(), g_ini.c_str());
+        const wchar_t* v = c.choices[SendMessageW(c.h, CB_GETCURSEL, 0, 0)].value;   // (nullptr deletes the key: default)
+        WritePrivateProfileStringW(L"options", c.env, v, g_ini.c_str());
     }
     for (Check& c : g_checks) {
         bool on = SendMessageW(c.h, BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -214,7 +217,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int show) {
     RegisterClassW(&wc);
 
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-    const int dpi = GetDpiForSystem(), height = MulDiv(MARGIN + 58 + 5 * ROW + 4 + 4 * 24 + 12 + 28 + MARGIN, dpi, 96);
+    const int dpi = GetDpiForSystem(), height = MulDiv(MARGIN + 58 + 6 * ROW + 4 + 4 * 24 + 12 + 28 + MARGIN, dpi, 96);
     RECT r{0, 0, MulDiv(WIN_W, dpi, 96), height};
     AdjustWindowRect(&r, style, FALSE);
     g_main = CreateWindowW(wc.lpszClassName, L"Formula One: Championship Edition", style, CW_USEDEFAULT, CW_USEDEFAULT,

@@ -17,7 +17,7 @@ else()
 endif()
 set(F1CE_HOST ${F1CE_HOST_DEFAULT} CACHE STRING "Host backend: SDL (window/audio/input) or NULL (headless)")
 option(F1CE_VULKAN "Vulkan renderer next to OpenGL, F1CE_RENDERER=vulkan selects it (needs third_party/glslang)" OFF)
-option(F1CE_TRACE_PC "Track the guest PC of memory accesses (debugging)" ON)
+option(F1CE_TRACE_PC "Track the guest PC of memory accesses and F1CE_WATCH_LINE stores (debugging, slower)" OFF)
 if(F1CE_TRACE_PC)
   add_compile_definitions(F1CE_TRACE_PC)
 endif()
@@ -62,11 +62,9 @@ endif()
 # Spelled out as features because zig's driver does not accept -march=x86-64-v3.
 set(ARCH_FLAGS -msse4.2 -mpopcnt -mavx -mavx2 -mfma -mbmi -mbmi2 -mlzcnt -mmovbe -mf16c)
 
-# The generated translation units are huge and branchy; -O1 keeps build times sane while still
-# promoting the guest register file into host registers within basic blocks.
 add_library(ppu_generated OBJECT ${GENERATED_SOURCES})
 target_include_directories(ppu_generated PRIVATE runtime generated)
-target_compile_options(ppu_generated PRIVATE ${ARCH_FLAGS} -O1 -fno-strict-aliasing -Wno-unused-label
+target_compile_options(ppu_generated PRIVATE ${ARCH_FLAGS} -O2 -fno-strict-aliasing -Wno-unused-label
   -Wno-unused-variable -Wno-parentheses-equality -fwrapv)
 
 # Ahead-of-time translated SPU blocks (tools/spu_aot.py): straight-line calls of the instruction handlers with

@@ -34,7 +34,11 @@ FORCE_INLINE u64 ld64(u32 ea) { u64 v; memcpy(&v, gmem(ea), 8); return __builtin
 // Debug watchpoint: stores to the 128-byte line g_watch_line (F1CE_WATCH_LINE) are logged.
 extern u32 g_watch_line;
 void watch_store(u32 ea, u64 value, u32 size);
+#ifdef F1CE_TRACE_PC
 #define WATCH_STORE(ea, v, sz) do { if (__builtin_expect(((ea) & ~127u) == g_watch_line, 0)) watch_store(ea, v, sz); } while (0)
+#else
+#define WATCH_STORE(ea, v, sz) ((void)0)
+#endif
 FORCE_INLINE void st8(u32 ea, u8 v) { WATCH_STORE(ea, v, 1); *gmem(ea) = v; }
 FORCE_INLINE void st16(u32 ea, u16 v) { WATCH_STORE(ea, v, 2); v = __builtin_bswap16(v); memcpy(gmem(ea), &v, 2); }
 FORCE_INLINE void st32(u32 ea, u32 v) { WATCH_STORE(ea, v, 4); v = __builtin_bswap32(v); memcpy(gmem(ea), &v, 4); }
@@ -99,8 +103,13 @@ struct PPUContext {
 #define PPU_PC(a) ((void)0)
 #endif
 
-#define PPU_DECL(name) void name(PPUContext& c)
-#define PPU_FUNC(name) void name(PPUContext& c)
+// The context never lies in guest memory: __restrict tells the compiler that guest loads and stores (char pointers
+// that may alias anything) leave it alone, so guest registers stay in host registers across memory accesses. The same
+// freedom lets it hoist guest loads out of loops, so backward branch targets carry PPU_LOOP: spin loops on memory
+// shared with other threads must read it again. The barrier does not touch the context while c has not escaped.
+#define PPU_DECL(name) void name(PPUContext& __restrict c)
+#define PPU_FUNC(name) void name(PPUContext& __restrict c)
+#define PPU_LOOP() __asm__ volatile("" : : : "memory")
 using PPUFunc = void (*)(PPUContext&);
 
 struct FuncEntry { u32 addr; PPUFunc fn; };

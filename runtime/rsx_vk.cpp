@@ -430,7 +430,7 @@ struct Surface {
     u64 mem_sig = 0, sig_checked = ~0ull;   // (see rsx_gl.cpp)
     u32 sig_bytes = 0;
     bool stale = false;
-    u32 scale = 1;
+    float scale = 1;
     bool local_wb = false;
     u64 write_seq = 0;
     Img* ms_color = nullptr;   // antialiased target: drawn here, resolved into tex / the zeta texture before reads
@@ -498,7 +498,7 @@ Surface* get_surface(u32 offset, u32 w, u32 h, u32 fmt) {
         g_surf_epoch++;
         s.offset = offset; s.width = w; s.height = h; s.format = fmt;
         s.scale = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale();
-        s.tex = make_image(w * s.scale, h * s.scale, 1, COLOR_FMT, SURF_USAGE);
+        s.tex = make_image(scaled(w, s.scale), scaled(h, s.scale), 1, COLOR_FMT, SURF_USAGE);
         clear_new(s.tex);
         LOG_I("rsx: surface %08x %ux%u fmt %x", offset, w, h, fmt);
     }
@@ -521,8 +521,8 @@ VkSampleCountFlagBits msaa_samples() {
 void ensure_ms(Surface* s) {
     if (s->ms_color) return;
     constexpr VkImageUsageFlags CU = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, DU = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    s->ms_color = make_image(s->width * s->scale, s->height * s->scale, 1, COLOR_FMT, CU, msaa_samples());
-    s->ms_depth = make_image(s->width * s->scale, s->height * s->scale, 1, g_depth_fmt, DU, msaa_samples());
+    s->ms_color = make_image(scaled(s->width, s->scale), scaled(s->height, s->scale), 1, COLOR_FMT, CU, msaa_samples());
+    s->ms_depth = make_image(scaled(s->width, s->scale), scaled(s->height, s->scale), 1, g_depth_fmt, DU, msaa_samples());
     g_ms_surfaces.push_back(s->offset);
     LOG_I("rsx: surface %08x %ux%u is antialiased: %ux multisampled", s->offset, s->width, s->height, (u32)msaa_samples());
 }
@@ -548,7 +548,7 @@ bool resolve_ms(Surface& s) {
     d.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     d.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     VkRenderingInfo ri{VK_STRUCTURE_TYPE_RENDERING_INFO};
-    ri.renderArea = {{0, 0}, {s.width * s.scale, s.height * s.scale}};
+    ri.renderArea = {{0, 0}, {scaled(s.width, s.scale), scaled(s.height, s.scale)}};
     ri.layerCount = 1;
     ri.colorAttachmentCount = 1;
     ri.pColorAttachments = &c;
@@ -586,7 +586,7 @@ DepthSurface* get_depth(u32 offset, u32 w, u32 h) {
     if (!d.tex) {
         g_surf_epoch++;
         d.offset = offset; d.width = w; d.height = h;
-        d.tex = make_image(w * res_scale(), h * res_scale(), 1, g_depth_fmt, ZETA_USAGE);
+        d.tex = make_image(scaled(w, res_scale()), scaled(h, res_scale()), 1, g_depth_fmt, ZETA_USAGE);
         clear_new(d.tex);
         LOG_I("rsx: depth surface %08x %ux%u", offset, w, h);
     }
@@ -618,7 +618,7 @@ void dump_surface(u32 off, const char* tag) {
     if (it == g_surfaces.end() || !it->second.tex) return;
     Surface& sf = it->second;
     resolve_ms(sf);
-    const u32 pw = sf.width * sf.scale, ph = sf.height * sf.scale;
+    const u32 pw = scaled(sf.width, sf.scale), ph = scaled(sf.height, sf.scale);
     std::vector<u32> px((size_t)pw * ph), fl(px.size());
     read_image(sf.tex, pw, ph, px.data());
     for (u32 y = 0; y < ph; y++) memcpy(&fl[(size_t)y * pw], &px[(size_t)(ph - 1 - y) * pw], pw * 4);
@@ -727,7 +727,7 @@ struct DynState {
 void begin_pass(Surface* s) {
     Img* c = s->ms_active ? s->ms_color : s->tex;
     Img* d = s->ms_active ? s->ms_depth : s->attached_depth;
-    const u32 pw = s->width * s->scale, ph = s->height * s->scale;
+    const u32 pw = scaled(s->width, s->scale), ph = scaled(s->height, s->scale);
     if (!d) d = null_depth(pw, ph);
     if (g_pass.on && g_pass.color == c->att && g_pass.depth == d->att && g_pass.w == pw && g_pass.h == ph) return;
     end_pass();
@@ -755,14 +755,15 @@ void begin_pass(Surface* s) {
 
 // viewport and scissor of the target (physical pixels; y as in OpenGL, see the file comment)
 VkRect2D target_scissor(const Surface* s) {
-    const s32 k = (s32)s->scale;
+    const float k = s->scale;
     const u32 w = s->width, h = s->height;
     u32 sx = reg(0x08C0) & 0xFFFF, sw = reg(0x08C0) >> 16, sy = reg(0x08C4) & 0xFFFF, sh = reg(0x08C4) >> 16;
-    VkRect2D r{{0, 0}, {w * k, h * k}};
+    const s32 pw = (s32)scaled(w, k), ph = (s32)scaled(h, k);
+    VkRect2D r{{0, 0}, {(u32)pw, (u32)ph}};
     if (sw && sh && sw < 4096 && sh < 4096) {
-        s32 x0 = (s32)sx * k, y0 = ((s32)h - (s32)(sy + sh)) * k, x1 = x0 + (s32)sw * k, y1 = y0 + (s32)sh * k;
-        x0 = std::clamp(x0, 0, (s32)(w * k)); x1 = std::clamp(x1, x0, (s32)(w * k));
-        y0 = std::clamp(y0, 0, (s32)(h * k)); y1 = std::clamp(y1, y0, (s32)(h * k));
+        s32 x0 = scaled_s(sx, k), y0 = scaled_s((s32)h - (s32)(sy + sh), k), x1 = scaled_s(sx + sw, k), y1 = scaled_s((s32)h - (s32)sy, k);
+        x0 = std::clamp(x0, 0, pw); x1 = std::clamp(x1, x0, pw);
+        y0 = std::clamp(y0, 0, ph); y1 = std::clamp(y1, y0, ph);
         r = {{x0, y0}, {(u32)(x1 - x0), (u32)(y1 - y0)}};
     }
     return r;
@@ -1257,7 +1258,7 @@ Img* cube_texture(u32 u) {
     struct CubeEntry { Img* tex = nullptr; u32 w = 0, pw = 0; u64 seq[6] = {}, checked_seq = ~0ull; };
     static std::unordered_map<u32, CubeEntry> cubes;
     CubeEntry& ce = cubes[offset];
-    const u32 pw = w * res_scale();
+    const u32 pw = scaled(w, res_scale());
     if (!ce.tex || ce.w != w) {
         if (ce.tex) destroy_image(ce.tex);
         ce.tex = make_image(pw, pw, 1, COLOR_FMT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_SAMPLE_COUNT_1_BIT, true);
@@ -1276,7 +1277,7 @@ Img* cube_texture(u32 u) {
         if (it == g_surfaces.end() || !it->second.tex || it->second.width != w || it->second.height != w) continue;
         if (it->second.write_seq == ce.seq[f]) continue;
         end_pass();
-        const s32 fw = (s32)(it->second.width * it->second.scale);
+        const s32 fw = (s32)(scaled(it->second.width, it->second.scale));
         VkImageBlit b{};
         b.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         b.srcOffsets[1] = {fw, fw, 1};
@@ -1420,7 +1421,7 @@ VkBlendOp blend_op(u32 e) {
 
 VkFrontFace g_front = VK_FRONT_FACE_CLOCKWISE;   // kept while culling is off, like glFrontFace
 void apply_state(const Surface* target, VkPrimitiveTopology topo) {
-    set_viewport(target->width * target->scale, target->height * target->scale);
+    set_viewport(scaled(target->width, target->scale), scaled(target->height, target->scale));
     set_scissor(target_scissor(target));
     const bool v = g_dyn.valid;
     VkCullModeFlags cull = VK_CULL_MODE_NONE;
@@ -1490,7 +1491,7 @@ u32 g_params_seg = ~0u;
 void draw(bool indexed) {
     u64 t0 = prof_usec();
     Surface* target = bind_target();
-    if (!target) return;
+    if (!target || cube_face_skipped(g_cube_faces, target->offset, g_frame)) return;
     static std::vector<float> fp_consts;
     Program* p = get_program(fp_consts);
     u64 t1 = prof_usec();
@@ -1664,7 +1665,7 @@ void draw(bool indexed) {
 VkPipeline g_clear_pipe = 0;
 void clear(u32 mask) {
     Surface* s = bind_target();
-    if (!s) return;
+    if (!s || cube_face_skipped(g_cube_faces, s->offset, g_frame)) return;
     if (s->ms_active) s->ms_dirty = true;
     begin_pass(s);
     VkRect2D sc = target_scissor(s);
@@ -1751,7 +1752,7 @@ void zpass_resolve() {
         auto& p = g_zpass.pending.front();
         u32 total = 0;
         for (u64 id : p.spans) total += g_qres[id & (QRES - 1)];
-        total /= res_scale() * res_scale();
+        total = (u32)(total / (res_scale() * res_scale()));
         st32(p.ea + 8, total);
         g_zpass.pending.pop_front();
     }
@@ -1966,7 +1967,7 @@ VkPipeline g_present_pipe = 0;
 Img* g_present_img = nullptr;
 
 void present_pass(Surface& s, u32 index) {
-    const u32 pw = s.width * s.scale, ph = s.height * s.scale;
+    const u32 pw = scaled(s.width, s.scale), ph = scaled(s.height, s.scale);
     u32 levels = ilog2(std::max(pw, ph)) + 1;
     if (!g_present_img || g_present_img->w != pw || g_present_img->h != ph) {
         if (g_present_img) destroy_image(g_present_img);
@@ -2055,8 +2056,8 @@ void present_blit(Surface* s, u32 index) {
         memory_barrier(g_cb);
         VkImageBlit b{};
         b.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        b.srcOffsets[0] = {0, (s32)(s->height * s->scale), 0};   // (surfaces are stored bottom-up)
-        b.srcOffsets[1] = {(s32)(s->width * s->scale), 0, 1};
+        b.srcOffsets[0] = {0, (s32)(scaled(s->height, s->scale)), 0};   // (surfaces are stored bottom-up)
+        b.srcOffsets[1] = {(s32)(scaled(s->width, s->scale)), 0, 1};
         b.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         b.dstOffsets[0] = {rx, ry, 0};
         b.dstOffsets[1] = {rx + rw, ry + rh, 1};
@@ -2420,9 +2421,9 @@ void method_2d(u32 sub, u32 mm, u32 arg) {
     end_pass();
     VkImageBlit b{};
     b.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    b.srcOffsets[1] = {(s32)(cw * s.scale), (s32)(ch * s.scale), 1};
+    b.srcOffsets[1] = {(s32)(scaled(cw, s.scale)), (s32)(scaled(ch, s.scale)), 1};
     b.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    b.dstOffsets[1] = {(s32)(cw * d->scale), (s32)(ch * d->scale), 1};
+    b.dstOffsets[1] = {(s32)(scaled(cw, d->scale)), (s32)(scaled(ch, d->scale)), 1};
     vkCmdBlitImage(g_cb, s.tex->img, VK_IMAGE_LAYOUT_GENERAL, d->tex->img, VK_IMAGE_LAYOUT_GENERAL, 1, &b, s.scale == d->scale ? VK_FILTER_NEAREST : VK_FILTER_LINEAR);
     memory_barrier(g_cb);
     d->last_use = g_frame;
@@ -2516,7 +2517,7 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
     auto it = g_surfaces.find(offset);
     Surface* shown = it != g_surfaces.end() && it->second.tex ? &it->second : nullptr;
     if (shown && getenv("F1CE_DUMP_FRAMES")) {
-        const u32 pw = shown->width * shown->scale, ph = shown->height * shown->scale;
+        const u32 pw = scaled(shown->width, shown->scale), ph = scaled(shown->height, shown->scale);
         std::vector<u32> px((size_t)pw * ph), fl(px.size());
         read_image(shown->tex, pw, ph, px.data());
         for (u32 y = 0; y < ph; y++) memcpy(&fl[(size_t)y * pw], &px[(size_t)(ph - 1 - y) * pw], pw * 4);

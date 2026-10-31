@@ -354,9 +354,9 @@ void trap_hit(PPUContext& c, u32 addr) {
 // reservation users; plain stores from other threads are detected by value comparison.
 // shared by PPU lwarx/stwcx. and SPU getllar/putllc so both kinds of atomic update exclude each other; striped by
 // 128-byte line (every user updates a single line under it)
-struct alignas(64) PaddedMutex { std::mutex m; };
-static PaddedMutex g_atomic_locks[64];
-std::mutex& atomic_lock(u32 ea) { return g_atomic_locks[(ea >> 7) & 63].m; }
+struct alignas(64) PaddedLock { SpinLock m; };
+static PaddedLock g_atomic_locks[64];
+SpinLock& atomic_lock(u32 ea) { return g_atomic_locks[(ea >> 7) & 63].m; }
 
 // Write generation per 128-byte line (hashed; a collision only fails a conditional store, which is retried). Every
 // write made under the line's reservation lock (PPU stwcx./stdcx., SPU PUTLLC/PUTLLUC, the HLE SPURS writers) bumps it,
@@ -529,17 +529,20 @@ void start_host_profiler() {
         std::map<u64, u64> dll_callers;   // samples outside the executable, by the first executable frame on the stack
         u64 total = 0, end = time_usec() + 10000000;
         u64 base = (u64)GetModuleHandleW(nullptr);
-        while (time_usec() < end) {
+        std::vector<HANDLE> sampled;
+        {
             HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
             THREADENTRY32 te{sizeof(te)};
             for (BOOL ok = Thread32First(snap, &te); ok; ok = Thread32Next(snap, &te)) {
                 if (te.th32OwnerProcessID != pid || te.th32ThreadID == self) continue;
-                {
-                    std::lock_guard lk(g_prof_threads_mutex);
-                    if (!g_prof_threads.empty() && !g_prof_threads.count(te.th32ThreadID)) continue;
-                }
-                HANDLE h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT, FALSE, te.th32ThreadID);
-                if (!h) continue;
+                std::lock_guard lk(g_prof_threads_mutex);
+                if (!g_prof_threads.empty() && !g_prof_threads.count(te.th32ThreadID)) continue;
+                if (HANDLE h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT, FALSE, te.th32ThreadID)) sampled.push_back(h);
+            }
+            CloseHandle(snap);
+        }
+        while (time_usec() < end) {
+            for (HANDLE h : sampled) {
                 if (SuspendThread(h) != (DWORD)-1) {
                     // no allocation while the thread is suspended: it may hold the CRT heap lock (the profiler
                     // then deadlocked and never printed its results)
@@ -569,11 +572,10 @@ void start_host_profiler() {
                         if (caller) dll_callers[caller]++;
                     }
                 }
-                CloseHandle(h);
             }
-            CloseHandle(snap);
             Sleep(1);
         }
+        for (HANDLE h : sampled) CloseHandle(h);
         LOG_I("host profile: %llu samples", (unsigned long long)total);
         // resolve: map file lines "address size align out in symbol" (symbols are the lines with 4+ fields)
         std::vector<std::pair<u64, std::string>> syms;

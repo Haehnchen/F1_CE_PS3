@@ -269,13 +269,22 @@ OP(shufb) {
     // byte-reversed layout: host lane j selects source byte (c & 31): index (c & 15) ^ 15 in a (bit 4 clear) or b;
     // control bytes with bit 7 set give 0x00 (10xxxxxx), 0xFF (110xxxxx) or 0x80 (111xxxxx)
     __m128i c = R(RRR_RC(w)).pi;
-    __m128i idx = _mm_xor_si128(_mm_and_si128(c, _mm_set1_epi8(15)), _mm_set1_epi8(15));
-    __m128i pa = _mm_shuffle_epi8(R(RA(w)).pi, idx), pb = _mm_shuffle_epi8(R(RB(w)).pi, idx);
-    __m128i sel = _mm_blendv_epi8(pa, pb, _mm_slli_epi16(_mm_and_si128(c, _mm_set1_epi8(0x10)), 3));
-    __m128i e = _mm_and_si128(c, _mm_set1_epi8((char)0xE0));
-    __m128i special = _mm_or_si128(_mm_cmpeq_epi8(e, _mm_set1_epi8((char)0xC0)),
-                                   _mm_and_si128(_mm_cmpeq_epi8(e, _mm_set1_epi8((char)0xE0)), _mm_set1_epi8((char)0x80)));
-    R(RRR_RT(w)).pi = _mm_blendv_epi8(sel, special, c);
+    __m128i x = _mm_xor_si128(_mm_and_si128(c, _mm_set1_epi8(0x1F)), _mm_set1_epi8(15));   // bit 4 clear: a, set: b
+    // + 0x70 moves bit 4 into bit 7, where pshufb gives 0; bit 7 of c also zeroes the byte
+    __m128i top = _mm_and_si128(c, _mm_set1_epi8((char)0x80));
+    __m128i ia = _mm_or_si128(_mm_add_epi8(x, _mm_set1_epi8(0x70)), top);
+    __m128i ib = _mm_or_si128(_mm_add_epi8(_mm_xor_si128(x, _mm_set1_epi8(0x10)), _mm_set1_epi8(0x70)), top);
+    __m128i r = _mm_or_si128(_mm_shuffle_epi8(R(RA(w)).pi, ia), _mm_shuffle_epi8(R(RB(w)).pi, ib));
+    // 0x80 is done; 110xxxxx and 111xxxxx give 0xFF and 0x80 (rare, but seen in masks)
+    __m128i hi = _mm_cmpgt_epi8(_mm_set1_epi8((char)0xC0), c);     // c < -64: 0x80..0xBF, else all clear below
+    __m128i sp = _mm_andnot_si128(hi, _mm_cmpgt_epi8(_mm_setzero_si128(), c));   // c in 0xC0..0xFF
+    if (__builtin_expect(!_mm_testz_si128(sp, sp), 0)) {
+        __m128i e = _mm_and_si128(c, _mm_set1_epi8((char)0xE0));
+        __m128i v = _mm_or_si128(_mm_cmpeq_epi8(e, _mm_set1_epi8((char)0xC0)),
+                                 _mm_and_si128(_mm_cmpeq_epi8(e, _mm_set1_epi8((char)0xE0)), _mm_set1_epi8((char)0x80)));
+        r = _mm_blendv_epi8(r, v, sp);
+    }
+    R(RRR_RT(w)).pi = r;
 }
 
 // ------------------------------------------------------------------ shifts / rotates (per element)
@@ -377,6 +386,12 @@ OP(csflt) { R(RT(w)).ps = _mm_mul_ps(_mm_cvtepi32_ps(R(RA(w)).pi), _mm_set1_ps(p
 OP(cuflt) { float sc = pow2f(-(int)(155 - I8(w))); v128 r; for (int i = 0; i < 4; i++) r.f[i] = (float)R(RA(w)).w[i] * sc; R(RT(w)) = r; }
 OP(cflts) {
     float sc = pow2f((int)(173 - I8(w))); v128 r;
+    __m256d d = _mm256_mul_pd(_mm256_cvtps_pd(R(RA(w)).ps), _mm256_set1_pd(sc));
+    // in range (a NaN compares false): truncating is all there is to do
+    if (__builtin_expect(_mm256_movemask_pd(_mm256_cmp_pd(_mm256_andnot_pd(_mm256_set1_pd(-0.0), d), _mm256_set1_pd(2147483647.0), _CMP_LT_OQ)) == 15, 1)) {
+        R(RT(w)).pi = _mm256_cvttpd_epi32(d);
+        return;
+    }
     for (int i = 0; i < 4; i++) {
         double x = (double)R(RA(w)).f[i] * sc;
         r.sw[i] = std::isnan(x) ? 0 : x >= 2147483647.0 ? INT32_MAX : x <= -2147483648.0 ? INT32_MIN : (s32)x;
@@ -473,7 +488,7 @@ u32 decrementer(SPUThread& s) { return s.dec_start - (u32)((time_usec() - s.dec_
 
 // reservation-lost detection: compare the reserved line with memory
 bool reservation_lost(SPUThread& s) {
-    return s.has_reservation && memcmp(gmem(s.res_addr), s.res_data, 128) != 0;
+    return s.has_reservation && !same_bytes(gmem(s.res_addr), s.res_data, 128);
 }
 
 u32 read_event_stat(SPUThread& s, bool block) {

@@ -59,11 +59,10 @@ u32 location_to_ea(u32 offset, bool main_memory) {
 // and the shader cache is shared: changing F1CE_SCALE no longer compiles every program again (the Driver garage stayed
 // white for seconds the first time at a new scale). F1CE_NATIVE_GLSL=1: the scale-1 sources of before.
 bool scaled_glsl() { static const bool v = !getenv("F1CE_NATIVE_GLSL"); return v; }
-u32 res_scale() {
-    static const u32 v = [] {
+float res_scale() {
+    static const float v = [] {
         const char* e = getenv("F1CE_SCALE");
-        u32 x = e ? (u32)atoi(e) : 1;
-        return std::clamp(x, 1u, 4u);
+        return std::clamp(e ? (float)atof(e) : 1.0f, 1.0f, 4.0f);
     }();
     return v;
 }
@@ -1051,3 +1050,8 @@ bool nv0039_transfer(u32 sub, u32 mm, Nv0039& x) {
     return true;
 }
 }  // namespace rsx
+
+u32 rsx::cube_faces_per_frame() {
+    const char* e = getenv("F1CE_CUBE_FACES");
+    return e ? (u32)std::clamp(atoi(e), 1, 6) : 6;
+}

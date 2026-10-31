@@ -1,6 +1,8 @@
 // What the OpenGL and Vulkan renderers share: the RSX register file, the microcode translators, hashes, the block
 // heap and the program database (rsx_common.cpp). Index lists and vertex regions: rsx_draw_shared.inl.
 #pragma once
+#include <iterator>
+#include <set>
 #include "ppu_runtime.h"
 
 #include <cstddef>
@@ -31,7 +33,10 @@ u32 location_to_ea(u32 offset, bool main_memory);
 u64 mem_fingerprint(u32 ea, u32 bytes);
 constexpr u32 MAIN_SURFACE_KEY = 0x80000000;   // g_surfaces key bit for main-memory colour buffers
 bool scaled_glsl();
-u32 res_scale();
+float res_scale();
+// physical pixels of a guest length; every size and edge goes through this, so they agree at a fractional scale
+FORCE_INLINE u32 scaled(u32 v, float k) { return (u32)(v * k + 0.5f); }
+FORCE_INLINE s32 scaled_s(s32 v, float k) { return (s32)floorf(v * k + 0.5f); }
 // label of the start-up progress bar as window rectangles (pixels, top-left origin), above the line at y = bar_top
 struct TextRect { s32 x, y, w, h; };
 std::vector<TextRect> progress_label(double frac, const char* what, s32 ww, s32 wh, s32 bar_top);
@@ -59,6 +64,18 @@ struct FPInfo {
 };
 VPInfo translate_vp(u32 start);
 FPInfo translate_fp(u32 ea, u32 shader_control, u32 cube_mask);
+
+// F1CE_CUBE_FACES=<n>: the reflection cube map renders n of its 6 faces per frame, in turn (default 6: all of them, as on
+// the RSX). A race sends 26% of its draws there. A skipped face keeps its last image; the game never reads them back.
+u32 cube_faces_per_frame();
+inline bool cube_face_skipped(const std::set<u32>& faces, u32 offset, u64 frame) {
+    static const u32 n = cube_faces_per_frame();
+    if (n >= 6) return false;
+    auto it = faces.find(offset);
+    if (it == faces.end()) return false;
+    u32 f = (u32)std::distance(faces.begin(), it) % 6;
+    return (f + frame * n) % 6 >= n;
+}
 
 // fragment programs are read from guest memory, or from a saved copy while the program database is replayed
 extern const u8* g_fp_override;   // big-endian program bytes standing for guest memory at g_fp_override_ea
