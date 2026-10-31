@@ -3,6 +3,7 @@
 #include "ppu_runtime.h"
 
 namespace rsx {
+bool use_vulkan();    // F1CE_RENDERER=vulkan: the Vulkan renderer instead of OpenGL (rsx.cpp)
 void init();
 void method(u32 method, u32 arg);                               // NV4097 state / draw methods
 void flip(u32 ea, u32 pitch, u32 width, u32 height);            // present a display buffer

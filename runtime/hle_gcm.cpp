@@ -15,6 +15,8 @@ u64 g_rsx_idle_us = 0;   // profiling: time the FIFO reader waited for the PPU (
 
 void profile_register_thread();   // core.cpp (host profiler)
 
+extern u32 g_ticks_per_frame_ea;
+
 namespace {
 constexpr u32 LOCAL_SIZE = 0x0F900000;
 constexpr u32 CMD_SEGMENT = 32 * 1024;
@@ -132,9 +134,30 @@ struct Rsx {
 
 u32 label_ptr(u32 offset) { return g.label_addr + offset; }
 
+// F1CE_60FPS: the game logic runs one tick per 59.94 Hz vblank, so the next frame gets one tick for each vblank period
+// this one took. The range is the game's own at the top (2 ticks: 30 fps); below 30 fps it slows down as on the PS3.
+void pace_ticks() {
+    const s64 tick_us = 16683;
+    static u64 last = time_usec(), window = last, flips = 0, ticks = 0;
+    static s64 owed = 0;
+    u64 now = time_usec();
+    owed += (s64)(now - last);
+    last = now;
+    s64 n = std::clamp<s64>((owed + tick_us / 2) / tick_us, 1, 2);
+    owed = std::clamp<s64>(owed - n * tick_us, -tick_us, tick_us);
+    st32(g_ticks_per_frame_ea, (u32)n);
+    flips++;
+    ticks += (u64)n;
+    if (now - window >= 5000000) {
+        LOG_I("60 fps: %.1f flips/s, %.1f ticks/s", flips * 1e6 / (now - window), ticks * 1e6 / (now - window));
+        window = now; flips = ticks = 0;
+    }
+}
+
 void do_flip(u32 id) {
     const DisplayBuffer& b = g.buffers[id & 7];
     rsx::flip(mem::RSX_LOCAL + b.offset, b.pitch, b.width, b.height);
+    if (g_ticks_per_frame_ea) pace_ticks();
     g.flip_status = 0;
     g.flips_done++;
     raise_interrupt(g.flip_handler, 1);
@@ -593,8 +616,10 @@ void rsx_thread() {
 
 void vblank_thread() {
     u64 next = time_usec();
+    // F1CE_60FPS: 119.88 Hz, as the game's limiter waits for two vblanks per frame
+    const u64 period = getenv("F1CE_60FPS") ? 8342 : 16683;   // 59.94 Hz
     for (;;) {
-        next += 16683;   // 59.94 Hz
+        next += period;
         u64 now = time_usec();
         if (next > now) sleep_usec(next - now);
         g.vblank_count++;

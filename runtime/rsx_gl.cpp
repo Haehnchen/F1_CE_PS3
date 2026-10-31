@@ -11,6 +11,7 @@
 #include "host.h"
 #include "kernel.h"
 #include "rsx.h"
+#include "rsx_common.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengl_glext.h>
@@ -27,8 +28,7 @@
 
 extern u64 g_rsx_idle_us;   // hle_gcm.cpp: time the FIFO reader waited for commands (profiling)
 namespace rsx {
-u32 io_offset_to_ea(u32 io);   // hle_gcm.cpp
-
+namespace gl {
 namespace {
 // ------------------------------------------------------------------ GL loader
 #define GL_FUNCS(X)                                                                                      \
@@ -81,33 +81,7 @@ bool load_gl() {
     return ok;
 }
 
-// ------------------------------------------------------------------ RSX registers
-u32 R[0x10000 / 4];
-FORCE_INLINE u32 reg(u32 m) { return R[m >> 2]; }
-FORCE_INLINE float regf(u32 m) { float f; memcpy(&f, &R[m >> 2], 4); return f; }
-
-u32 vp_words[512 * 4];          // vertex program memory
-u32 vp_load_pos = 0;            // in words
-float vp_consts[468 * 4];
-// per constant: value of vp_ver when it was last written; a program re-uploads only the constants newer than its upload
-u32 vp_slot_ver[468];
-u32 vp_ver = 1;
-u32 vp_const_pos = 0;           // in floats
 bool gl_ok = false;
-
-constexpr u32 CTX_LOCAL = 0xFEED0000, CTX_MAIN = 0xFEED0001;
-
-u32 location_to_ea(u32 offset, bool main_memory);
-// fingerprint of [ea, ea + bytes): 512 words sampled evenly
-u64 mem_fingerprint(u32 ea, u32 bytes) {
-    u64 h = 1469598103934665603ull;
-    u32 step = std::max(4u, (bytes / 512) & ~3u);
-    for (u32 o = 0; o + 4 <= bytes; o += step) { u32 v; memcpy(&v, gmem(ea + o), 4); h = (h ^ v) * 1099511628211ull; }
-    return h;
-}
-u32 location_to_ea(u32 offset, bool main_memory) {
-    return main_memory ? io_offset_to_ea(offset) : mem::RSX_LOCAL + offset;
-}
 
 // ------------------------------------------------------------------ surfaces
 // Colour surfaces and depth (zeta) buffers are separate objects keyed by their local-memory
@@ -136,23 +110,6 @@ struct Surface {
     GLuint wb_pbo = 0;
 };
 constexpr u32 MAIN_SURFACE_KEY = 0x80000000;   // g_surfaces key bit for main-memory colour buffers
-// Resolution scaling (roadmap step 3, F1CE_SCALE=1..4, default 1): local render targets and depth buffers are
-// allocated at scale x their guest size and drawn with a scaled viewport and scissor; the vertex programs map window
-// coordinates through the guest size, so geometry needs no change. Main-memory targets (read back by the CPU) stay
-// native. Fragment programs see WPOS in guest pixels (u_res_scale), occlusion counts are divided by scale^2 (the
-// game picks levels of detail and flare intensity from them), cube maps and copies use the physical sizes.
-// The fragment programs read their scale from uniforms (u_res_scale, u_ui_clamp), so one source serves every scale
-// and the shader cache is shared: changing F1CE_SCALE no longer compiles every program again (the Driver garage stayed
-// white for seconds the first time at a new scale). F1CE_NATIVE_GLSL=1: the scale-1 sources of before.
-bool scaled_glsl() { static const bool v = !getenv("F1CE_NATIVE_GLSL"); return v; }
-u32 res_scale() {
-    static const u32 v = [] {
-        const char* e = getenv("F1CE_SCALE");
-        u32 x = e ? (u32)atoi(e) : 1;
-        return std::clamp(x, 1u, 4u);
-    }();
-    return v;
-}
 struct DepthSurface {
     u32 offset = 0, width = 0, height = 0;
     GLuint tex = 0;
@@ -175,12 +132,7 @@ void srgb_write(bool on) {
 DepthSurface* g_cur_depth = nullptr;
 std::unordered_map<u32, Surface> g_surfaces;      // keyed by local-memory offset of colour buffer A
 std::unordered_map<u32, DepthSurface> g_depths;   // keyed by local-memory offset of the zeta buffer
-u64 g_frame = 0;
 // profiling: microseconds per frame section (reported every 120 frames by flip())
-struct Prof { u64 program = 0, textures = 0, vertices = 0, submit = 0, other = 0, draws = 0, verts = 0, frame_start = 0, conv_verts = 0, conv_inst = 0, hashed = 0, tex_hashed = 0, t_index = 0, t_hash = 0, t_conv = 0, conv_new = 0, conv_changed = 0, idx_built = 0, ir_grow = 0, ir_changed = 0, idx_old = 0, t_pre = 0, t_apply = 0, t_upload = 0, t_bind = 0, binds = 0, t_draw = 0, t_ringwait = 0, ring_segs = 0, t_texdec = 0, tex_decoded = 0, memo_hits = 0, memo_miss = 0, t_miss = 0; } g_prof;
-// debug: F1CE_WATCH_FP=<local offset> logs 2D-engine writes into [offset, offset + 0x800) and the constants of draws
-// that use the fragment program at that offset
-const u32 g_watch_fp = getenv("F1CE_WATCH_FP") ? (u32)strtoul(getenv("F1CE_WATCH_FP"), nullptr, 16) : ~0u;
 
 // texture binding state, tracked so draws can skip redundant binds and wrap-mode changes
 u32 g_active_unit = 0;
@@ -200,11 +152,6 @@ void delete_tex(GLuint* t) {
     glDeleteTextures(1, t);
 }
 
-// F1CE_TRACE_FRAME=<n> traces frame n; F1CE_TRACE_COUNT=<k> extends it to frames n .. n+k-1
-bool trace_on(long long first) {
-    static const long long count = getenv("F1CE_TRACE_COUNT") ? atoll(getenv("F1CE_TRACE_COUNT")) : 1;
-    return first >= 0 && (long long)g_frame >= first && (long long)g_frame < first + count;
-}
 std::map<u32, u32> g_frame_targets;   // debug (F1CE_FLIP_LOG): draws + clears per target in the current frame
 
 // GL state last set by bind_target / apply_state / draw, so unchanged state costs no driver calls; code that changes
@@ -288,7 +235,6 @@ GLuint ensure_ms(Surface* s) {
     return s->ms_fbo;
 }
 
-void srgb_write(bool on);
 // resolves a multisampled surface into its texture (and its zeta texture); true if the framebuffer binding changed
 bool resolve_ms(Surface& s) {
     if (!s.ms_fbo || !s.ms_dirty) return false;
@@ -481,649 +427,6 @@ GLuint compile(GLenum type, const std::string& src) {
     return sh;
 }
 
-const char* SWZ = "xyzw";
-
-std::string swizzle_str(u32 sx, u32 sy, u32 sz, u32 sw) {
-    std::string s = ".";
-    s += SWZ[sx]; s += SWZ[sy]; s += SWZ[sz]; s += SWZ[sw];
-    return s;
-}
-
-std::string mask_str(bool x, bool y, bool z, bool w) {
-    std::string s;
-    if (x) s += 'x';
-    if (y) s += 'y';
-    if (z) s += 'z';
-    if (w) s += 'w';
-    return s;
-}
-
-// assigns a vec4 expression to dst through a write mask
-std::string masked_assign(const std::string& dst, const std::string& mask, const std::string& expr, bool sat) {
-    std::string e = sat ? "clamp(" + expr + ", 0.0, 1.0)" : expr;
-    if (mask.size() == 4) return dst + " = " + e + ";";
-    return dst + "." + mask + " = (" + e + ")." + mask + ";";
-}
-
-// ---------------- vertex program
-struct VPInfo { std::string glsl; u32 outputs_used = 0; };
-
-std::string vp_src(u32 src, u32 d1, bool abs_flag, u32 d3, u32 d0) {
-    u32 type = src & 3, tmp = (src >> 2) & 0x3F;
-    u32 sw = (src >> 8) & 3, sz = (src >> 10) & 3, sy = (src >> 12) & 3, sx = (src >> 14) & 3;
-    bool neg = (src >> 16) & 1;
-    std::string r;
-    switch (type) {
-        case 1: r = "R[" + std::to_string(tmp) + "]"; break;
-        case 2: r = "in_attr" + std::to_string((d1 >> 8) & 0xF); break;
-        case 3: {
-            u32 ci = (d1 >> 12) & 0x3FF;
-            if (d3 & 2) r = "C[clamp(" + std::to_string(ci) + " + A[" + std::to_string((d0 >> 24) & 1) + "]." + SWZ[d0 & 3] + ", 0, 467)]";
-            else r = "C[" + std::to_string(ci) + "]";
-            break;
-        }
-        default: r = "vec4(0.0)";
-    }
-    r = "(" + r + ")" + swizzle_str(sx, sy, sz, sw);
-    if (abs_flag) r = "abs(" + r + ")";
-    if (neg) r = "-" + r;
-    return r;
-}
-
-// highest constant index used with array `name` ("R" matches R[n] but not FC[n]) + 1; at least `min_n`
-int array_size(const std::string& src, const char* name, int min_n) {
-    int n = min_n;
-    size_t len = strlen(name);
-    for (size_t i = src.find(name); i != std::string::npos; i = src.find(name, i + 1)) {
-        if (i > 0 && (isalnum((unsigned char)src[i - 1]) || src[i - 1] == '_')) continue;
-        if (src.compare(i + len, 1, "[") != 0) continue;
-        n = std::max(n, atoi(src.c_str() + i + len + 1) + 1);
-    }
-    return n;
-}
-// Vertex pulling (roadmap step 2): the vertex program reads the raw big-endian guest records itself from two buffer
-// textures (the stream ring and the vertex heap) and decodes the RSX formats, as fetch_attr() does on the CPU.
-// u_va[i]: x = byte offset of record 0 in its buffer, y = stride, z = type | size << 4 | modulo << 8 | ring << 9
-// (type 0: attribute disabled, reads (0, 0, 0, 1)), w = frequency. gl_VertexID is the guest vertex index.
-bool vp_uses_input(const std::string& body, int i) {   // "in_attr<i>" not followed by another digit
-    std::string n = "in_attr" + std::to_string(i);
-    for (size_t q = body.find(n); q != std::string::npos; q = body.find(n, q + 1))
-        if (q + n.size() >= body.size() || !isdigit((unsigned char)body[q + n.size()])) return true;
-    return false;
-}
-
-std::string vp_fetch_glsl(const std::string& body) {
-    std::string s =
-        "uniform usamplerBuffer u_va_ring;\nuniform usamplerBuffer u_va_heap;\nuniform ivec4 u_va[16];\n"
-        "uint va_w(int a, bool r) { return r ? texelFetch(u_va_ring, a >> 2).r : texelFetch(u_va_heap, a >> 2).r; }\n"
-        "uint va_u8(int a, bool r) { return (va_w(a, r) >> uint((a & 3) * 8)) & 255u; }\n"
-        "uint va_u16(int a, bool r) {\n"
-        " if ((a & 1) == 0) { uint x = (va_w(a, r) >> uint((a & 2) * 8)) & 0xFFFFu; return ((x & 255u) << 8) | (x >> 8); }\n"
-        " return (va_u8(a, r) << 8) | va_u8(a + 1, r);\n"
-        "}\n"
-        "uint va_u32(int a, bool r) {\n"
-        " if ((a & 3) == 0) { uint w = va_w(a, r); return (w << 24) | ((w & 0xFF00u) << 8) | ((w >> 8) & 0xFF00u) | (w >> 24); }\n"
-        " return (va_u16(a, r) << 16) | va_u16(a + 2, r);\n"
-        "}\n"
-        "float va_s16(uint x) { return float(int(x << 16) >> 16); }\n"
-        "vec4 va_fetch(int i) {\n"
-        " ivec4 d = u_va[i];\n"
-        " int type = d.z & 15, size = min((d.z >> 4) & 15, 4);\n"
-        " vec4 o = vec4(0.0, 0.0, 0.0, 1.0);\n"
-        " if (type == 0) return o;\n"
-        " bool r = (d.z & 512) != 0;\n"
-        " int v = gl_VertexID;\n"
-        " if (d.w > 1) v = (d.z & 256) != 0 ? v % d.w : v / d.w;\n"
-        " int a = d.x + v * d.y;\n"
-        " if (type == 6) {   // CMP 11:11:10\n"
-        "  uint p = va_u32(a, r);\n"
-        "  if (size > 0) o.xyz = vec3(float(int(p << 21) >> 21) / 1023.0, float(int(p << 10) >> 21) / 1023.0, float(int(p) >> 22) / 511.0);\n"
-        "  return o;\n"
-        " }\n"
-        " for (int k = 0; k < 4; k++) {\n"
-        "  if (k >= size) break;\n"
-        "  if (type == 1) o[k] = va_s16(va_u16(a + k * 2, r)) / 32767.0;\n"
-        "  else if (type == 2) o[k] = uintBitsToFloat(va_u32(a + k * 4, r));\n"
-        "  else if (type == 3) o[k] = unpackHalf2x16(va_u16(a + k * 2, r)).x;\n"
-        "  else if (type == 4) o[k] = float(va_u8(a + k, r)) / 255.0;\n"
-        "  else if (type == 5) o[k] = va_s16(va_u16(a + k * 2, r));\n"
-        "  else if (type == 7) o[k] = float(va_u8(a + k, r));\n"
-        " }\n"
-        " return o;\n"
-        "}\n";
-    for (int i = 0; i < 16; i++)
-        if (vp_uses_input(body, i)) s += "vec4 in_attr" + std::to_string(i) + ";\n";
-    return s;
-}
-
-VPInfo translate_vp(u32 start) {
-    VPInfo info;
-    std::ostringstream body;
-    for (u32 slot = start; slot < 512; slot++) {
-        const u32* w = &vp_words[slot * 4];
-        u32 d0 = w[0], d1 = w[1], d2 = w[2], d3 = w[3];
-        u32 vec_op = (d1 >> 22) & 0x1F, sca_op = (d1 >> 27) & 0x1F;
-        u32 src0 = ((d1 & 0xFF) << 9) | (d2 >> 23);
-        u32 src1 = (d2 >> 6) & 0x1FFFF;
-        u32 src2 = ((d2 & 0x3F) << 11) | (d3 >> 21);
-        bool sat = (d0 >> 26) & 1, vec_result = (d0 >> 30) & 1;
-        u32 vec_tmp = (d0 >> 15) & 0x3F, dst = (d3 >> 2) & 0x1F, sca_tmp = (d3 >> 7) & 0x3F;
-        std::string vmask = mask_str((d3 >> 16) & 1, (d3 >> 15) & 1, (d3 >> 14) & 1, (d3 >> 13) & 1);
-        std::string smask = mask_str((d3 >> 20) & 1, (d3 >> 19) & 1, (d3 >> 18) & 1, (d3 >> 17) & 1);
-        std::string a = vp_src(src0, d1, (d0 >> 21) & 1, d3, d0);
-        std::string b = vp_src(src1, d1, (d0 >> 22) & 1, d3, d0);
-        std::string c = vp_src(src2, d1, (d0 >> 23) & 1, d3, d0);
-
-        std::string ve;
-        switch (vec_op) {
-            case 0: break;
-            case 1: ve = a; break;
-            case 2: ve = a + " * " + b; break;
-            case 3: ve = a + " + " + c; break;   // ADD uses src0 + src2
-            case 4: ve = a + " * " + b + " + " + c; break;
-            case 5: ve = "vec4(dot((" + a + ").xyz, (" + b + ").xyz))"; break;
-            case 6: ve = "vec4(dot(vec4((" + a + ").xyz, 1.0), " + b + "))"; break;
-            case 7: ve = "vec4(dot(" + a + ", " + b + "))"; break;
-            case 8: ve = "vec4(1.0, (" + a + ").y * (" + b + ").y, (" + a + ").z, (" + b + ").w)"; break;
-            case 9: ve = "min(" + a + ", " + b + ")"; break;
-            case 10: ve = "max(" + a + ", " + b + ")"; break;
-            case 11: ve = "vec4(lessThan(" + a + ", " + b + "))"; break;
-            case 12: ve = "vec4(greaterThanEqual(" + a + ", " + b + "))"; break;
-            case 13: body << "A[" << ((d0 >> 24) & 1) << "] = ivec4(floor(" << a << "));\n"; break;
-            case 14: ve = "fract(" + a + ")"; break;
-            case 15: ve = "floor(" + a + ")"; break;
-            case 16: ve = "vec4(equal(" + a + ", " + b + "))"; break;
-            case 17: ve = "vec4(0.0)"; break;
-            case 18: ve = "vec4(greaterThan(" + a + ", " + b + "))"; break;
-            case 19: ve = "vec4(lessThanEqual(" + a + ", " + b + "))"; break;
-            case 20: ve = "vec4(notEqual(" + a + ", " + b + "))"; break;
-            case 21: ve = "vec4(1.0)"; break;
-            case 22: ve = "sign(" + a + ")"; break;
-            case 25: ve = "textureLod(vtex" + std::to_string((d2 >> 8) & 3) + ", (" + a + ").xy, 0.0)"; break;   // TXL (vertex texture)
-            default: LOG_W("rsx vp: unsupported vector op %u", vec_op);
-        }
-        std::string se;
-        std::string cx = "(" + c + ").x";
-        switch (sca_op) {
-            case 0: break;
-            case 1: se = "vec4(" + cx + ")"; break;
-            case 2: se = "vec4(1.0 / " + cx + ")"; break;
-            case 3: se = "vec4(clamp(1.0 / " + cx + ", -1.884467e19, 1.884467e19))"; break;
-            case 4: se = "vec4(inversesqrt(abs(" + cx + ")))"; break;
-            case 5: se = "vec4(exp2(floor(" + cx + ")), fract(" + cx + "), exp2(" + cx + "), 1.0)"; break;
-            case 6: se = "vec4(floor(log2(abs(" + cx + "))), 1.0, log2(abs(" + cx + ")), 1.0)"; break;
-            case 7: se = "vec4(1.0, max((" + c + ").x, 0.0), ((" + c + ").x > 0.0) ? pow(max((" + c + ").y, 0.0), clamp((" + c + ").w, -127.9961, 127.9961)) : 0.0, 1.0)"; break;
-            case 13: se = "vec4(log2(" + cx + "))"; break;
-            case 14: se = "vec4(exp2(" + cx + "))"; break;
-            case 15: se = "vec4(sin(" + cx + "))"; break;
-            case 16: se = "vec4(cos(" + cx + "))"; break;
-            default: LOG_W("rsx vp: unsupported scalar op %u", sca_op);
-        }
-        // condition codes: D0 bits 10-12 condition (1 lt, 2 eq, 4 gt), 13 test enable, 14 + 29 update enable,
-        // 25 condition register select, 2-9 condition swizzle (w, z, y, x)
-        u32 cond = (d0 >> 10) & 7;
-        bool cond_test = ((d0 >> 13) & 1) && cond != 7;
-        bool cond_update = ((d0 >> 14) & 1) && ((d0 >> 29) & 1);
-        std::string ccreg = "CC[" + std::to_string((d0 >> 25) & 1) + "]";
-        std::string ccv = ccreg + swizzle_str((d0 >> 8) & 3, (d0 >> 6) & 3, (d0 >> 4) & 3, (d0 >> 2) & 3);
-        std::string cmask = "step(vec4(0.5), vec4(0.0)";
-        if (cond & 1) cmask += " + vec4(lessThan(" + ccv + ", vec4(0.0)))";
-        if (cond & 2) cmask += " + vec4(equal(" + ccv + ", vec4(0.0)))";
-        if (cond & 4) cmask += " + vec4(greaterThan(" + ccv + ", vec4(0.0)))";
-        cmask += ")";
-        auto put = [&](const std::string& target, const std::string& mask, const std::string& val) {
-            if (cond_test) return masked_assign(target, mask, "mix(" + target + ", " + val + ", m)", false) + "\n";
-            return masked_assign(target, mask, val, false) + "\n";
-        };
-        bool skip = ((d0 >> 13) & 1) && cond == 0;   // condition "never"
-        if (!ve.empty() && !skip) {
-            body << "{ vec4 v = " << (sat ? "clamp(" + ve + ", 0.0, 1.0)" : ve) << ";\n";
-            if (cond_test) body << " vec4 m = " << cmask << ";\n";
-            if (vec_tmp != 0x3F && !vmask.empty()) body << put("R[" + std::to_string(vec_tmp) + "]", vmask, "v");
-            if ((vec_result || sca_op == 0) && dst != 0x1F && !vmask.empty()) {   // no scalar op: the vector unit owns the output
-                body << put("O[" + std::to_string(dst) + "]", vmask, "v");
-                info.outputs_used |= 1u << dst;
-            }
-            if (cond_update && !vmask.empty()) body << put(ccreg, vmask, "v");
-            body << "}\n";
-        }
-        if (!se.empty() && !skip) {
-            body << "{ vec4 s = " << (sat ? "clamp(" + se + ", 0.0, 1.0)" : se) << ";\n";
-            if (cond_test) body << " vec4 m = " << cmask << ";\n";
-            if (sca_tmp != 0x3F && !smask.empty()) body << put("R[" + std::to_string(sca_tmp) + "]", smask, "s");
-            if (!vec_result && sca_op != 0 && dst != 0x1F && !smask.empty()) {
-                body << put("O[" + std::to_string(dst) + "]", smask, "s");
-                info.outputs_used |= 1u << dst;
-            }
-            if (cond_update && ve.empty() && !smask.empty()) body << put(ccreg, smask, "s");
-            body << "}\n";
-        }
-        if (d3 & 1) break;   // last instruction
-    }
-    std::ostringstream src;
-    src << "#version 420 core\n";
-    extern bool g_vtx_gpu;
-    if (g_vtx_gpu) src << vp_fetch_glsl(body.str());
-    else for (int i = 0; i < 16; i++) src << "layout(location = " << i << ") in vec4 in_attr" << i << ";\n";
-    src << "uniform vec4 C[468];\nuniform sampler2D vtex0;\nuniform sampler2D vtex1;\nuniform sampler2D vtex2;\nuniform sampler2D vtex3;\n"
-           "uniform vec4 u_vp_scale;\nuniform vec4 u_vp_offset;\nuniform vec4 u_surface;\n"
-           "out vec4 v_col0; out vec4 v_col1; out vec4 v_fog; out vec4 v_tex[10];\n"
-           "void main() {\n";
-    {   // only the temporaries the program uses (zero-initialised arrays of 48/64 registers compiled very slowly)
-        int nr = array_size(body.str(), "R", 1);
-        src << " vec4 R[" << nr << "]; for (int i = 0; i < " << nr << "; i++) R[i] = vec4(0.0);\n";
-    }
-    if (g_vtx_gpu)
-        for (int i = 0; i < 16; i++)
-            if (vp_uses_input(body.str(), i))
-                src << " in_attr" << i << " = va_fetch(" << i << ");\n";
-    src << " vec4 O[32]; for (int i = 0; i < 32; i++) O[i] = vec4(0.0, 0.0, 0.0, 1.0);\n ivec4 A[2]; A[0] = ivec4(0); A[1] = ivec4(0);\n"
-           " vec4 CC[2]; CC[0] = vec4(0.0); CC[1] = vec4(0.0);\n";
-    src << body.str();
-    // RSX: clip-space position -> (divide) -> viewport scale/offset -> window coords (top-left origin).
-    // Convert back to GL clip space for the current surface size, keeping w for perspective interpolation.
-    src << " vec4 p = O[0];\n"
-           " vec3 win = (p.xyz / p.w) * u_vp_scale.xyz + u_vp_offset.xyz;\n"
-           " float y_top = u_surface.z > 0.5 ? -win.y : win.y;   // SHADER_WINDOW origin bottom: y measured upward\n"
-           " vec3 ndc = vec3(win.x / u_surface.x * 2.0 - 1.0, 1.0 - y_top / u_surface.y * 2.0, win.z * 2.0 - 1.0);\n"
-           " gl_Position = vec4(ndc * p.w, p.w);\n"
-           " v_col0 = O[1]; v_col1 = O[2]; v_fog = O[5];\n"
-           " for (int i = 0; i < 10; i++) v_tex[i] = O[7 + i];\n}\n";
-    info.glsl = src.str();
-    return info;
-}
-
-// ---------------- fragment program
-struct FPInfo {
-    std::string glsl;
-    std::vector<u32> const_offsets;   // byte offsets (from program start) of inline constants
-    u32 size = 0;                     // bytes
-    u32 tex_used = 0;
-};
-
-// fragment programs are read from guest memory, or from a saved copy while the program database is replayed
-const u8* g_fp_override = nullptr;   // big-endian program bytes standing for guest memory at g_fp_override_ea
-u32 g_fp_override_ea = 0, g_fp_override_size = 0;
-FORCE_INLINE u32 fp_word(u32 ea) {
-    u32 v;
-    if (__builtin_expect(g_fp_override != nullptr, 0)) {
-        u32 o = ea - g_fp_override_ea;
-        if (o + 4 > g_fp_override_size) return 0;
-        memcpy(&v, g_fp_override + o, 4);
-        v = __builtin_bswap32(v);
-    } else v = ld32(ea);
-    return (v << 16) | (v >> 16);
-}
-
-// The RSX half registers share the file of the full ones: H[2k] is stored in R[k].xy and H[2k+1] in R[k].zw, two
-// halves per 32-bit word. The shader compiler packs both into the same storage when their lifetimes allow (the crowd
-// shader writes H17.w right after its last read of R8.w) and moves packed halves with full-precision MOVs: with
-// separate arrays the crowd's fallback lookup used stale coordinates and dressed every figure in the skin colour of
-// its atlas cell. The file is kept as raw bits (uvec4 R[]): a packed pair whose high half is zero is a denormal
-// float, which the GPU flushes to zero when it is copied as a float.
-bool fp_h_alias() { static const bool v = getenv("F1CE_NO_H_ALIAS") == nullptr; return v; }   // debug: separate H/R
-
-std::string fp_r_read(u32 n) {
-    return fp_h_alias() ? "uintBitsToFloat(R[" + std::to_string(n) + "])" : "R[" + std::to_string(n) + "]";
-}
-
-std::string fp_h_read(u32 n) {
-    if (!fp_h_alias()) return "H[" + std::to_string(n) + "]";
-    return std::string(n & 1 ? "h_hi(R[" : "h_lo(R[") + std::to_string(n >> 1) + "])";
-}
-
-std::string fp_h_write(u32 n, const std::string& mask, const std::string& e) {
-    if (!fp_h_alias()) return masked_assign("H[" + std::to_string(n) + "]", mask, e, false);
-    return "{ vec4 hv = " + fp_h_read(n) + "; " + masked_assign("hv", mask, e, false) + " R[" + std::to_string(n >> 1) + "]." +
-           (n & 1 ? "zw" : "xy") + " = h_pack(hv); }";
-}
-
-std::string fp_src(u32 s, u32 attr, bool abs_flag, int const_idx, bool& uses_const) {
-    u32 type = s & 3, idx = (s >> 2) & 0x3F;
-    bool half = (s >> 8) & 1;
-    u32 sx = (s >> 9) & 3, sy = (s >> 11) & 3, sz = (s >> 13) & 3, sw = (s >> 15) & 3;
-    bool neg = (s >> 17) & 1;
-    std::string r;
-    static const char* inputs[] = {"wpos", "v_col0", "v_col1", "fogc", "v_tex[0]", "v_tex[1]", "v_tex[2]",
-                                   "v_tex[3]", "v_tex[4]", "v_tex[5]", "v_tex[6]", "v_tex[7]", "v_tex[8]", "v_tex[9]",
-                                   "vec4(gl_FrontFacing ? 1.0 : -1.0)", "vec4(0.0)"};
-    switch (type) {
-        case 0: r = half ? fp_h_read(idx) : fp_r_read(idx); break;
-        case 1: r = inputs[attr & 15]; break;
-        case 2: r = "FC[" + std::to_string(const_idx) + "]"; uses_const = true; break;
-        default: r = "vec4(0.0)";
-    }
-    r = "(" + r + ")" + swizzle_str(sx, sy, sz, sw);
-    if (abs_flag) r = "abs(" + r + ")";
-    if (neg) r = "-" + r;
-    return r;
-}
-
-bool g_fp_stop_here = false;   // F1CE_FP_STOP applies to the program being translated (F1CE_FP_STOP_HASH)
-
-u64 g_fp_hash_cur = 0;   // hash of the program being translated (debug options by hash)
-FPInfo translate_fp(u32 ea, u32 shader_control, u32 cube_mask) {
-    FPInfo info;
-    std::ostringstream body;
-    u32 off = 0;
-    int nconst = 0;
-    // IFE blocks: byte offsets (from the program start) where an else branch / the end of an if begins
-    std::vector<u32> else_offs, end_offs;
-    for (int guard = 0; guard < 2048; guard++) {
-        for (auto it = std::find(end_offs.begin(), end_offs.end(), off); it != end_offs.end();
-             it = std::find(end_offs.begin(), end_offs.end(), off)) {
-            end_offs.erase(it);
-            body << "}\n";
-        }
-        for (auto it = std::find(else_offs.begin(), else_offs.end(), off); it != else_offs.end();
-             it = std::find(else_offs.begin(), else_offs.end(), off)) {
-            else_offs.erase(it);
-            body << "} else {\n";
-        }
-        u32 w0 = fp_word(ea + off), w1 = fp_word(ea + off + 4), w2 = fp_word(ea + off + 8), w3 = fp_word(ea + off + 12);
-        bool end = w0 & 1;
-        u32 dst = (w0 >> 1) & 0x3F;
-        bool dst_half = (w0 >> 7) & 1;
-        std::string mask = mask_str((w0 >> 9) & 1, (w0 >> 10) & 1, (w0 >> 11) & 1, (w0 >> 12) & 1);
-        u32 attr = (w0 >> 13) & 0xF, tex = (w0 >> 17) & 0xF;
-        u32 op = ((w0 >> 24) & 0x3F) | (((w2 >> 31) & 1) << 6);
-        bool no_dest = (w0 >> 30) & 1, sat = (w0 >> 31) & 1;
-        u32 scale = (w2 >> 28) & 7;
-        bool uses_const = false, flow = op >= 0x40 && op <= 0x45;   // BRK CAL IFE LOOP REP RET: no sources
-        std::string a, b, c;
-        if (!flow) {
-            a = fp_src(w1, attr, (w1 >> 29) & 1, nconst, uses_const);
-            b = fp_src(w2, attr, (w2 >> 18) & 1, nconst, uses_const);
-            c = fp_src(w3, attr, (w3 >> 18) & 1, nconst, uses_const);
-        }
-        off += 16;
-        if (uses_const) {
-            info.const_offsets.push_back(off);
-            nconst++;
-            off += 16;
-        }
-        // condition codes: writes execute per component where CC[cond_reg].swizzle compares (<, ==, >) 0 as enabled;
-        // set_cond also stores the result into CC[cond_mod_reg]
-        u32 cond = (w1 >> 18) & 7;
-        bool cond_all = cond == 7, set_cond = (w0 >> 8) & 1;
-        static const bool cc_swap = getenv("F1CE_FP_CCSWAP") != nullptr;   // debug: swap the tested / written CC bits
-        std::string ccv = "CC[" + std::to_string((w1 >> (cc_swap ? 30 : 31)) & 1) + "]" +
-                          swizzle_str((w1 >> 21) & 3, (w1 >> 23) & 3, (w1 >> 25) & 3, (w1 >> 27) & 3);
-        std::string cond_mask = "(";
-        if (cond & 1) cond_mask += "vec4(lessThan(" + ccv + ", vec4(0.0))) + ";
-        if (cond & 2) cond_mask += "vec4(equal(" + ccv + ", vec4(0.0))) + ";
-        if (cond & 4) cond_mask += "vec4(greaterThan(" + ccv + ", vec4(0.0))) + ";
-        cond_mask += "vec4(0.0))";
-        std::string e;
-        // all lookups go through sample_unit(): v flip for surfaces, depth compare for zeta buffers
-        auto tex2d = [&](const std::string& coord4, bool projective) {
-            info.tex_used |= 1u << tex;
-            std::string t = std::to_string(tex);
-            if (cube_mask & (1u << tex)) return "remap(texture(tex" + t + ", (" + coord4 + ").xyz), " + t + ")";
-            return "sample_unit(tex" + t + ", " + coord4 + ", " + t + ", " + (projective ? "true" : "false") + ")";
-        };
-        switch (op) {
-            case 0x00: break;
-            case 0x01: e = a; break;
-            case 0x02: e = a + " * " + b; break;
-            case 0x03: e = a + " + " + b; break;
-            case 0x04: e = a + " * " + b + " + " + c; break;
-            case 0x05: e = "vec4(dot((" + a + ").xyz, (" + b + ").xyz))"; break;
-            case 0x06: e = "vec4(dot(" + a + ", " + b + "))"; break;
-            case 0x07: e = "vec4(1.0, (" + a + ").y * (" + b + ").y, (" + a + ").z, (" + b + ").w)"; break;
-            case 0x08: e = "min(" + a + ", " + b + ")"; break;
-            case 0x09: e = "max(" + a + ", " + b + ")"; break;
-            case 0x0A: e = "vec4(lessThan(" + a + ", " + b + "))"; break;
-            case 0x0B: e = "vec4(greaterThanEqual(" + a + ", " + b + "))"; break;
-            case 0x0C: e = "vec4(lessThanEqual(" + a + ", " + b + "))"; break;
-            case 0x0D: e = "vec4(greaterThan(" + a + ", " + b + "))"; break;
-            case 0x0E: e = "vec4(notEqual(" + a + ", " + b + "))"; break;
-            case 0x0F: e = "vec4(equal(" + a + ", " + b + "))"; break;
-            case 0x10: e = "fract(" + a + ")"; break;
-            case 0x11: e = "floor(" + a + ")"; break;
-            case 0x12:   // KIL: discard where the condition holds
-                body << "if (" << (cond_all ? "true" : "any(greaterThan(" + cond_mask + ", vec4(0.5)))") << ") discard;\n";
-                break;
-            case 0x15: e = "dFdx(" + a + ")"; break;
-            case 0x16: e = "dFdy(" + a + ")"; break;
-            case 0x17: e = tex2d(a, false); break;
-            case 0x18: e = tex2d(a, true); break;
-            case 0x19: e = tex2d(a, false); break;
-            case 0x1A: e = "vec4(1.0 / (" + a + ").x)"; break;
-            case 0x1B: e = "vec4(inversesqrt(abs((" + a + ").x)))"; break;
-            case 0x1C: e = "vec4(exp2((" + a + ").x))"; break;
-            case 0x1D: e = "vec4(log2((" + a + ").x))"; break;
-            case 0x1E: e = "vec4(1.0, max((" + a + ").x, 0.0), ((" + a + ").x > 0.0) ? pow(max((" + a + ").y, 0.0), (" + a + ").w) : 0.0, 1.0)"; break;
-            case 0x1F: e = "mix(" + c + ", " + b + ", " + a + ")"; break;
-            case 0x20: e = "vec4(1.0)"; break;
-            case 0x21: e = "vec4(0.0)"; break;
-            case 0x22: e = "vec4(cos((" + a + ").x))"; break;
-            case 0x23: e = "vec4(sin((" + a + ").x))"; break;
-            case 0x26: e = "vec4(pow((" + a + ").x, (" + b + ").x))"; break;
-            case 0x2F: e = tex2d(a, false); break;
-            case 0x31: e = tex2d(a, false); break;
-            case 0x38: e = "vec4(dot((" + a + ").xy, (" + b + ").xy))"; break;
-            case 0x39: e = "vec4(normalize((" + a + ").xyz), 1.0)"; break;
-            case 0x3A: e = a + " / (" + b + ").x"; break;
-            case 0x3B: e = a + " * inversesqrt(abs((" + b + ").x))"; break;
-            case 0x3D: case 0x3E: break;   // FENCT / FENCB: ordering fences, no effect here
-            case 0x42: {   // IFE: if (condition) { .. } else { .. }; word 2 = else, word 3 = endif (in 32-bit words)
-                // the crowd shader picks each figure's clothes in such a branch: running both sides painted every
-                // figure in the skin colour of its atlas cell
-                u32 else_off = (w2 & 0x7FFFFFFF) << 2, end_off = (w3 & 0x7FFFFFFF) << 2;
-                body << "if (" << (cond_all ? "true" : "any(greaterThan(" + cond_mask + ", vec4(0.5)))") << ") {\n";
-                if (else_off != end_off) else_offs.push_back(else_off);
-                end_offs.push_back(end_off);
-                break;
-            }
-            default: LOG_W("rsx fp: unsupported opcode 0x%x", op);
-        }
-        {   // raw words (w0 w1 w2 w3, halves swapped) for decoding checks
-            char raw[48];
-            snprintf(raw, sizeof(raw), " [%08x %08x %08x %08x]", w0, w1, w2, w3);
-            body << "// i" << guard << " op " << std::hex << op << std::dec << " cond " << cond << (set_cond ? " setcc" : "") << raw << "\n";
-        }
-        if (!e.empty() && !mask.empty() && cond != 0 && (!no_dest || set_cond)) {
-            static const char* scales[] = {"", " * 2.0", " * 4.0", " * 8.0", "", " / 2.0", " / 4.0", " / 8.0"};
-            std::string ex = "(" + e + ")" + scales[scale];
-            if (sat) ex = "clamp(" + ex + ", 0.0, 1.0)";
-            std::string reg = dst_half ? fp_h_read(dst) : fp_r_read(dst);
-            std::string rbits = "R[" + std::to_string(dst) + "]";
-            // a plain MOV between full registers copies bits (packed halves included)
-            bool bit_move = fp_h_alias() && op == 0x01 && !dst_half && (w1 & 3) == 0 && !((w1 >> 8) & 1) && !sat &&
-                            scale == 0 && !((w1 >> 17) & 1) && !((w1 >> 29) & 1);
-            std::string move_src = "R[" + std::to_string((w1 >> 2) & 0x3F) + "]" +
-                                   swizzle_str((w1 >> 9) & 3, (w1 >> 11) & 3, (w1 >> 13) & 3, (w1 >> 15) & 3);
-            auto write = [&](const std::string& v) {
-                if (dst_half) return fp_h_write(dst, mask, v);
-                if (!fp_h_alias()) return masked_assign(reg, mask, v, false);
-                return masked_assign(rbits, mask, "floatBitsToUint(" + v + ")", false);
-            };
-            std::string cc = "CC[" + std::to_string((w1 >> (cc_swap ? 31 : 30)) & 1) + "]";
-            if (cond_all) {
-                if (!no_dest) body << (bit_move ? masked_assign(rbits, mask, move_src, false) : write(ex)) << "\n";
-                static const bool no_setcc = getenv("F1CE_FP_NOSETCC") != nullptr;   // debug experiment
-                if (set_cond && !no_setcc) body << masked_assign(cc, mask, ex, false) << "\n";
-            } else {
-                body << "{ vec4 t = " << ex << "; vec4 m = step(vec4(0.5), " << cond_mask << ");\n";
-                if (!no_dest && bit_move) body << masked_assign(rbits, mask, "r_sel(" + rbits + ", " + move_src + ", m)", false) << "\n";
-                else if (!no_dest && !dst_half && fp_h_alias())
-                    body << masked_assign(rbits, mask, "r_sel(" + rbits + ", floatBitsToUint(t), m)", false) << "\n";
-                else if (!no_dest) body << write("mix(" + reg + ", t, m)") << "\n";
-                if (set_cond) body << masked_assign(cc, mask, "mix(" + cc + ", t, m)", false) << "\n";
-                body << "}\n";
-            }
-        }
-        // debug: F1CE_FP_STOP=<n>:<R|H><m> outputs register m right after instruction n (every program that long)
-        static const char* fp_stop = getenv("F1CE_FP_STOP");
-        if (fp_stop && g_fp_stop_here && guard == atoi(fp_stop)) {
-            const char* r = strchr(fp_stop, ':');
-            if (r && r[1] == 'v')   // interpolated input v_tex[m]
-                body << "{ frag_color = vec4(abs(v_tex[" << atoi(r + 2) << "].xyz), 1.0); return; }\n";
-            else if (r && r[1] == 'f')   // fog: red = factor (fogc.y), green = fog input / 1000
-                body << "{ frag_color = vec4(clamp(fogc.y, 0.0, 1.0), clamp(abs(fogc.x) / 1000.0, 0.0, 1.0), 0.0, 1.0); return; }\n";
-            else if (r && r[1] == 'c')
-                body << "{ frag_color = vec4(abs(v_col0.xyz), 1.0); return; }\n";
-            else if (r && r[1] == 'C')   // condition register: > 0 / == 0 / < 0 per component y,z,w -> 1.0 / 0.5 / 0.0
-                body << "{ vec4 x = CC[" << atoi(r + 2) << "]; frag_color = vec4(step(0.0, x.yzw) * 0.5 + step(0.0, -x.yzw) * -0.5 + 0.5, 1.0); return; }\n";
-            else if (r && (r[1] == 'R' || r[1] == 'H') && getenv("F1CE_FP_STOP_NAN"))   // red = NaN, green = Inf
-                body << "{ vec3 x = " << (r[1] == 'H' ? fp_h_read(atoi(r + 2)) : fp_r_read(atoi(r + 2))) << ".xyz; frag_color = vec4(any(isnan(x)) ? 1.0 : 0.0, "
-                     << "any(isinf(x)) ? 1.0 : 0.0, 0.0, 1.0); return; }\n";
-            else if (r && (r[1] == 'R' || r[1] == 'H'))
-                body << "{ frag_color = vec4(abs(" << (r[1] == 'H' ? fp_h_read(atoi(r + 2)) : fp_r_read(atoi(r + 2))) << "."
-                     << (getenv("F1CE_FP_STOP_SWZ") ? getenv("F1CE_FP_STOP_SWZ") : "xyz") << ") * "   // e.g. wwx
-                     << (getenv("F1CE_FP_STOP_SCALE") ? getenv("F1CE_FP_STOP_SCALE") : "1.0") << ", 1.0); return; }\n";
-        }
-        if (end) break;
-    }
-    for (size_t i = 0; i < end_offs.size(); i++) body << "}\n";   // blocks that end with the program
-    info.size = off;
-    std::ostringstream src;
-    src << "#version 420 core\n";
-    // debug: F1CE_SHADER_SALT=<text> makes every program new to the disk cache (cold compile tests)
-    if (const char* salt = getenv("F1CE_SHADER_SALT")) src << "// " << salt << "\n";
-    src << "in vec4 v_col0; in vec4 v_col1; in vec4 v_fog; in vec4 v_tex[10];\n";
-    for (int i = 0; i < 16; i++) src << ((cube_mask >> i) & 1 ? "uniform samplerCube tex" : "uniform sampler2D tex") << i << ";\n";
-    // u_tex_scale: 1/size for textures with unnormalized (texel) coordinates (format bit 0x40), else 1
-    if (scaled_glsl()) src << "uniform float u_ui_clamp;\n";
-    src << "uniform float u_tex_flip[16];\nuniform vec2 u_tex_scale[16];\n"
-           "vec2 tex_coord(vec2 c, int u) { c *= u_tex_scale[u]; return u_tex_flip[u] > 0.5 ? vec2(c.x, 1.0 - c.y) : c; }\n"
-           "uniform float u_tex_depth[16];\n"
-           // TEXTURE_CONTROL1 remap: bits 2i..2i+1 = source (0 A, 1 R, 2 G, 3 B) of output i (0 A, 1 R, 2 G, 3 B),
-           // bits 8+2i.. = 0 zero, 1 one, 2 the source; 0xaae4 is the identity
-           // bits 16-19: TEXTURE_ADDRESS gamma (sRGB decode of R, G, B, A), bit 20: unsigned remap BIASED (x * 2 - 1),
-           // applied to the fetched texel before the remap
-           "uniform float u_remap[16];\n"
-
-           "vec4 remap(vec4 v, int u) {\n"
-           " int r = int(u_remap[u]), c = r >> 16; r &= 0xFFFF;\n"
-           " if (c != 0) {\n"
-           "  vec4 m = vec4(ivec4(c, c >> 1, c >> 2, c >> 3) & 1);\n"
-           "  v = mix(v, v * (v * (v * 0.305306011 + 0.682171111) + 0.012522878), m);\n"
-           "  if ((c & 16) != 0) v = v * 2.0 - 1.0;\n"
-           " }\n"
-           " if (r == 0xaae4) return v;\n"
-           " vec4 s = vec4(v.a, v.r, v.g, v.b); vec4 o;\n"
-           " for (int i = 0; i < 4; i++) { int op = (r >> (8 + 2 * i)) & 3; o[i] = op == 0 ? 0.0 : op == 1 ? 1.0 : s[(r >> (2 * i)) & 3]; }\n"
-           " return vec4(o.y, o.z, o.w, o.x);\n"
-           "}\n"
-           "vec4 sample_unit(sampler2D t, vec4 c, int u, bool proj) {\n"
-           " vec3 p = proj ? c.xyz / c.w : c.xyz;\n";
-    // resolution scaling: draws without depth test (2D interface, full-screen passes) keep coordinates inside [0, 1]
-    // half a texel from the edges. Their quads map textures 1:1 onto pixels: at native size every sample hits a
-    // texel centre, at a higher scale the edge samples blended in the opposite edge of repeating textures (a
-    // coloured line down the Quick Race menu at the portrait's edge). Coordinates outside [0, 1] repeat as before.
-    if (scaled_glsl())
-        src << " vec2 tc = tex_coord(p.xy, u);\n"
-               " if (u_ui_clamp > 0.5 && all(greaterThanEqual(tc, vec2(0.0))) && all(lessThanEqual(tc, vec2(1.0)))) {\n"
-               "  vec2 hh = 0.5 / vec2(textureSize(t, 0)); tc = clamp(tc, hh, 1.0 - hh);\n"
-               " }\n"
-               " vec4 v = texture(t, tc);\n";
-    else
-        src << " vec4 v = texture(t, tex_coord(p.xy, u));\n";
-    src << " int f = int(u_tex_depth[u]);\n"
-           " if (f == 0) return remap(v, u);\n"
-           " if (f == 9) {   // D24S8 zeta read with a colour format: A = d[23:16], R = d[15:8], G = d[7:0], B = stencil\n"
-           "  uint z = uint(v.r * 16777215.0 + 0.5);\n"
-           "  return remap(vec4(float((z >> 8) & 255u), float(z & 255u), 0.0, float(z >> 16)) / 255.0, u);\n"
-           " }\n"
-           " if (f == 12) return remap(vec4(v.b), u);   // B8 render target (stores blue) read as a B8 texture\n"
-           " float d = v.r, r = clamp(p.z, 0.0, 1.0); bool pass;\n"
-           " if (f == 10) return vec4(d); if (f == 11) return vec4(p.z);   // debug (F1CE_ZFUNC): stored depth / reference\n"
-           // linear filtering of a depth compare (f + 16) is percentage-closer filtering on the RSX: the four texels
-           // are compared, then the results are weighted bilinearly. Comparing the filtered depth spread wrong
-           // shadows along depth edges (dark smears around the wheels and suspension).
-           " if (f >= 16) {\n"
-           "  f -= 16;\n"
-           "  vec2 sz = vec2(textureSize(t, 0)), q = tex_coord(p.xy, u) * sz - 0.5, w = fract(q);\n"
-           "  vec4 g = textureGather(t, (floor(q) + 1.0) / sz, 0);   // (x0,y1) (x1,y1) (x1,y0) (x0,y0)\n"
-           "  vec4 c;\n"
-           "  for (int i = 0; i < 4; i++) {\n"
-           "   float e = g[i]; bool ps;\n"
-           "   if (f == 1) ps = false; else if (f == 2) ps = e < r; else if (f == 3) ps = e == r;\n"
-           "   else if (f == 4) ps = e <= r; else if (f == 5) ps = e > r; else if (f == 6) ps = e != r;\n"
-           "   else if (f == 7) ps = e >= r; else ps = true;\n"
-           "   c[i] = ps ? 1.0 : 0.0;\n"
-           "  }\n"
-           "  return vec4(mix(mix(c.w, c.z, w.x), mix(c.x, c.y, w.x), w.y));\n"
-           " }\n"
-           // RSX texture depth compare is "stored FUNC reference" (the reverse of GL's ref-to-texture order); the GL
-           // order put the player car in its own shadow and darkened the whole race scene
-           " if (f == 1) pass = false; else if (f == 2) pass = d < r; else if (f == 3) pass = d == r;\n"
-           " else if (f == 4) pass = d <= r; else if (f == 5) pass = d > r; else if (f == 6) pass = d != r;\n"
-           " else if (f == 7) pass = d >= r; else pass = true;\n"
-           " return vec4(pass ? 1.0 : 0.0);\n"
-           "}\n";
-    // FOGC input: x = the VP fog output, y = fog factor from FOG_MODE / FOG_PARAMS (u_fog = mode, p0, p1)
-    src << "vec4 h_lo(uvec4 r) { return vec4(unpackHalf2x16(r.x), unpackHalf2x16(r.y)); }\n"
-           "vec4 h_hi(uvec4 r) { return vec4(unpackHalf2x16(r.z), unpackHalf2x16(r.w)); }\n"
-           "uvec2 h_pack(vec4 v) { return uvec2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }\n"
-           "uvec4 r_sel(uvec4 a, uvec4 b, vec4 m) {\n"
-           " return uvec4(m.x > 0.5 ? b.x : a.x, m.y > 0.5 ? b.y : a.y, m.z > 0.5 ? b.z : a.z, m.w > 0.5 ? b.w : a.w);\n"
-           "}\n";
-    src << "uniform vec4 u_fog;\n"
-           "vec4 fog_value() {\n"
-           " float x = v_fog.x, p0 = u_fog.y, p1 = u_fog.z, y; int m = int(u_fog.x);\n"
-           " if (m >= 3) x = abs(x);   // *_ABS modes\n"
-           " if (m == 0 || m == 3) y = p1 * x + (p0 - 1.0);\n"
-           " else if (m == 1 || m == 4) y = exp(11.084 * (p1 * x + p0 - 1.5));\n"
-           " else y = exp(-pow(4.709 * (p1 * x + p0 - 1.5), 2.0));\n"
-           " return vec4(v_fog.x, clamp(y, 0.0, 1.0), 0.0, 0.0);\n"
-           "}\n";
-    if (scaled_glsl()) src << "uniform float u_res_scale;\n";
-    src << "uniform vec4 FC[" << std::max(nconst, 1) << "];\nuniform vec4 u_alpha_test;\nuniform vec2 u_prog_id;\nout vec4 frag_color;\n"
-           "void main() {\n vec4 CC[2]; CC[0] = vec4(0.0); CC[1] = vec4(0.0);\n vec4 fogc = fog_value();\n";
-    // WPOS.w is the clip-space w on the RSX; gl_FragCoord.w is 1/w. The crowd impostors multiply a texture coordinate
-    // by it to recover texel coordinates in their figure table: with 1/w they read texels near the origin (empty)
-    static const bool wpos_raw_all = getenv("F1CE_WPOS_CLIP_W") == nullptr;   // debug experiment: WPOS.w = clip w
-    // F1CE_WPOS_CLIP_W_FP=<fp hash>,...: the experiment for those programs only (bisecting)
-    static const std::string wpos_fps = getenv("F1CE_WPOS_CLIP_W_FP") ? "," + std::string(getenv("F1CE_WPOS_CLIP_W_FP")) + "," : "";
-    char fhk[24];
-    snprintf(fhk, sizeof(fhk), ",%016llx,", (unsigned long long)g_fp_hash_cur);
-    bool listed = wpos_fps.find(fhk) != std::string::npos, except = wpos_fps.size() > 1 && wpos_fps[1] == '-';   // "-<hash>,..": all but
-    bool wpos_raw = wpos_raw_all && (wpos_fps.empty() || (except ? listed : !listed));
-    if (scaled_glsl())
-        src << " vec4 wpos = vec4(gl_FragCoord.xy / u_res_scale, gl_FragCoord.z, " << (wpos_raw ? "gl_FragCoord.w" : "1.0 / gl_FragCoord.w") << ");\n";
-    else
-        src << (wpos_raw ? " vec4 wpos = gl_FragCoord;\n" : " vec4 wpos = vec4(gl_FragCoord.xyz, 1.0 / gl_FragCoord.w);\n");
-    {   // only the registers the program uses (R1 for depth export, H0/R0 for the output)
-        int nr = array_size(body.str(), "R", 2), nh = array_size(body.str(), "H", 1);
-        src << (fp_h_alias() ? " uvec4 R[" : " vec4 R[") << nr << "]; for (int i = 0; i < " << nr << "; i++) R[i] = "
-            << (fp_h_alias() ? "uvec4(0u)" : "vec4(0.0)") << ";\n"
-            << " vec4 H[" << nh << "]; for (int i = 0; i < " << nh << "; i++) H[i] = vec4(0.0);\n";
-    }
-    src << body.str();
-    static const bool force_r0 = getenv("F1CE_FP_FORCE_R0") != nullptr;   // debug experiment
-    src << " frag_color = " << ((shader_control & 0x40) || force_r0 ? fp_r_read(0) : fp_h_read(0)) << ";\n";
-    if (shader_control & 0xE) src << " gl_FragDepth = " << fp_r_read(1) << ".z;\n";   // depth export: fragment depth from R1.z
-    // debug: F1CE_FP_DEBUG=1 shows the raw unit-0 texture for shaders that sample it (bypasses lighting)
-    //        F1CE_FP_DEBUG=<n> (n = 0..9) shows the interpolated input v_tex[n].xyz instead
-    static const char* fp_debug = getenv("F1CE_FP_DEBUG");
-    if (fp_debug && (info.tex_used & 1)) {
-        int n = atoi(fp_debug);
-        if (*fp_debug == 't') src << " frag_color = vec4(texture(tex0, tex_coord(v_tex[0].xy, 0)).rgb, frag_color.a);\n";
-        else if (*fp_debug == 'R' || *fp_debug == 'H')   // F1CE_FP_DEBUG=R3 / H1: show a register's final value
-            src << " frag_color = vec4(abs(" << (*fp_debug == 'H' ? fp_h_read(std::clamp(atoi(fp_debug + 1), 0, 63)) : fp_r_read(std::clamp(atoi(fp_debug + 1), 0, 63))) << ".xyz), frag_color.a);\n";
-        else src << " frag_color = vec4(abs(v_tex[" << std::clamp(n, 0, 9) << "].xyz), frag_color.a);\n";
-    }
-    // debug: F1CE_PROG_ID=1 paints every program in a colour encoding its id (R = id & 255, G = id >> 8)
-    if (getenv("F1CE_PROG_ID")) src << " frag_color = vec4(u_prog_id.xy, 0.5, 1.0);\n";
-    // alpha test: x = enabled, y = func (GL enum - 0x200), z = ref
-    src << " if (u_alpha_test.x > 0.5) {\n"
-           "  int f = int(u_alpha_test.y); float a = frag_color.a, r = u_alpha_test.z; bool pass = true;\n"
-           "  if (f == 0) pass = false; else if (f == 1) pass = a < r; else if (f == 2) pass = a == r;\n"
-           "  else if (f == 3) pass = a <= r; else if (f == 4) pass = a > r; else if (f == 5) pass = a != r;\n"
-           "  else if (f == 6) pass = a >= r;\n"
-           "  if (!pass) discard;\n }\n"
-           // SHADER_PACKER (0x1FD8) bit 0: sRGB output (the game lights in linear space: textures are decoded on fetch
-           // by their TEXTURE_ADDRESS gamma bits and the result is encoded when written)
-           " if (u_alpha_test.w > 0.5) {\n"
-           "  vec3 c = clamp(frag_color.rgb, 0.0, 1.0);\n"
-           "  frag_color.rgb = mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));\n"
-           " }\n}\n";
-    info.glsl = src.str();
-    return info;
-}
 
 struct Program {
     GLuint prog = 0;
@@ -1154,26 +457,6 @@ std::unordered_map<u64, std::pair<GLuint, FPInfo>> g_fp_cache;   // fp hash -> s
 struct VPEntry { GLuint sh = 0; std::string glsl; };
 std::unordered_map<u64, VPEntry> g_vp_cache;
 
-// Linked programs are cached on disk (shader_cache/ next to the executable, keyed by the GLSL sources and the GL
-// driver): compiling the few hundred programs of a race scene took seconds on the first frames, during which no
-// frame was presented (white screen after loading).
-std::string shader_cache_dir() {
-    static std::string dir = [] {
-        std::string d = "shader_cache";
-#ifdef _WIN32
-        char path[MAX_PATH];
-        DWORD n = GetModuleFileNameA(nullptr, path, MAX_PATH);
-        if (n && n < MAX_PATH) {
-            std::string s(path, n);
-            size_t slash = s.find_last_of("\\/");
-            if (slash != std::string::npos) d = s.substr(0, slash + 1) + "shader_cache";
-        }
-        CreateDirectoryA(d.c_str(), nullptr);
-#endif
-        return d;
-    }();
-    return dir;
-}
 u64 g_compile_us = 0, g_compiled = 0, g_cache_hits = 0, g_preload_hits = 0;
 
 // Program preload: loading a cached binary when a program is first drawn costs ~10 ms (glProgramBinary), which made
@@ -1182,7 +465,6 @@ u64 g_compile_us = 0, g_compiled = 0, g_cache_hits = 0, g_preload_hits = 0;
 std::mutex g_pre_m;
 std::unordered_map<u64, GLuint> g_preloaded;   // disk cache key -> linked program, ready for the render context
 std::set<u64> g_used_keys;                     // keys listed in used.txt (render thread only)
-std::string shader_cache_dir();
 
 void start_preload() {
     static bool started = false;
@@ -1241,27 +523,6 @@ void start_preload() {
 }
 u64 g_start_us = 0;   // first flip
 
-u64 hash_words(const u32* p, size_t n, u64 h = 1469598103934665603ull) {
-    for (size_t i = 0; i < n; i++) { h ^= p[i]; h *= 1099511628211ull; }
-    return h;
-}
-
-// hashes the FP instructions only (inline constants excluded so constant changes reuse the shader)
-u64 hash_fp(u32 ea, u32& size_out) {
-    u64 h = 1469598103934665603ull;
-    u32 off = 0;
-    for (int guard = 0; guard < 2048; guard++) {
-        u32 w[4];
-        for (int i = 0; i < 4; i++) w[i] = fp_word(ea + off + i * 4);
-        h = hash_words(w, 4, h);
-        off += 16;
-        bool uses_const = (w[1] & 3) == 2 || (w[2] & 3) == 2 || (w[3] & 3) == 2;
-        if (uses_const) off += 16;
-        if (w[0] & 1) break;
-    }
-    size_out = off;
-    return h;
-}
 
 // uniform locations and sampler units of a linked program
 void setup_program(Program& p) {
@@ -1387,30 +648,6 @@ bool start_compile_thread() {
     return true;
 }
 
-// Program database (shader_cache/programs.bin): the guest microcode of every program pair the game has used (vertex
-// program slots, fragment program bytes, shader control, cube mask). At start-up, before the renderer runs its first
-// command, every entry is translated again with the current translator and its GL program is loaded from the binary
-// cache or compiled, with a progress bar in the window: programs are never compiled or loaded during play any more
-// (stutter, white screens while a new screen's programs compiled), also after a translator change or a new scale.
-// Programs the game has never used before are still compiled once when they first appear, and recorded.
-struct ProgRecord { u32 magic, vp_start, vp_len, fp_ea, fp_size, shader_control, cube_mask, pad; u64 vh, fh; };
-constexpr u32 PROG_MAGIC = 0x46314442;   // "F1DB"
-std::set<u64> g_db_keys;   // program pairs in the database (vh * 31 + fh)
-bool g_db_loaded = false;
-
-void db_record(u32 vp_start, u32 vp_len, u32 fp_ea, u32 fp_size, u32 shader_control, u32 cube_mask, u64 vh, u64 fh) {
-    if (!g_db_loaded || !g_db_keys.insert(vh * 31 + fh).second || fp_size == 0 || fp_size > 65536) return;
-    FILE* f = fopen((shader_cache_dir() + "/programs.bin").c_str(), "ab");
-    if (!f) return;
-    ProgRecord r{PROG_MAGIC, vp_start, vp_len, fp_ea, fp_size, shader_control, cube_mask, 0, vh, fh};
-    fwrite(&r, sizeof(r), 1, f);
-    fwrite(&vp_words[vp_start * 4], 4, (size_t)vp_len * 4, f);
-    std::vector<u8> fp(fp_size);
-    for (u32 o = 0; o < fp_size; o += 4) { u32 v = __builtin_bswap32(ld32(fp_ea + o)); memcpy(&fp[o], &v, 4); }   // as in memory
-    fwrite(fp.data(), 1, fp_size, f);
-    fclose(f);
-}
-
 // the GLSL of a program pair and its disk cache key (as get_program builds them)
 std::string program_renderer_id() {
     static const std::string r = (const char*)glGetString(GL_RENDERER) + std::string("|") + (const char*)glGetString(GL_VERSION);
@@ -1449,20 +686,7 @@ void progress_bar(double frac, const char* what) {
 }
 
 void precompile_programs() {
-    g_db_loaded = true;
-    FILE* f = fopen((shader_cache_dir() + "/programs.bin").c_str(), "rb");
-    if (!f) { LOG_I("rsx: no program database yet (shader_cache/programs.bin)"); return; }
-    struct Entry { ProgRecord r; std::vector<u32> vp; std::vector<u8> fp; };
-    std::vector<Entry> entries;
-    for (;;) {
-        Entry e;
-        if (fread(&e.r, sizeof(e.r), 1, f) != 1 || e.r.magic != PROG_MAGIC || e.r.vp_start + e.r.vp_len > 512 || e.r.fp_size > 65536) break;
-        e.vp.resize((size_t)e.r.vp_len * 4);
-        e.fp.resize(e.r.fp_size);
-        if (fread(e.vp.data(), 4, e.vp.size(), f) != e.vp.size() || fread(e.fp.data(), 1, e.fp.size(), f) != e.fp.size()) break;
-        if (g_db_keys.insert(e.r.vh * 31 + e.r.fh).second) entries.push_back(std::move(e));
-    }
-    fclose(f);
+    std::vector<ProgEntry> entries = load_program_db();
     if (entries.empty()) return;
     static const bool off = getenv("F1CE_NO_PRECOMPILE") != nullptr;   // debug: skip the phase (database still recorded)
     if (off) return;
@@ -1471,7 +695,7 @@ void precompile_programs() {
     u32 loaded = 0, compiled = 0, failed = 0;
     std::unordered_map<u64, std::string> vs_of;   // vertex programs are shared by many pairs: translated once
     for (size_t i = 0; i < entries.size(); i++) {
-        const Entry& e = entries[i];
+        const ProgEntry& e = entries[i];
         if (time_usec() - last_bar > 50000) { progress_bar((double)i / entries.size(), "shaders"); last_bar = time_usec(); }
         auto vit = vs_of.find(e.r.vh);
         if (vit == vs_of.end()) {
@@ -1717,24 +941,6 @@ Program* get_program(std::vector<float>& fp_consts) {
 // ------------------------------------------------------------------ textures
 // change-detection hash of guest memory: four independent multiply chains (one chain is latency-bound);
 // step > 8 samples one 8-byte word per step
-u64 hash_range(const u8* p, u32 bytes, u32 step) {
-    u64 h0 = 1469598103934665603ull, h1 = 0x9E3779B97F4A7C15ull, h2 = 0xC2B2AE3D27D4EB4Full, h3 = 0x165667B19E3779F9ull;
-    constexpr u64 M = 1099511628211ull;
-    u32 k = 0;
-    if (step == 8) {
-        for (; k + 32 <= bytes; k += 32) {
-            u64 x0, x1, x2, x3;
-            memcpy(&x0, p + k, 8); memcpy(&x1, p + k + 8, 8); memcpy(&x2, p + k + 16, 8); memcpy(&x3, p + k + 24, 8);
-            h0 = (h0 ^ x0) * M; h1 = (h1 ^ x1) * M; h2 = (h2 ^ x2) * M; h3 = (h3 ^ x3) * M;
-        }
-        for (; k + 8 <= bytes; k += 8) { u64 x; memcpy(&x, p + k, 8); h0 = (h0 ^ x) * M; }
-        for (; k < bytes; k++) h1 = (h1 ^ p[k]) * M;
-    } else {
-        for (; k + 8 <= bytes; k += step) { u64 x; memcpy(&x, p + k, 8); h0 = (h0 ^ x) * M; }
-    }
-    return h0 ^ (h1 * 3) ^ (h2 * 5) ^ (h3 * 7) ^ bytes;
-}
-
 // cache entries keep their full identity: keys are hashes, and a static entry is used without re-hashing its data,
 // so a colliding key must not hand out another draw's buffer
 struct VtxEntry {
@@ -1743,86 +949,21 @@ struct VtxEntry {
     u32 id_src = 0, id_fmt = 0, id_min = 0, id_freq = 0;
     bool id_mod = false;
 };
-FORCE_INLINE u64 mix64(u64 x) {   // splitmix64 finalizer
-    x ^= x >> 30; x *= 0xBF58476D1CE4E5B9ull;
-    x ^= x >> 27; x *= 0x94D049BB133111EBull;
-    return x ^ (x >> 31);
-}
 std::unordered_map<u64, VtxEntry> g_vtx_cache;   // converted vertex attribute buffers (see draw())
-// Block heaps: raw vertex data (vertex pulling) and converted index lists that stay for several frames. Blocks are
-// never rewritten: changed data gets a new block and the old one is reused only after the GPU finished the frame
-// that freed it.
-struct BlockHeap {
-    static constexpr u32 ALIGN = 256;
-    u32 size = 0;
-    GLuint buf = 0, tex = 0, ring_tex = 0;
-    u8* ptr = nullptr;                        // persistently mapped (index arena)
-    std::map<u32, u32> free_off;              // offset -> size
-    std::multimap<u32, u32> free_size;        // size -> offset
-    struct Pending { u64 frame; u32 off, size; };
-    std::deque<Pending> pending;              // freed blocks waiting for their frame's fence
-    std::deque<std::pair<u64, GLsync>> fences;   // end-of-frame fences
-    u64 done_frame = 0;                       // the GPU finished every frame up to this one
-    u32 used = 0, failed = 0;
-};
 BlockHeap g_heap;    // vertex heap (video memory)
 BlockHeap g_iheap;   // index arena (mapped, see iarena_init)
-
-void heap_insert_free(BlockHeap& h, u32 off, u32 size) {   // with coalescing of neighbours
-    auto erase_size = [&h](u32 o, u32 sz) {
-        auto r = h.free_size.equal_range(sz);
-        for (auto it = r.first; it != r.second; ++it) if (it->second == o) { h.free_size.erase(it); return; }
-    };
-    auto next = h.free_off.lower_bound(off);
-    if (next != h.free_off.end() && next->first == off + size) {
-        size += next->second;
-        erase_size(next->first, next->second);
-        next = h.free_off.erase(next);
-    }
-    if (next != h.free_off.begin()) {
-        auto prev = std::prev(next);
-        if (prev->first + prev->second == off) {
-            erase_size(prev->first, prev->second);
-            off = prev->first;
-            size += prev->second;
-            h.free_off.erase(prev);
-        }
-    }
-    h.free_off[off] = size;
-    h.free_size.emplace(size, off);
-}
-
-// a block of `bytes` in the heap (offset), ~0u when full
-u32 heap_alloc(BlockHeap& h, u32 bytes) {
-    bytes = (bytes + BlockHeap::ALIGN - 1) & ~(BlockHeap::ALIGN - 1);
-    auto it = h.free_size.lower_bound(bytes);
-    if (it == h.free_size.end()) { h.failed++; return ~0u; }
-    u32 off = it->second, size = it->first;
-    h.free_size.erase(it);
-    h.free_off.erase(off);
-    if (size > bytes) heap_insert_free(h, off + bytes, size - bytes);
-    h.used += bytes;
-    return off;
-}
-
-void heap_free(BlockHeap& h, u32 off, u32 bytes) {
-    if (off == ~0u) return;
-    bytes = (bytes + BlockHeap::ALIGN - 1) & ~(BlockHeap::ALIGN - 1);
-    h.pending.push_back({g_frame, off, bytes});
-    h.used -= bytes;
-}
 
 // at each flip: fence the frame, return the blocks freed by frames the GPU has finished
 void heap_end_frame(BlockHeap& h) {
     if (!h.buf) return;
-    h.fences.push_back({g_frame, glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)});
+    h.fences.push_back({g_frame, (void*)glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)});
     while (!h.fences.empty()) {
-        GLenum r = glClientWaitSync(h.fences.front().second, 0, 0);
+        GLenum r = glClientWaitSync((GLsync)h.fences.front().second, 0, 0);
         if (r != GL_ALREADY_SIGNALED && r != GL_CONDITION_SATISFIED && h.fences.size() < 8) break;
         if (r != GL_ALREADY_SIGNALED && r != GL_CONDITION_SATISFIED)   // too many frames in flight: wait
-            glClientWaitSync(h.fences.front().second, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000ull);
+            glClientWaitSync((GLsync)h.fences.front().second, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000ull);
         h.done_frame = h.fences.front().first;
-        glDeleteSync(h.fences.front().second);
+        glDeleteSync((GLsync)h.fences.front().second);
         h.fences.pop_front();
     }
     while (!h.pending.empty() && h.pending.front().frame <= h.done_frame) {
@@ -1831,14 +972,6 @@ void heap_end_frame(BlockHeap& h) {
     }
 }
 
-struct IdxEntry {
-    u32 off = ~0u, bytes = 0;   // block in the index arena (~0u: none)
-    u64 hash = 0; u32 count = 0, min_v = 0, max_v = 0; u64 last_change = 0, last_frame = 0;
-    u32 id_src = 0, id_count = 0, id_flags = 0;
-    u64 seen_frame = 0;   // as VtxEntry::seen_frame
-    u64 checked_frame = ~0ull;
-};
-std::unordered_map<u64, IdxEntry> g_idx_cache;   // converted index lists (see draw())
 GLuint g_attr_buf[16];   // vertex buffer bound to each attribute binding of the VAO
 GLintptr g_attr_off[16];   // ... and its offset
 
@@ -1853,20 +986,9 @@ struct RegionEntry {
     u64 last_change = 0;   // frame the content last changed: recently changing small regions are checked every draw
 };
 std::unordered_map<u64, RegionEntry> g_regions;
-// Index regions: the raw index buffer (byte-swapped, restart index marked) converted over a range that grows to cover
-// the draws, which then draw at an offset with base vertex -min_v instead of rebuilding and rebasing their own list
-// (sub-ranges of static index buffers change with the camera; ~500k indices were rebuilt per frame)
-struct IdxRegion {
-    u32 off = ~0u, bytes = 0;   // block in the index arena
-    u32 ea = 0, flags = 0, first = 0, count = 0;
-    u64 hash = 0, checked_frame = ~0ull, last_frame = 0;
-    u32 changes = 0;   // content changes seen: rewritten (ring) buffers go back to per-draw lists
-    std::vector<u32> cpu;                                   // converted indices (for min/max of sub-ranges)
-    std::unordered_map<u64, std::pair<u32, u32>> minmax;    // (first << 32 | count) -> vertex range
-};
-std::unordered_map<u64, IdxRegion> g_idx_regions;
 
 // drops vertex/index buffers not drawn for 120 frames (dynamic geometry in ring buffers gets a new key every frame)
+void evict_index_caches();
 void evict_buffers() {
     std::vector<GLuint> dead;
     for (auto it = g_vtx_cache.begin(); it != g_vtx_cache.end();)
@@ -1874,11 +996,7 @@ void evict_buffers() {
             if (it->second.buf) dead.push_back(it->second.buf);
             it = g_vtx_cache.erase(it);
         } else ++it;
-    for (auto it = g_idx_regions.begin(); it != g_idx_regions.end();)
-        if (g_frame - it->second.last_frame > 120) {
-            heap_free(g_iheap, it->second.off, it->second.bytes);
-            it = g_idx_regions.erase(it);
-        } else ++it;
+    evict_index_caches();
     for (auto it = g_regions.begin(); it != g_regions.end();)
         if (g_frame - it->second.last_frame > 120) {
             if (it->second.buf) dead.push_back(it->second.buf);
@@ -1886,29 +1004,12 @@ void evict_buffers() {
         } else ++it;
     for (GLuint b : dead)
         for (GLuint& a : g_attr_buf) if (a == b) a = 0;   // deleting unbinds it from the VAO
-    for (auto it = g_idx_cache.begin(); it != g_idx_cache.end();)
-        if (g_frame - it->second.last_frame > 120) {
-            heap_free(g_iheap, it->second.off, it->second.bytes);
-            it = g_idx_cache.erase(it);
-        } else ++it;
     if (!dead.empty()) glDeleteBuffers((GLsizei)dead.size(), dead.data());
 }
 
 struct TexEntry { GLuint tex = 0; u64 hash = 0; u32 w = 0, h = 0, fmt = 0; u64 checked_frame = ~0ull, last_change = 0; };
 std::unordered_map<u64, TexEntry> g_textures;
 
-u32 morton(u32 x, u32 y, u32 log_w, u32 log_h) {
-    // RSX swizzle: interleave x/y bits while both have bits left, then the remaining bits of the larger one
-    u32 off = 0, shift = 0;
-    u32 lw = log_w, lh = log_h;
-    while (lw || lh) {
-        if (lw) { off |= (x & 1) << shift++; x >>= 1; lw--; }
-        if (lh) { off |= (y & 1) << shift++; y >>= 1; lh--; }
-    }
-    return off;
-}
-
-u32 ilog2(u32 v) { u32 r = 0; while ((1u << r) < v) r++; return r; }
 
 // Texture decoding on the GPU (roadmap step 2): the raw level bytes go into a staging buffer texture and a compute
 // shader deswizzles and converts them (the formats of the CPU loop below, same results) straight into the texture
@@ -1929,32 +1030,9 @@ bool tex_gpu() {
         "uniform ivec4 u_lvl;   // x = byte offset of the level, y = width, z = height, w = format\n"
         "uniform ivec4 u_lay;   // x = linear, y = row pitch in bytes, z = bytes per texel, w = log2(w) | log2(h) << 8\n"
         "uint rd8(int a) { return (texelFetch(u_src, a >> 2).r >> uint((a & 3) * 8)) & 255u; }\n"
-        "uint rd16(int a) { return (rd8(a) << 8) | rd8(a + 1); }\n"
-        "uint rd32(int a) { return (rd16(a) << 16) | rd16(a + 2); }\n"
-        "uint morton(uint x, uint y, int lw, int lh) {   // as morton() on the CPU\n"
-        " uint off = 0u; int shift = 0;\n"
-        " while (lw > 0 || lh > 0) {\n"
-        "  if (lw > 0) { off |= (x & 1u) << shift; shift++; x >>= 1; lw--; }\n"
-        "  if (lh > 0) { off |= (y & 1u) << shift; shift++; y >>= 1; lh--; }\n"
-        " }\n"
-        " return off;\n"
-        "}\n"
-        "void main() {\n"
-        " ivec2 p = ivec2(gl_GlobalInvocationID.xy);\n"
-        " if (p.x >= u_lvl.y || p.y >= u_lvl.z) return;\n"
-        " int bpp = u_lay.z;\n"
-        " int texel = u_lay.x != 0 ? p.y * u_lay.y + p.x * bpp : int(morton(uint(p.x), uint(p.y), u_lay.w & 255, u_lay.w >> 8)) * bpp;\n"
-        " int a = u_lvl.x + texel, f = u_lvl.w;\n"
-        " uvec4 c;   // r g b a\n"
-        " if (f == 0x81) { uint v = rd8(a); c = uvec4(v); }\n"
-        " else if (f == 0x83) { uint v = rd16(a); c = uvec4((v >> 8) & 15u, (v >> 4) & 15u, v & 15u, (v >> 12) & 15u) * 17u; }\n"
-        " else if (f == 0x82) { uint v = rd16(a); c = uvec4(((v >> 10) & 31u) * 255u / 31u, ((v >> 5) & 31u) * 255u / 31u, (v & 31u) * 255u / 31u, (v >> 15) != 0u ? 255u : 0u); }\n"
-        " else if (f == 0x84) { uint v = rd16(a); c = uvec4(((v >> 11) & 31u) * 255u / 31u, ((v >> 5) & 63u) * 255u / 63u, (v & 31u) * 255u / 31u, 255u); }\n"
-        " else if (f == 0x8B) { uint v = rd16(a); c = uvec4(v >> 8, v >> 8, v & 255u, v & 255u); }\n"
-        " else { uint v = rd32(a); c = uvec4((v >> 16) & 255u, (v >> 8) & 255u, v & 255u, v >> 24); }   // A8R8G8B8 and the rest\n"
-        " imageStore(u_dst, p, vec4(c) / 255.0);\n"
-        "}\n";
-    GLuint sh = compile(0x91B9 /*GL_COMPUTE_SHADER*/, src);
+        ;
+    const std::string csrc = std::string(src) + tex_decode_glsl();
+    GLuint sh = compile(0x91B9 /*GL_COMPUTE_SHADER*/, csrc);
     GLuint prog = glCreateProgram();
     glAttachShader(prog, sh);
     glLinkProgram(prog);
@@ -2218,8 +1296,6 @@ GLuint cube_texture(u32 u) {
     return ce.tex;
 }
 
-float half_to_float(u16 h);
-
 // vertex texture unit u (registers 0x0900 + 0x20 * u): float formats used as data tables by vertex programs
 GLuint upload_vertex_texture(u32 u) {
     u32 base = 0x0900 + u * 0x20;
@@ -2317,7 +1393,7 @@ void ring_init() {
 }
 
 // space for `bytes` (16-byte aligned) in the ring: pointer to write to and its buffer offset, or nullptr
-u8* ring_alloc(u32 bytes, GLintptr* off) {
+u8* ring_alloc(u32 bytes, ptrdiff_t* off) {
     if (!g_ring.ptr || bytes > StreamRing::SEG) return nullptr;
     u32 pos = (g_ring.pos + 15) & ~15u;
     u32 seg = pos / StreamRing::SEG;
@@ -2337,14 +1413,13 @@ u8* ring_alloc(u32 bytes, GLintptr* off) {
         pos = next * StreamRing::SEG;
     }
     g_ring.pos = pos + bytes;
-    *off = (GLintptr)pos;
+    *off = (ptrdiff_t)pos;
     return g_ring.ptr + pos;
 }
 // Vertex heap (vertex pulling): raw guest vertex data that stays for several frames, in one buffer in video memory
 // (the stream ring is mapped, i.e. usually system memory). Data goes through the ring and a GPU copy: glBufferSubData
 // into the heap while draws read it stalled the AMD driver (0.1 fps). Blocks are never rewritten: changed data gets
 // a new block and the old one is reused only after the GPU finished the frame that freed it.
-bool g_vtx_gpu = false;   // vertex pulling on (F1CE_VTX_CPU=1: CPU conversion into float4 attribute buffers)
 void heap_init() {
     static const bool cpu = getenv("F1CE_VTX_CPU") != nullptr;
     if (cpu || !g_ring.ptr || !glTexBuffer) return;
@@ -2394,7 +1469,7 @@ void iarena_init() {
 }
 
 // space for one draw's list in the arena's ring: pointer and offset, or nullptr
-u8* iring_alloc(u32 bytes, GLintptr* off) {
+u8* iring_alloc(u32 bytes, ptrdiff_t* off) {
     if (!g_iheap.ptr || bytes > IDX_SEG) return nullptr;
     u32 pos = (g_iring.pos + 15) & ~15u;
     u32 seg = pos / IDX_SEG;
@@ -2413,13 +1488,13 @@ u8* iring_alloc(u32 bytes, GLintptr* off) {
         pos = next * IDX_SEG;
     }
     g_iring.pos = pos + bytes;
-    *off = (GLintptr)pos;
+    *off = (ptrdiff_t)pos;
     return g_iheap.ptr + pos;
 }
 
 // a list used by this draw only: its offset in the element buffer bound for the draw
-GLintptr idx_stream(const u32* data, u32 n) {
-    GLintptr off;
+ptrdiff_t idx_stream(const u32* data, u32 n) {
+    ptrdiff_t off;
     if (u8* p = iring_alloc(n * 4, &off)) { memcpy(p, data, (size_t)n * 4); return off; }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);   // larger than a ring segment (or no arena): its own buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)n * 4, data, GL_STREAM_DRAW);
@@ -2437,23 +1512,7 @@ bool idx_store(const u32* data, u32 n, u32& off, u32& bytes) {
     return true;
 }
 
-u32 g_prim = 0;
-struct Range { u32 first, count; };
-std::vector<Range> g_array_ranges, g_index_ranges;
-std::vector<u32> g_inline;
 u64 g_draws = 0;
-
-float half_to_float(u16 h) {
-    u32 s = (h >> 15) & 1, e = (h >> 10) & 31, m = h & 1023;
-    u32 f;
-    if (e == 0) f = m ? 0 : (s << 31);
-    else if (e == 31) f = (s << 31) | 0x7F800000 | (m << 13);
-    else f = (s << 31) | ((e + 112) << 23) | (m << 13);
-    if (e == 0 && m) { float v = std::ldexp((float)m, -24); return s ? -v : v; }
-    float r;
-    memcpy(&r, &f, 4);
-    return r;
-}
 
 // reads attribute i of vertex v as float4
 void fetch_attr(u32 i, u32 v, float* out) {
@@ -2518,148 +1577,16 @@ void convert_attr(u32 i, u32 first, u32 count, float* out) {
     }
 }
 
-// Raw vertex data per buffer region (vertex pulling): as RegionEntry, but the guest bytes are copied unconverted
-// into a heap block. Keyed by base address, stride and element size (the bytes a record's attribute occupies).
-struct RawRegion {
-    u32 off = ~0u, bytes = 0;   // heap block
-    u32 base_ea = 0, stride = 0, elem = 0, first = 0, count = 0;
-    u64 hash = 0, checked_frame = ~0ull, last_frame = 0, seen_frame = 0, last_change = 0;
-};
-std::unordered_map<u64, RawRegion> g_raw_regions;
-
-void evict_raw_regions() {
-    for (auto it = g_raw_regions.begin(); it != g_raw_regions.end();)
-        if (g_frame - it->second.last_frame > 120) {
-            heap_free(g_heap, it->second.off, it->second.bytes);
-            it = g_raw_regions.erase(it);
-        } else ++it;
+void heap_copy_begin() {
+    glBindBuffer(GL_COPY_READ_BUFFER, g_ring.buf);
+    glBindBuffer(GL_COPY_WRITE_BUFFER, g_heap.buf);
 }
-
-// sets u_va for the attributes of this draw (vertices min_v .. max_v); the draw then uses base vertex 0
-void setup_attrs_gpu(Program* p, u32 min_v, u32 max_v) {
-    u32 input_mask = reg(0x1FF0), nverts = max_v - min_v + 1;
-    int va[64] = {};
-    struct Memo { u64 key, h; };
-    Memo memo[16];
-    u32 nmemo = 0;
-    auto hash_of = [&](u32 ea, u32 n) {
-        u64 memo_key = ((u64)ea << 32) ^ n;
-        for (u32 m = 0; m < nmemo; m++) if (memo[m].key == memo_key) return memo[m].h;
-        u64 th = time_usec();
-        u64 h = hash_range(gmem(ea), n, n > 65536 ? 64 : 8);
-        g_prof.t_hash += time_usec() - th;
-        g_prof.hashed += n;
-        if (nmemo < 16) memo[nmemo++] = {memo_key, h};
-        return h;
-    };
-    // raw bytes into the stream ring: offset of the copy, or -1
-    auto stream = [&](u32 ea, u32 n) -> long long {
-        GLintptr roff;
-        u8* rp = ring_alloc(n, &roff);
-        if (!rp) return -1;
-        u64 tc = time_usec();
-        memcpy(rp, gmem(ea), n);
-        g_prof.t_conv += time_usec() - tc;
-        return (long long)roff;
-    };
-    for (u32 i = 0; i < 16; i++) {
-        u32 fmt = reg(0x1740 + i * 4);
-        u32 type = fmt & 0xF, size = (fmt >> 4) & 0xF;
-        if (!size || !(input_mask & (1u << i))) continue;   // disabled: type 0
-        u32 stride = (fmt >> 8) & 0xFF, freq = fmt >> 16;
-        bool modulo = ((reg(0x1FC0) >> i) & 1) != 0;
-        u32 off = reg(0x1680 + i * 4);
-        u32 base_ea = location_to_ea(off & 0x7FFFFFFF, off >> 31);
-        u32 elem = type == 6 ? 4 : std::min(size, 4u) * (type == 2 ? 4 : type == 4 || type == 7 ? 1 : 2);
-        u32 rmin = min_v, rmax = max_v;
-        if (freq > 1) {
-            if (modulo) { rmin = 0; rmax = std::min(freq, nverts) - 1; } else { rmin = min_v / freq; rmax = max_v / freq; }
-        }
-        if (!stride) rmin = rmax = 0;
-        u32 src = base_ea + rmin * stride, bytes = (rmax - rmin) * stride + elem;
-        long long base = -1;   // byte offset of the attribute's record rmin
-        bool in_ring = true;
-        if (stride && freq <= 1) {
-            u64 key = mix64(((u64)base_ea << 32) ^ (stride << 8) ^ elem) ^ 0x7f4a7c15ull;
-            RawRegion& re = g_raw_regions[key];
-            if (re.base_ea != base_ea || re.stride != stride || re.elem != elem) {
-                heap_free(g_heap, re.off, re.bytes);
-                re = RawRegion{};
-                re.base_ea = base_ea; re.stride = stride; re.elem = elem;
-            }
-            re.last_frame = g_frame;
-            auto region_bytes = [&](u32 count) { return (count - 1) * stride + elem; };
-            auto upload = [&](u32 first, u32 count) {   // a new block with records first .. first+count-1
-                u32 n = region_bytes(count), ea = base_ea + first * stride;
-                heap_free(g_heap, re.off, re.bytes);
-                re.off = heap_alloc(g_heap, n);
-                re.bytes = n;
-                re.first = first; re.count = count;
-                if (re.off == ~0u) return;
-                u64 tc = time_usec();
-                glBindBuffer(GL_COPY_READ_BUFFER, g_ring.buf);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, g_heap.buf);
-                for (u32 done = 0; done < n;) {   // in pieces of at most one ring segment
-                    u32 k = std::min(n - done, StreamRing::SEG);
-                    GLintptr roff;
-                    u8* rp = ring_alloc(k, &roff);
-                    if (!rp) break;
-                    memcpy(rp, gmem(ea + done), k);
-                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, roff, (GLintptr)re.off + done, k);
-                    done += k;
-                }
-                g_prof.t_conv += time_usec() - tc;
-                g_prof.conv_verts += count;
-            };
-            bool covers = re.off != ~0u && min_v >= re.first && max_v < re.first + re.count;
-            if (covers) {
-                // small regions that changed recently (ring buffers rewritten between draws) are checked every draw
-                bool small = re.count * stride <= 16384 && g_frame - re.last_change < 60;
-                if (small || re.checked_frame != g_frame) {
-                    u64 h = hash_of(base_ea + re.first * stride, region_bytes(re.count));
-                    if (h != re.hash) { upload(re.first, re.count); re.hash = h; g_prof.conv_changed += re.count; re.last_change = g_frame; }
-                    re.checked_frame = g_frame;
-                }
-            } else if (re.off == ~0u && re.seen_frame && re.seen_frame != g_frame) {
-                // seen in an earlier frame: give the region its own block
-                re.hash = hash_of(base_ea + min_v * stride, region_bytes(nverts));
-                upload(min_v, nverts);
-                re.checked_frame = re.last_change = g_frame;
-                g_prof.conv_new += nverts;
-            } else if (re.off != ~0u) {
-                // grow to the union when the ranges are close, else start over at this draw's range
-                u32 nf = std::min(re.first, min_v), ne = std::max(re.first + re.count, max_v + 1);
-                if (ne - nf > 4 * std::max(re.count, nverts) + 4096) { nf = min_v; ne = max_v + 1; }
-                re.hash = hash_of(base_ea + nf * stride, region_bytes(ne - nf));
-                upload(nf, ne - nf);
-                re.checked_frame = re.last_change = g_frame;
-                g_prof.conv_new += re.count;
-            } else {
-                re.seen_frame = g_frame;   // first sighting (ring-buffer data at a new address every frame): streamed
-            }
-            if (re.off != ~0u && min_v >= re.first && max_v < re.first + re.count) {
-                base = (long long)re.off + (long long)(rmin - re.first) * stride;
-                in_ring = false;
-            }
-        }
-        if (base < 0) {
-            base = stream(src, bytes);
-            g_prof.conv_new += rmax - rmin + 1;
-            if (base < 0) { LOG_W("rsx: vertex data of %u bytes does not fit the stream ring", bytes); continue; }
-        }
-        va[i * 4] = (int)(base - (long long)rmin * stride);   // record 0 (may lie before the buffer start)
-        va[i * 4 + 1] = (int)stride;
-        va[i * 4 + 2] = (int)(type | (size << 4) | (modulo ? 256 : 0) | (in_ring ? 512 : 0));
-        va[i * 4 + 3] = (int)freq;
-    }
-    if (p->loc_va >= 0 && (g_no_state_cache || memcmp(p->u_va, va, sizeof(va)) != 0)) {
-        u64 tb = time_usec();
-        memcpy(p->u_va, va, sizeof(va));
-        glUniform4iv(p->loc_va, 16, va);
-        g_prof.t_bind += time_usec() - tb;
-        g_prof.binds++;
-    }
+void heap_copy(ptrdiff_t ring_off, u32 heap_off, u32 n) {
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, (GLintptr)ring_off, (GLintptr)heap_off, n);
 }
+constexpr bool LINE_LOOP_AS_STRIP = false;
+constexpr u32 RING_SEG = StreamRing::SEG;
+#include "rsx_draw_shared.inl"
 
 void apply_state() {
     static u32 last[13];
@@ -3013,209 +1940,32 @@ void draw(bool indexed) {
 
     u64 t2 = time_usec();
     g_prof.textures += t2 - t1;
-    // gather indices: the converted list (restart index marked, quads turned into triangles, rebased to the lowest
-    // referenced vertex) is cached per contiguous source range and checked with a content hash, like vertex data
     glBindVertexArray(g_vao);
-    constexpr u32 RESTART = 0xFFFFFFFFu;
     static const GLenum modes[11] = {0, GL_POINTS, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_TRIANGLES,
                                      GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES, GL_TRIANGLES, GL_TRIANGLE_FAN};
     if (g_prim < 1 || g_prim > 10) return;
     GLenum mode = modes[g_prim];
-    u32 min_v = ~0u, max_v = 0, idx_count = 0;
-    GLintptr idx_offset = 0;   // index lists stay absolute: every draw uses base vertex -min_v
     u64 ti0 = time_usec();
-    {
-        auto& ranges = indexed ? g_index_ranges : g_array_ranges;
-        u32 first = ranges[0].first, count = 0;   // the game splits long draws into 256-element commands
-        bool contiguous = true;
-        for (auto& r : ranges) { contiguous &= r.first == first + count; count += r.count; }
-        u32 ifmt = reg(0x1820);
-        bool u16idx = ((ifmt >> 4) & 0xF) == 1;
-        bool restart = indexed && (reg(0x1DAC) & 1);
-        u32 rv = reg(0x1DB0);
-        u32 ea = indexed ? location_to_ea(reg(0x181C), (ifmt & 0xF) != 0) : 0;
-        u32 isz = u16idx ? 2 : 4;
-        IdxEntry* ie = nullptr;
-        bool need = true;
-        u64 h = 0;
-        static const bool idx_nocache = getenv("F1CE_IDX_NOCACHE") != nullptr;   // debug
-        static const bool no_idx_region = getenv("F1CE_IDX_NOREGION") != nullptr;   // debug
-        bool region = false;
-        // regions are per 16K-index chunk of the buffer, so draws far apart in one buffer don't fight over a region
-        u32 chunk = first >> 14;
-        if (indexed && contiguous && g_prim != 8 && g_prim != 9 && !idx_nocache && !no_idx_region && count &&
-            ((first + count - 1) >> 14) == chunk) {
-            u32 flags = (u16idx ? 1u : 0u) | (restart ? 2u | (rv << 8) : 0u) | (chunk << 24);
-            IdxRegion& ir = g_idx_regions[mix64(((u64)ea << 32) ^ flags) ^ 0x2545F491ull];
-            if (ir.ea != ea || ir.flags != flags) { heap_free(g_iheap, ir.off, ir.bytes); ir = IdxRegion{}; ir.ea = ea; ir.flags = flags; }
-            ir.last_frame = g_frame;
-            if (ir.changes >= 3) goto idx_per_draw;
-            auto build = [&](u32 f, u32 n) {   // convert raw indices f .. f+n-1 into the region
-                ir.first = f; ir.count = n;
-                ir.cpu.resize(n);
-                const u8* q = gmem(ea + f * isz);
-                for (u32 k = 0; k < n; k++) {
-                    u32 v;
-                    if (u16idx) { u16 x; memcpy(&x, q + k * 2, 2); v = __builtin_bswap16(x); }
-                    else { u32 x; memcpy(&x, q + k * 4, 4); v = __builtin_bswap32(x); }
-                    if (restart && (v == rv || (u16idx && v == 0xFFFF && rv >= 0xFFFF))) v = RESTART;
-                    ir.cpu[k] = v;
-                }
-                idx_store(ir.cpu.data(), n, ir.off, ir.bytes);   // (full arena: off stays ~0u, the draws stream)
-                ir.hash = hash_range(q, n * isz, 8);
-                ir.checked_frame = g_frame;
-                ir.minmax.clear();
-                g_prof.idx_built += n;
-            };
-            bool covers = !ir.cpu.empty() && first >= ir.first && first + count <= ir.first + ir.count;
-            if (covers) {
-                bool small = ir.count * isz <= 16384 && ir.changes > 0;   // rewritten before: check every draw
-                if (small || ir.checked_frame != g_frame) {
-                    u64 hh = hash_range(gmem(ea + ir.first * isz), ir.count * isz, 8);
-                    g_prof.hashed += ir.count * isz;
-                    if (hh != ir.hash) {
-                        if (++ir.changes >= 3) goto idx_per_draw;
-                        build(ir.first, ir.count);
-                        g_prof.ir_changed += ir.count;
-                    }
-                    ir.checked_frame = g_frame;
-                }
-            } else {
-                u32 nf = first, ne = first + count;
-                if (!ir.cpu.empty()) {   // grow to the union (bounded by the chunk)
-                    nf = std::min(ir.first, first);
-                    ne = std::max(ir.first + ir.count, first + count);
-                }
-                build(nf, ne - nf);
-                g_prof.ir_grow += ne - nf;
-            }
-            u64 mk = ((u64)first << 32) | count;
-            auto mm = ir.minmax.find(mk);
-            if (mm == ir.minmax.end()) {
-                u32 lo = ~0u, hi = 0;
-                for (u32 k = first - ir.first, e = k + count; k < e; k++) {
-                    u32 v = ir.cpu[k];
-                    if (v == RESTART) continue;
-                    lo = std::min(lo, v);
-                    hi = std::max(hi, v);
-                }
-                mm = ir.minmax.emplace(mk, std::make_pair(lo, hi)).first;
-            }
-            min_v = mm->second.first;
-            max_v = mm->second.second;
-            if (min_v > max_v) return;
-            if (max_v - min_v > 1000000) { LOG_W("rsx: absurd vertex range %u..%u", min_v, max_v); return; }
-            idx_count = count;
-            if (ir.off != ~0u) idx_offset = (GLintptr)ir.off + (GLintptr)(first - ir.first) * 4;
-            else idx_offset = idx_stream(&ir.cpu[first - ir.first], count);
-            region = true;
-            need = false;
-        }
-    idx_per_draw:
-        if (!region && contiguous && !idx_nocache) {
-            u32 id_src = indexed ? ea + first * isz : first;
-            u32 id_flags = g_prim | (indexed ? 0x100 : 0) | (u16idx ? 0x200 : 0) | (restart ? 0x400 | (rv << 16) : 0);
-            u64 key = mix64(((u64)id_src << 32) ^ count) ^ mix64(id_flags);
-            ie = &g_idx_cache[key];
-            bool cached = ie->off != ~0u;
-            if (cached && (ie->id_src != id_src || ie->id_count != count || ie->id_flags != id_flags)) ie->hash = 0;   // collision
-            ie->id_src = id_src; ie->id_count = count; ie->id_flags = id_flags;
-            if (cached && !indexed && ie->hash == 1) need = false;   // array draws: the list depends on the range only
-            else if (!indexed) h = 1;
-            else if (cached && count * isz > 16384 && ie->checked_frame == g_frame) {
-                need = false;   // large index lists are checked once per frame (the same mesh is drawn in several passes)
-            } else {
-                h = hash_range(gmem(ea + first * isz), count * isz, 8);
-                g_prof.hashed += count * isz;
-                need = !cached || h != ie->hash;
-                ie->checked_frame = g_frame;
-            }
-            if (cached) ie->last_frame = g_frame;
-        }
-        if (need) {
-            // one pass: byte swap, restart index, vertex range (the lists stay absolute: drawn with base vertex -min_v)
-            static std::vector<u32> indices;
-            indices.resize(count);
-            u32* o = indices.data();
-            u32 rv16 = (u16idx && rv >= 0xFFFF) ? 0xFFFF : rv;
-            for (auto& r : ranges) {
-                if (indexed) {
-                    const u8* q = gmem(ea + r.first * isz);
-                    if (u16idx)
-                        for (u32 i = 0; i < r.count; i++) {
-                            u16 x; memcpy(&x, q + i * 2, 2);
-                            u32 v = __builtin_bswap16(x);
-                            if (restart && (v == rv || v == rv16)) { *o++ = RESTART; continue; }
-                            min_v = std::min(min_v, v); max_v = std::max(max_v, v);
-                            *o++ = v;
-                        }
-                    else
-                        for (u32 i = 0; i < r.count; i++) {
-                            u32 x; memcpy(&x, q + i * 4, 4);
-                            u32 v = __builtin_bswap32(x);
-                            if (restart && v == rv) { *o++ = RESTART; continue; }
-                            min_v = std::min(min_v, v); max_v = std::max(max_v, v);
-                            *o++ = v;
-                        }
-                } else if (r.count) {
-                    for (u32 i = 0; i < r.count; i++) *o++ = r.first + i;
-                    min_v = std::min(min_v, r.first); max_v = std::max(max_v, r.first + r.count - 1);
-                }
-            }
-            indices.resize(o - indices.data());
-            if (min_v > max_v) return;
-            if (max_v - min_v > 1000000) { LOG_W("rsx: absurd vertex range %u..%u", min_v, max_v); return; }
-            if (g_prim == 8 || g_prim == 9) {   // quads / quad strips as triangle lists
-                std::vector<u32> tris;
-                size_t seg = 0;
-                for (size_t i = 0; i <= indices.size(); i++) {
-                    if (i < indices.size() && indices[i] != RESTART) continue;
-                    size_t n = i - seg;
-                    if (g_prim == 8)
-                        for (size_t q = seg; q + 3 < seg + n; q += 4) {
-                            u32 a = indices[q], b = indices[q + 1], c = indices[q + 2], d = indices[q + 3];
-                            tris.insert(tris.end(), {a, b, c, a, c, d});
-                        }
-                    else
-                        for (size_t q = seg; q + 3 < seg + n; q += 2) {
-                            u32 a = indices[q], b = indices[q + 1], c = indices[q + 2], d = indices[q + 3];
-                            tris.insert(tris.end(), {a, b, d, a, d, c});
-                        }
-                    seg = i + 1;
-                }
-                indices.swap(tris);
-            }
-            idx_count = (u32)indices.size();
-            g_prof.idx_built += idx_count; g_prof.idx_old += idx_count;
-            // first sightings are streamed, as for vertex data
-            if (ie && ie->off == ~0u && !(ie->seen_frame && ie->seen_frame != g_frame && ie->hash == h)) {
-                if (ie->seen_frame != g_frame || ie->hash != h) ie->seen_frame = g_frame;
-                ie->hash = h;
-                ie->last_frame = g_frame;
-                ie = nullptr;
-            }
-            if (ie && idx_store(indices.data(), idx_count, ie->off, ie->bytes)) {
-                ie->hash = h; ie->count = idx_count; ie->min_v = min_v; ie->max_v = max_v;
-                ie->last_change = ie->last_frame = g_frame;
-                idx_offset = (GLintptr)ie->off;
-            } else {
-                idx_offset = idx_stream(indices.data(), idx_count);   // (arena full: also cached lists stream)
-            }
-        } else if (!region) {
-            idx_count = ie->count;
-            min_v = ie->min_v;
-            max_v = ie->max_v;
-            idx_offset = (GLintptr)ie->off;
-        }
-        if (!idx_count) return;
-    }
+    DrawGeom geom;
+    if (!gather_indices(indexed, geom)) return;
+    const u32 min_v = geom.min_v, max_v = geom.max_v, idx_count = geom.idx_count;
+    const GLintptr idx_offset = (GLintptr)geom.idx_offset;
     u32 nverts = max_v - min_v + 1;
     g_prof.t_index += time_usec() - ti0;
 
     u32 vtx_shift = 0;
     u32 input_mask = reg(0x1FF0);
-    if (g_vtx_gpu) setup_attrs_gpu(p, min_v, max_v);
-    else {
+    if (g_vtx_gpu) {
+        int va[64];
+        setup_attrs_gpu(min_v, max_v, va);
+        if (p->loc_va >= 0 && (g_no_state_cache || memcmp(p->u_va, va, sizeof(va)) != 0)) {
+            u64 tb = time_usec();
+            memcpy(p->u_va, va, sizeof(va));
+            glUniform4iv(p->loc_va, 16, va);
+            g_prof.t_bind += time_usec() - tb;
+            g_prof.binds++;
+        }
+    } else {
     // attribute array state of the single VAO, so unchanged attributes cost no GL calls; the buffers of all
     // attributes are bound with one call
     GLuint* attr_buf = g_attr_buf;
@@ -3319,7 +2069,7 @@ void draw(bool indexed) {
             } else {
                 // first sighting (ring-buffer data lives at a new address every frame): streamed, no buffer yet
                 re.seen_frame = g_frame;
-                GLintptr roff;
+                ptrdiff_t roff;
                 if (u8* rp = ring_alloc(nverts * 16, &roff)) {
                     u64 tc = time_usec();
                     convert_attr(i, min_v, nverts, (float*)rp);
@@ -3387,7 +2137,7 @@ void draw(bool indexed) {
                 ve.last_frame = g_frame;
             }
         }
-        GLintptr roff;
+        ptrdiff_t roff;
         u8* rp = fresh && (streamed || !cacheable) && stride ? ring_alloc(nverts * 16, &roff) : nullptr;
         if (rp) {
             (cacheable ? g_prof.conv_verts : g_prof.conv_inst) += nverts;
@@ -3471,7 +2221,7 @@ void draw(bool indexed) {
     static bool restart_on = false;
     if (!restart_on) {
         glEnable(GL_PRIMITIVE_RESTART);
-        glPrimitiveRestartIndex(RESTART);
+        glPrimitiveRestartIndex(0xFFFFFFFFu);
         restart_on = true;
     }
     // debug: F1CE_DUMP_ON_PROG=<prog> dumps unit 0's surface before and the target after that program's first
@@ -3687,45 +2437,11 @@ static void gl_init_once() {
 
 // 2D objects as bound by libgcm: subchannel 1 = NV0039 (memory to memory), 3 = NV3062 (2D surface),
 // 5 = NV308A (inline image: used to patch fragment-program constants in local memory)
-u32 sreg(u32 sub, u32 mm) { return R[((sub << 13) | mm) >> 2]; }
-
 void method_2d(u32 sub, u32 mm, u32 arg) {
-    if (sub == 5 && mm >= 0x400 && mm < 0x2000) {          // NV308A COLOR[i]
-        u32 fmt = sreg(3, 0x300), pitch_out = sreg(3, 0x304) >> 16;
-        u32 bpp = fmt == 0xB || fmt == 0xA ? 4 : 2;           // Y32 / A8R8G8B8 : R5G6B5
-        u32 point = sreg(5, 0x304), x = point & 0xFFFF, y = point >> 16;   // POINT (0x300 = colour format)
-        u32 idx = (mm - 0x400) >> 2;
-        u32 dst = sreg(3, 0x30C) + y * pitch_out + (x + idx) * bpp;
-        u32 ea = location_to_ea(dst, sreg(3, 0x188) == CTX_MAIN);
-        if (bpp == 4) st32(ea, arg); else st16(ea, (u16)arg);
-        static const long long trace_frame = getenv("F1CE_TRACE_FRAME") ? atoll(getenv("F1CE_TRACE_FRAME")) : -1;
-        if (trace_on(trace_frame) && idx == 0) LOG_I("trace NV308A -> %08x", dst);
-        if (dst - g_watch_fp < 0x800) {
-            static int wl = 0;
-            if (wl++ < 300) LOG_I("watch fp: NV308A +%03x = %08x (%g)", dst - g_watch_fp, arg, *(float*)&arg);
-        }
-        static int logged = 0;
-        if (logged++ < 64)
-            LOG_I("rsx: NV308A fmt %x pitch %u point %u,%u [%u] -> %08x%s = %08x", fmt, pitch_out, x, y, idx, dst,
-                  sreg(3, 0x188) == CTX_MAIN ? "(main)" : "", arg);
-        return;
-    }
-    if (sub == 1 && mm == 0x328) {                         // NV0039 BUFFER_NOTIFY: run the transfer
-        u32 src = sreg(1, 0x30C), dst = sreg(1, 0x310);
-        s32 pitch_in = (s32)sreg(1, 0x314), pitch_out = (s32)sreg(1, 0x318);
-        u32 len = sreg(1, 0x31C), lines = sreg(1, 0x320);
-        bool src_main = sreg(1, 0x184) == CTX_MAIN, dst_main = sreg(1, 0x188) == CTX_MAIN;
-        static int logged = 0;
-        if (logged++ < 40)
-            LOG_I("rsx: NV0039 copy %08x%s -> %08x%s len %u x %u pitch %d/%d", src, src_main ? "(main)" : "", dst,
-                  dst_main ? "(main)" : "", len, lines, pitch_in, pitch_out);
-        if (!dst_main && dst < g_watch_fp + 0x800 && dst + len * std::max(1u, lines) > g_watch_fp)
-            LOG_I("watch fp: NV0039 copy %08x%s -> %08x len %u x %u", src, src_main ? "(main)" : "", dst, len, lines);
-        if (!pitch_in) pitch_in = (s32)len;
-        if (!pitch_out) pitch_out = (s32)len;
-        u32 sea = location_to_ea(src, src_main), dea = location_to_ea(dst, dst_main);
-        for (u32 l = 0; l < lines; l++)
-            memmove(gmem(dea + l * pitch_out), gmem(sea + l * pitch_in), len);
+    if (method_2d_inline(sub, mm, arg)) return;
+    Nv0039 xf;
+    if (nv0039_transfer(sub, mm, xf)) {
+        auto [src, dst, len, lines, src_main, dst_main] = xf;
         // render target copied: copy the GL surface too (the memory copy above has stale contents)
         auto it = src_main ? g_surfaces.end() : g_surfaces.find(src);
         if (it != g_surfaces.end() && it->second.tex && !dst_main) {
@@ -3831,25 +2547,9 @@ bool present_pass(Surface& s, GLint ww, GLint wh) {
             "uniform vec4 u_p;     // x = mip level, y = FXAA on, zw = 1 / size of that level\n"
             "uniform vec4 u_win;   // xy = origin, zw = size of the image area in the window\n"
             "out vec4 o;\n"
-            "vec3 tap(vec2 uv) { return textureLod(u_src, uv, u_p.x).rgb; }\n"
-            "float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }\n"
-            "void main() {\n"
-            " vec2 uv = (gl_FragCoord.xy - u_win.xy) / u_win.zw, r = u_p.zw;\n"
-            " vec3 m = tap(uv);\n"
-            " if (u_p.y < 0.5) { o = vec4(m, 1.0); return; }\n"
-            " vec3 nw = tap(uv + vec2(-1.0, -1.0) * r), ne = tap(uv + vec2(1.0, -1.0) * r);\n"
-            " vec3 sw = tap(uv + vec2(-1.0, 1.0) * r), se = tap(uv + vec2(1.0, 1.0) * r);\n"
-            " float lnw = luma(nw), lne = luma(ne), lsw = luma(sw), lse = luma(se), lm = luma(m);\n"
-            " float lmin = min(lm, min(min(lnw, lne), min(lsw, lse))), lmax = max(lm, max(max(lnw, lne), max(lsw, lse)));\n"
-            " vec2 dir = vec2(-((lnw + lne) - (lsw + lse)), (lnw + lsw) - (lne + lse));\n"
-            " float reduce = max((lnw + lne + lsw + lse) * (0.25 / 8.0), 1.0 / 128.0);\n"
-            " dir = clamp(dir / (min(abs(dir.x), abs(dir.y)) + reduce), vec2(-8.0), vec2(8.0)) * r;\n"
-            " vec3 a = 0.5 * (tap(uv + dir * (1.0 / 3.0 - 0.5)) + tap(uv + dir * (2.0 / 3.0 - 0.5)));\n"
-            " vec3 b = a * 0.5 + 0.25 * (tap(uv - dir * 0.5) + tap(uv + dir * 0.5));\n"
-            " float lb = luma(b);\n"
-            " o = vec4(lb < lmin || lb > lmax ? a : b, 1.0);\n"
-            "}\n";
-        GLuint v = compile(GL_VERTEX_SHADER, vs), f = compile(GL_FRAGMENT_SHADER, fs);
+            ;
+        const std::string fs_all = fs + present_glsl();
+        GLuint v = compile(GL_VERTEX_SHADER, vs), f = compile(GL_FRAGMENT_SHADER, fs_all);
         prog = glCreateProgram();
         glAttachShader(prog, v);
         glAttachShader(prog, f);
@@ -4201,5 +2901,6 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
     heap_end_frame(g_heap);
     heap_end_frame(g_iheap);
 }
+}  // namespace gl
 }  // namespace rsx
 

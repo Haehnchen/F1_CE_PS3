@@ -100,6 +100,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_MSAA=2/4/8` | samples of the targets the game antialiases (default 4, as on the RSX) |
 | `F1CE_FXAA=1` | FXAA on the final image |
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
+| `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time) |
 | `F1CE_DUMP_WINDOW=<n>` | saves the window after presentation every n-th frame (`frame_w_*`) |
 | `F1CE_TEX_CPU=1`, `F1CE_NO_IDX_ARENA=1`, `F1CE_TEX_NOMEMO=1` | texture decoding on the CPU / an element buffer per index list / no per-unit texture memo (comparisons) |
 | `F1CE_VTX_CPU=1` | converts vertex attributes on the CPU into float4 buffers (the path before vertex pulling) |
@@ -136,12 +137,15 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 3. **Resolution scaling (up to 4K) and anti-aliasing options.** *Done 2026-10-29: `F1CE_SCALE`, `F1CE_MSAA`, `F1CE_FXAA`.* Render targets at an internal scale factor (surfaces
    the CPU reads back stay native; copies, cube map and shadow maps scaled; post-processing offsets checked);
    MSAA 8x, FXAA/SMAA on the final image, supersampling via the scale factor. GPU-side cost only.
-4. **60 fps.** The game ties its logic and physics to the frame rate; the RPCS3 60 fps patch for this game changes the
-   frame limiter and timing constants. Apply the equivalent changes to the recompiled code (patch table, addresses
-   verified against this binary) once steps 1-2 leave enough CPU headroom.
+4. **60 fps.** *Done 2026-10-31: `F1CE_60FPS=1`, adaptive ticks per frame.* A steady 60 still needs more CPU headroom:
+   the full grid stays at ~30 fps, driving reaches 38-46.
 5. **Vulkan backend** next to OpenGL: lower per-call driver cost, explicit pipeline caches (no stutter on new
    shaders), multithreaded command recording, better Linux support. DirectX 11 is not planned (no gain over OpenGL,
-   Windows only).
+   Windows only). *Working (2026-10-31): `runtime/rsx_vk.cpp` runs the boot, menus and a Silverstone race at scale 2 at the
+   30 fps cap, matching OpenGL by eye; not yet played by hand, and never run with validation layers. It is built with
+   `cmake -DF1CE_VULKAN=ON` (needs `third_party/glslang`, tag vulkan-sdk-1.4.350.1) and selected with
+   `F1CE_RENDERER=vulkan`; OpenGL stays the default. Shared with OpenGL: `rsx_common.{h,cpp}` (registers, microcode
+   translators, hashes, block heap, program database) and `rsx_draw_shared.inl` (index lists, raw vertex regions).*
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
@@ -550,3 +554,15 @@ banks, then waits for SPU work.
     the sRGB encode (sky 0.15 -> 0.42), but the encode rule only saw textures with gamma bits and the glass reads the
     rear view raw. A raw read of a smaller target with the depth test on now selects the encode. Bloom and glare read
     smaller targets too, with the depth test off, and stay unencoded. The mirrors now match RPCS3 in brightness.
+- **60 fps (2026-10-31, `F1CE_60FPS=1`, off by default):**
+  - The RPCS3 patches are for 02.00 (BCES00005) and this disc is 01.00, so their addresses do not apply. Their
+    "60 FPS" word is the game's ticks per frame: here 0x10044288, value 2, read every frame by the main loop (0x2494a4,
+    virtual call +0xA0 in a loop). The limiter waits for two vblanks per frame (0x1004d960, handler 0x489a2c).
+  - Fixed 1 tick per frame with a 120 Hz vblank gives 60 fps, but half speed where the game holds only 30 fps. So
+    `do_flip` sets the ticks of the next frame from the time this one took (1 or 2, remainder carried over) and the
+    vblank runs at 119.88 Hz. This does the job of the RPCS3 "Delta time" patch without code changes: that patch
+    could not be ported as given (02.00 addresses, the `BCES00005_DeltaTimer` block was not in the copy we had).
+  - Scale 2, 60 s of a Quick Race with the throttle held: menus 60 fps, full grid ~30, driving 38-46, game logic
+    57.7-60.1 ticks/s throughout (54.8 once during loading). `perf` lines and "60 fps:" log lines show flips and ticks per second.
+    Physics step size is unchanged because ticks are unchanged. Frames with 1 and 2 ticks alternate below 60 fps, so
+    motion may look less even than a locked 30.

@@ -43,6 +43,8 @@ template <typename T> T be(const u8* p) {
 
 struct LoadedProcess { u32 entry_opd; u32 stack_size; s32 prio; };
 
+u32 g_ticks_per_frame_ea = 0;   // set by F1CE_60FPS
+
 LoadedProcess load_elf(const std::string& path) {
     std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f) fatal("cannot open %s", path.c_str());
@@ -76,6 +78,14 @@ LoadedProcess load_elf(const std::string& path) {
         }
     }
     LOG_I("TLS image %08x filesz=%x memsz=%x", g_tls_addr, g_tls_filesz, g_tls_memsz);
+    if (getenv("F1CE_60FPS")) {
+        // game ticks per frame, read by the main loop (0x2494a4) every frame; 2 on the 01.00 disc. do_flip sets it
+        // from the time each frame took and the vblank thread doubles its rate for the game's frame limiter
+        const u32 ticks_per_frame = 0x10044288;
+        u32 v = ld32(ticks_per_frame);
+        if (v == 2) { g_ticks_per_frame_ea = ticks_per_frame; LOG_I("60 fps: adaptive ticks per frame"); }
+        else LOG_W("60 fps: unexpected ticks per frame %08x (not the 01.00 executable?): not patched", v);
+    }
     return p;
 }
 

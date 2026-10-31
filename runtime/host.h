@@ -27,6 +27,10 @@ void gl_swap();
 void* gl_create_shared_context(bool share = true);   // share = false: a separate share group
 bool gl_make_current(void* ctx);
 void gl_drawable_size(int* w, int* h);
+// Vulkan path: waits for the window and loads the Vulkan library. Returns vkGetInstanceProcAddr, or null if unavailable.
+void* vk_begin();
+const char* const* vk_instance_extensions(u32* count);   // what the window system needs
+void* vk_create_surface(void* instance);                  // VkSurfaceKHR of the window, null on failure
 // Saves a frame (host ARGB, top-down) for F1CE_DUMP_FRAMES debugging.
 void dump_frame(const u32* argb, u32 width, u32 height);
 }  // namespace host

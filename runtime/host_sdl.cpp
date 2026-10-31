@@ -4,8 +4,10 @@
 // on a dedicated UI thread. The RSX thread owns the OpenGL context (created for that window).
 #include "host.h"
 #include "kernel.h"
+#include "rsx.h"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 #include <vector>
 
@@ -99,7 +101,8 @@ void ui_thread() {
         if (sscanf(e, "%dx%d", &a, &b) == 2 && a >= 320 && b >= 180) { win_w = a; win_h = b; }
     }
     SDL_Window* win = SDL_CreateWindow("Formula One: Championship Edition (recompiled)", win_w, win_h,
-                                       SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | (full ? SDL_WINDOW_FULLSCREEN : 0));
+                                       (rsx::use_vulkan() ? SDL_WINDOW_VULKAN : SDL_WINDOW_OPENGL) | SDL_WINDOW_RESIZABLE |
+                                           (full ? SDL_WINDOW_FULLSCREEN : 0));
     {
         std::lock_guard lk(g_win_mutex);
         g_window = win;
@@ -293,4 +296,21 @@ void* gl_create_shared_context(bool share) {
 bool gl_make_current(void* ctx) { return SDL_GL_MakeCurrent(g_window, (SDL_GLContext)ctx); }
 void gl_swap() { if (g_window) SDL_GL_SwapWindow(g_window); }
 void gl_drawable_size(int* w, int* h) { SDL_GetWindowSizeInPixels(g_window, w, h); }
+
+void* vk_begin() {
+    std::unique_lock lk(g_win_mutex);
+    g_win_cv.wait(lk, [] { return g_window || g_window_failed; });
+    if (!g_window) return nullptr;
+    if (!SDL_Vulkan_LoadLibrary(nullptr)) { LOG_E("Vulkan library: %s", SDL_GetError()); return nullptr; }
+    return (void*)SDL_Vulkan_GetVkGetInstanceProcAddr();
+}
+const char* const* vk_instance_extensions(u32* count) { return SDL_Vulkan_GetInstanceExtensions(count); }
+void* vk_create_surface(void* instance) {
+    VkSurfaceKHR surface = 0;
+    if (!SDL_Vulkan_CreateSurface(g_window, (VkInstance)instance, nullptr, &surface)) {
+        LOG_E("Vulkan surface: %s", SDL_GetError());
+        return nullptr;
+    }
+    return (void*)surface;
+}
 }  // namespace host
