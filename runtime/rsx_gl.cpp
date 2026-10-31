@@ -2894,9 +2894,13 @@ void draw(bool indexed) {
         // copy to the display buffer, the heat haze that refracts the scene into a 640x360 buffer: encoding it
         // washed the haze out into white clouds); a smaller one feeds a material (the mirror glass shades the
         // 256x128 rear view with fog, exposure and tone mapping, and its result is encoded like any other material)
-        if (from_surface && depth_func == 0 && !(conv & 0xF) && (p->tex_used >> u & 1) &&
-            (reg(0x1A18 + u * 0x20) >> 16) >= target->width && (reg(0x1A18 + u * 0x20) & 0xFFFF) >= target->height)
-            reads_raw_target = true;
+        if (from_surface && depth_func == 0 && !(conv & 0xF) && (p->tex_used >> u & 1)) {
+            if ((reg(0x1A18 + u * 0x20) >> 16) >= target->width && (reg(0x1A18 + u * 0x20) & 0xFFFF) >= target->height)
+                reads_raw_target = true;
+            // the glass samples nothing else with gamma bits, so this read alone must select the encode (depth test
+            // on: bloom and glare also read smaller targets raw, in passes that stay unencoded)
+            else if (reg(0x0A74) & 1) reads_gamma = true;
+        }
         if (reg(0x1A04 + u * 0x20) & 0x4000) {   // CELL_GCM_TEXTURE_UN: coordinates in texels
             u32 rect = reg(0x1A18 + u * 0x20);
             tex_scale[u * 2] = 1.0f / (float)std::max(1u, rect >> 16);

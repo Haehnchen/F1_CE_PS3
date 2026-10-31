@@ -267,7 +267,17 @@ bool gl_begin() {
     g_gl = SDL_GL_CreateContext(g_window);
     if (!g_gl) { LOG_E("OpenGL 3.3 context creation failed: %s", SDL_GetError()); return false; }
     SDL_GL_MakeCurrent(g_window, g_gl);
-    SDL_GL_SetSwapInterval(0);   // the game paces itself on vblank
+    // F1CE_VSYNC: 1 = wait for the display's vblank (no tearing; the game still paces itself on the guest vblank),
+    // 0 = off, -1 = adaptive (late frames tear instead of waiting a whole refresh)
+    const char* vs = getenv("F1CE_VSYNC");
+    int interval = vs ? atoi(vs) : 1;
+    if (!SDL_GL_SetSwapInterval(interval)) {
+        LOG_W("swap interval %d: %s", interval, SDL_GetError());
+        if (interval < 0 && !SDL_GL_SetSwapInterval(1)) LOG_W("swap interval 1: %s", SDL_GetError());
+    }
+    int got = 0;
+    SDL_GL_GetSwapInterval(&got);
+    LOG_I("vsync: swap interval %d", got);
     return true;
 }
 void* gl_proc(const char* name) { return (void*)SDL_GL_GetProcAddress(name); }

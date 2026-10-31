@@ -99,6 +99,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_SCALE=1..4` | internal resolution (x 1280x720; 3 = 3840x2160): supersampled to the window |
 | `F1CE_MSAA=2/4/8` | samples of the targets the game antialiases (default 4, as on the RSX) |
 | `F1CE_FXAA=1` | FXAA on the final image |
+| `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
 | `F1CE_DUMP_WINDOW=<n>` | saves the window after presentation every n-th frame (`frame_w_*`) |
 | `F1CE_TEX_CPU=1`, `F1CE_NO_IDX_ARENA=1`, `F1CE_TEX_NOMEMO=1` | texture decoding on the CPU / an element buffer per index list / no per-unit texture memo (comparisons) |
 | `F1CE_VTX_CPU=1` | converts vertex attributes on the CPU into float4 buffers (the path before vertex pulling) |
@@ -146,13 +147,6 @@ All of these become options (environment variables or a config file) with the or
 
 ### Known rendering issues (reported 2026-10-25, updated 2026-10-28)
 
-- Mirror images are darker than on PS3/RPCS3. The rear view (256x128 target at 0x02550000) is drawn with an unlit
-  fragment program: colour = texture x C[467].x (1) x FC0, fogged towards (2, 2, 4), and FC0 is 0.1. The mirror glass
-  then applies exposure 0.18 and Reinhard tone mapping, so the asphalt ends near black while the sky (about 1.0) is
-  right. FC0 is not patched: the SPU job copies it from the material's program in main memory, written once at load
-  (`F1CE_WATCH_LINE` on the copy + `F1CE_LS_WRITERS=f180` + `F1CE_WATCH_SRC=20` follow it to that source). The
-  vertex program passes normals that this fragment program ignores, so the game probably selects a lit variant on
-  PS3 (quality / LOD choice still to find). The fog factor is 1 there, as expected for near objects.
 - Suspension arms in front of the cockpit are darker than in RPCS3 (self-shadowing; the shadow maps cull front faces
   as requested since 2026-10-28).
 - Rubber marks near the corners looked much darker than on PS3: not checked again since the 2026-10-28 fixes (needs a
@@ -548,4 +542,11 @@ banks, then waits for SPU work.
     ("SPU task<n> print:"). `F1CE_STUCK_TEST=1` lowers the retry limit to 2: it froze every time before the fix, and
     runs normally after it. A PPU flag wait over 3 s logs "freeze:" lines and saves `freeze_task<tid>.bin`.
   - Confirmed by the user: Monaco loads and a full lap completed without a freeze.
-  - To do (user notes): mirror images are still too dark; tearing in fast scenes, vsync to implement.
+- **Vsync and mirrors (2026-10-31):**
+  - Vsync: `SDL_GL_SetSwapInterval` was fixed at 0, so frames tore. `F1CE_VSYNC` now selects 1 (default), 0 or -1
+    (adaptive). Race start at scale 2 with it on: 28.5-29.3 fps.
+  - Mirrors too dark: the rear view's unlit program and its 0.1 constant are the ones the environment cube map uses,
+    so they were never the fault. The glass applies exposure 0.18 and Reinhard and outputs linear colour, which needs
+    the sRGB encode (sky 0.15 -> 0.42), but the encode rule only saw textures with gamma bits and the glass reads the
+    rear view raw. A raw read of a smaller target with the depth test on now selects the encode. Bloom and glare read
+    smaller targets too, with the depth test off, and stay unencoded. The mirrors now match RPCS3 in brightness.
