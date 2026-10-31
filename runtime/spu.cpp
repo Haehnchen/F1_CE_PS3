@@ -175,7 +175,9 @@ void SPUThread::flush_blocks() {
     for (auto& p : block_pages) p.reset();
     cluster_ver.clear();
     cluster_ok.clear();
-    memset(fast, 0, sizeof(fast));
+    memset(fast, 0xFF, sizeof(fast));   // (no pc matches)
+    std::fill(std::begin(region_writes), std::end(region_writes), 1ull);
+    memset(region_links, 0, sizeof(region_links));
     blocks_on = true;
     memset(line_code, 0, sizeof(line_code));
 }
@@ -230,6 +232,9 @@ SPUThread::Block* SPUThread::build_block(u32 pc) {
                 v->cluster = (s32)ci;
             }
         }
+        v->home = v->lines ? v->lines[0] >> LINES_PER_REGION_SHIFT : v->line0 >> LINES_PER_REGION_SHIFT;
+        if (v->lines) for (u32 i = 0; i < v->nlines; i++) link_region(v->lines[i], v->home);
+        else for (u32 l = v->line0; ; l = (l + 1) & 2047) { link_region(l, v->home); if (l == v->line1) break; }
         v->ver_sum = block_ver(*v);
         return v;
     };
@@ -331,21 +336,24 @@ void SPUThread::run() {
         pc &= 0x3FFFC;
         if (__builtin_expect(pc_trace != nullptr, 0) && pc_trace->size() < 20000) pc_trace->push_back(pc);
         FastEnt& fe = fast[(pc >> 2) & 4095];
-        if (fe.pc == pc && (fe.checked == code_writes ||
-                            ((fe.count_n & FAST_CLUSTER) && cluster_ok[fe.count_n & ~FAST_CLUSTER] == code_writes))) {
-            fe.checked = code_writes;
-            st_fast++;
-            u32 cn = fe.count_n & FAST_CLUSTER ? 0 : fe.count_n;
-            fe.fn(*this);
-            u64 before_n = instructions;
-            instructions += cn;
-            if ((before_n >> 12) != (instructions >> 12)) pc_samples[(instructions >> 12) & 255] = pc;
-            continue;
+        if (fe.pc == pc) {
+            const u64 epoch = region_writes[fe.home];
+            if (fe.checked == epoch || (fe.cluster >= 0 && cluster_ok[fe.cluster] == epoch)) {
+                fe.checked = epoch;
+                st_fast++;
+                u32 cn = fe.count_n;
+                fe.fn(*this);
+                u64 before_n = instructions;
+                instructions += cn;
+                if ((before_n >> 12) != (instructions >> 12)) pc_samples[(instructions >> 12) & 255] = pc;
+                continue;
+            }
         }
         Block* b = find_block(pc);
         st_slow++;
-        if (!b || (b->checked != code_writes && b->ver_sum != block_ver(*b))) { b = build_block(pc); st_build++; }
-        b->checked = code_writes;
+        if (!b || (b->checked != region_writes[b->home] && b->ver_sum != block_ver(*b))) { b = build_block(pc); st_build++; }
+        const u64 epoch = region_writes[b->home];
+        b->checked = epoch;
         // debug: F1CE_SPU_VERIFY=1 runs every block through this path and compares it with the LS
         static const bool verify = getenv("F1CE_SPU_VERIFY") != nullptr;
         if (__builtin_expect(verify, 0))
@@ -356,8 +364,8 @@ void SPUThread::run() {
                 }
         if (b->native) {
             static const bool no_fast = getenv("F1CE_SPU_NOFAST") != nullptr;   // debug
-            if (b->cluster >= 0) cluster_ok[b->cluster] = code_writes;
-            if (!no_fast && !verify) fe = {code_writes, b->native, pc, b->cluster >= 0 ? FAST_CLUSTER | (u32)b->cluster : b->count_n};
+            if (b->cluster >= 0) cluster_ok[b->cluster] = epoch;
+            if (!no_fast && !verify) fe = {epoch, b->native, pc, b->home, b->cluster, b->count_n};
             b->native(*this);
             u64 before_n = instructions;
             instructions += b->count_n;
@@ -406,11 +414,12 @@ void SPUThread::dma(u32 cmd) {
         case 0xB4: bump(counts[3]); break;
     }
     if (on_dma) on_dma(*this, cmd, lsa, ea, size);
+    extern u32 g_watch_line;   // core.cpp (F1CE_WATCH_LINE; may be retargeted at run time by F1CE_AUTO_WATCH)
     // debug ring of recent DMA commands (printed with F1CE_WATCH_LINE hits when F1CE_WATCH_HISTORY is set)
     struct DmaRec { u32 cmd, ea, lsa, size, pc; };
     thread_local DmaRec hist[32];
     thread_local u32 hist_pos = 0;
-    hist[hist_pos++ % 32] = {cmd & 0xFF, ea, lsa, size, pc};
+    if (__builtin_expect(g_watch_line > 1, 0)) hist[hist_pos++ % 32] = {cmd & 0xFF, ea, lsa, size, pc};
     auto print_history = [&] {
         for (u32 k = 0; k < 32; k++) {
             const DmaRec& r = hist[(hist_pos + k) % 32];
@@ -418,7 +427,6 @@ void SPUThread::dma(u32 cmd) {
         }
     };
     // debug: F1CE_WATCH_LINE=<hex ea> logs every SPU access to that 128-byte line
-    extern u32 g_watch_line;   // core.cpp (F1CE_WATCH_LINE; may be retargeted at run time by F1CE_AUTO_WATCH)
     const u32 watch = g_watch_line > 1 ? g_watch_line : 0;
     extern double watch_after();
     if (watch && mfc_eal < watch + 128 && mfc_eal + std::max(mfc_size, 1u) > watch && time_usec() / 1e6 >= watch_after()) {

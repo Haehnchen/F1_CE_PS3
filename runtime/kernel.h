@@ -195,3 +195,11 @@ u64 time_usec();          // monotonic microseconds since start
 extern const u64 g_tsc_scale;   // microseconds per tick, 32.32 fixed point
 FORCE_INLINE u64 prof_usec() { return (u64)(((unsigned __int128)__rdtsc() * g_tsc_scale) >> 32); }
 void sleep_usec(u64 us);
+u64 process_cpu_usec();   // user + kernel time of all threads
+// Wait of a polling thread with nothing to do: short waits (they spin, for latency) until it has been idle for 3 ms, then
+// a real sleep. Under load the idle spells are shorter, so the 1 ms of latency only applies in menus and pauses.
+inline void idle_wait(u64& idle_since, u64 short_us) {
+    u64 now = time_usec();
+    if (!idle_since) idle_since = now;
+    sleep_usec(now - idle_since > 3000 ? 1000 : short_us);
+}

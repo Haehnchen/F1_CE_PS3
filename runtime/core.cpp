@@ -121,7 +121,11 @@ u64 time_usec() {
 void sleep_usec(u64 us) {
     if (us <= 200) {
         u64 end = time_usec() + us;
-        do std::this_thread::yield(); while (time_usec() < end);
+        // (a yield per poll is a system call: the pauses leave the core to its other hardware thread)
+        do {
+            for (int i = 0; i < 32; i++) _mm_pause();
+            std::this_thread::yield();
+        } while (time_usec() < end);
         return;
     }
 #ifdef _WIN32
@@ -129,6 +133,21 @@ void sleep_usec(u64 us) {
     (void)period;
 #endif
     std::this_thread::sleep_for(std::chrono::microseconds(us));
+}
+void ppu_spin() {
+    static thread_local u32 n = 0;
+    for (int i = 0; i < 8; i++) _mm_pause();
+    if ((++n & 63) == 0) std::this_thread::yield();
+}
+u64 process_cpu_usec() {
+#ifdef _WIN32
+    FILETIME created, exited, kernel, user;
+    if (!GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user)) return 0;
+    auto us = [](const FILETIME& f) { return (((u64)f.dwHighDateTime << 32) | f.dwLowDateTime) / 10; };
+    return us(kernel) + us(user);
+#else
+    return (u64)(clock() / (double)CLOCKS_PER_SEC * 1e6);
+#endif
 }
 u64 ppu_timebase() {  // 79.8 MHz
     auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - g_start).count();

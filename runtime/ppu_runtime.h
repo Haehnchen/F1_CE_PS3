@@ -110,6 +110,10 @@ struct PPUContext {
 #define PPU_DECL(name) void name(PPUContext& __restrict c)
 #define PPU_FUNC(name) void name(PPUContext& __restrict c)
 #define PPU_LOOP() __asm__ volatile("" : : : "memory")
+// Head of a loop that only polls memory written by the SPUs (tools/recomp.py SPIN_LOOPS): it leaves the core to the other
+// hardware thread, and the processor to a worker when the threads outnumber the cores.
+void ppu_spin();   // core.cpp
+#define PPU_SPIN() ppu_spin()
 using PPUFunc = void (*)(PPUContext&);
 
 struct FuncEntry { u32 addr; PPUFunc fn; };

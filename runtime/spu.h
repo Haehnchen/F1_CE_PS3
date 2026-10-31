@@ -30,6 +30,12 @@ FORCE_INLINE bool same_bytes(const u8* a, const u8* b, u32 n) {
     return true;
 }
 
+// at most 128 bytes, mostly whole lines: the C library call per line showed up in profiles
+FORCE_INLINE void copy_bytes(u8* d, const u8* s, u32 n) {
+    for (; n >= 32; d += 32, s += 32, n -= 32) _mm256_storeu_si256((__m256i*)d, _mm256_loadu_si256((const __m256i*)s));
+    if (n) memcpy(d, s, n);
+}
+
 struct SPUThread {
     // Registers use the same byte-reversed layout as VMX registers: BE word i lives in w[3-i],
     // so the preferred slot (BE word 0) is w[3].
@@ -92,7 +98,8 @@ struct SPUThread {
     struct Block {
         u32 start = 0, n = 0, line0 = 0, line1 = 0;
         u64 ver_sum = 0;
-        u64 checked = 0;   // code_writes when the block was last validated
+        u64 checked = 0;   // region_writes[home] when the block was last validated
+        u32 home = 0;      // the region whose epoch covers this block (see region_writes)
         void (*native)(SPUThread&) = nullptr;   // ahead-of-time translated version (generated/spu_aot*.cpp)
         s32 aot = -1;                            // its g_spu_aot index
         u32 count_n = 0;                         // instructions counted per dispatch (cluster code counts itself)
@@ -123,10 +130,27 @@ struct SPUThread {
     u64 line_ver[2048] = {};
     u64 code_writes = 1;   // bumped whenever a line holding decoded code is written
     bool line_code[2048] = {};
+    // Per-region epochs (4 KB regions): a job binary swapped in, or the code the job manager's interrupt handler
+    // writes on its stack, leaves the policy module's blocks valid. region_links[r]: other regions with a block or
+    // cluster that guards a line in r (their epoch is `home`, one region per block), so a write in r bumps them too.
+    static constexpr u32 LINES_PER_REGION_SHIFT = 5;
+    u64 region_writes[64];
+    u64 region_links[64];
+    void code_hit(u32 l) {
+        code_writes++;
+        line_code[l] = false;
+        u32 r = l >> LINES_PER_REGION_SHIFT;
+        region_writes[r]++;
+        for (u64 m = region_links[r]; m; m &= m - 1) region_writes[__builtin_ctzll(m)]++;
+    }
+    void link_region(u32 line, u32 home) {
+        u32 r = line >> LINES_PER_REGION_SHIFT;
+        if (r != home) region_links[r] |= 1ull << home;
+    }
     void ls_written(u32 a, u32 n) {
         if (!blocks_on) return;
         for (u32 l = (a & 0x3FFFF) >> 7, e = ((a + std::max(n, 1u) - 1) & 0x3FFFF) >> 7; ; l = (l + 1) & 2047) {
-            if (line_code[l]) { code_writes++; line_code[l] = false; }
+            if (line_code[l]) code_hit(l);
             if (l == e) break;
         }
     }
@@ -143,7 +167,7 @@ struct SPUThread {
     }
     u64 st_fast = 0, st_slow = 0, st_build = 0;   // dispatch statistics (logged with the SPURS report)
     std::vector<u64> cluster_ver;   // per cluster: version sum of its lines when its words last matched (0 = never)
-    std::vector<u64> cluster_ok;    // per cluster: code_writes when its lines last matched that sum
+    std::vector<u64> cluster_ok;    // per cluster: epoch of its home region when its lines last matched that sum
     u64 lines_ver(const u16* l, u32 n) {
         u64 v = 0;
         for (u32 i = 0; i < n; i++) v += line_version(l[i]);
@@ -167,8 +191,8 @@ struct SPUThread {
         // per line: a binary that shares lines with the previous one keeps the blocks on those lines
         while (n) {
             u32 k = std::min(n, 128 - (lsa & 127)), l = lsa >> 7;
-            if (!line_code[l]) memcpy(ls + lsa, p, k);
-            else if (!same_bytes(ls + lsa, p, k)) { memcpy(ls + lsa, p, k); code_writes++; line_code[l] = false; }
+            if (!line_code[l]) copy_bytes(ls + lsa, p, k);
+            else if (!same_bytes(ls + lsa, p, k)) { copy_bytes(ls + lsa, p, k); code_hit(l); }
             lsa += k; p += k; n -= k;
         }
     }
@@ -179,10 +203,9 @@ struct SPUThread {
     }
     // dispatch cache: native code of recently run blocks in one compact direct-mapped table, valid while no code was
     // written since the block was verified (the block objects are scattered on the heap, and the cache misses of
-    // the full lookup were the largest single cost of the SPU threads). Cluster code: count_n = FAST_CLUSTER | cluster
-    // index (it counts itself), and the entry stays good once any block of its cluster was verified again.
-    static constexpr u32 FAST_CLUSTER = 0x80000000;
-    struct FastEnt { u64 checked; void (*fn)(SPUThread&); u32 pc, count_n; };
+    // the full lookup were the largest single cost of the SPU threads). Cluster code: cluster >= 0 (it counts itself),
+    // and the entry stays good once any block of its cluster was verified again.
+    struct FastEnt { u64 checked; void (*fn)(SPUThread&); u32 pc, home; s32 cluster; u32 count_n; };
     FastEnt fast[4096] = {};
     Block* build_block(u32 pc);
     void flush_blocks();

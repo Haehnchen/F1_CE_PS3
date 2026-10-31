@@ -169,6 +169,7 @@ void spu_worker(u32 num) {
     spu->name = "spurs" + std::to_string(num);
     g_worker_spu[num & 7] = spu.get();
     u32 idle_streak = 0;
+    u64 idle_since = 0;
     for (;;) {
         int wid = -1;
         Workload w;
@@ -214,7 +215,8 @@ void spu_worker(u32 num) {
                 w = g_sp.wkl[wid];
             }
         }
-        if (wid < 0) { sleep_usec(100); continue; }
+        if (wid < 0) { idle_wait(idle_since, 100); continue; }
+        idle_since = 0;
         u64 run_t0 = time_usec();
         u64 n = run_workload(*spu, (u32)wid, w);
         if (w.runs < 8) {   // diagnostics: rarely run workloads (the pit-entry job manager)

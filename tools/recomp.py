@@ -23,6 +23,7 @@ from ppc import (RA, RB, RC, RD, RS, SIMM, UIMM, DS, BO, BI, BD, LI, AA, LK, CRF
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "generated"
 CHUNK = 400
+SPIN_LOOPS = {0x551228, 0x5513BC}   # the job manager's waits: they only poll counters the SPUs write
 
 LOAD_INT = {  # mnemonic: (size, signed, update, indexed)
     "lbz": (1, 0, 0, 0), "lbzu": (1, 0, 1, 0), "lbzx": (1, 0, 0, 1), "lbzux": (1, 0, 1, 1),
@@ -164,7 +165,9 @@ class FuncGen:
         for a, code, m in body:
             if a in self.labels or self.dispatch_all:
                 out.append(f"L_{a:X}:")
-            if a in self.loop_heads or self.dispatch_all:
+            if a in SPIN_LOOPS:
+                out.append("\tPPU_SPIN();")
+            elif a in self.loop_heads or self.dispatch_all:
                 out.append("\tPPU_LOOP();")
             out.append(f"\t{code}")
         if tail:

@@ -154,10 +154,22 @@ void pace_ticks() {
     }
 }
 
+// cores in use by the whole process, averaged over 5 s: what the game costs in power, whatever the frame rate
+void log_cpu_use() {
+    static u64 window = time_usec(), last_cpu = process_cpu_usec(), flips = 0;
+    flips++;
+    u64 now = time_usec();
+    if (now - window < 5000000) return;
+    u64 cpu = process_cpu_usec();
+    LOG_I("cpu: %.2f cores at %.1f fps", (double)(cpu - last_cpu) / (now - window), flips * 1e6 / (now - window));
+    window = now; last_cpu = cpu; flips = 0;
+}
+
 void do_flip(u32 id) {
     const DisplayBuffer& b = g.buffers[id & 7];
     rsx::flip(mem::RSX_LOCAL + b.offset, b.pitch, b.width, b.height);
     if (g_ticks_per_frame_ea) pace_ticks();
+    log_cpu_use();
     g.flip_status = 0;
     g.flips_done++;
     raise_interrupt(g.flip_handler, 1);
@@ -502,7 +514,10 @@ void rsx_thread() {
         }
         if (put == get) {
             flush_pending();
-            u64 t = time_usec(); sleep_usec(50); g_rsx_idle_us += time_usec() - t; continue;
+            static u64 idle_since = 0;
+            u64 t = time_usec(); idle_wait(idle_since, 50); g_rsx_idle_us += time_usec() - t;
+            if (ld32(g.control_addr) != ld32(g.control_addr + 4)) idle_since = 0;
+            continue;
         }
         u32 cmd = fifo_word(get);
         g_cur_get = get;

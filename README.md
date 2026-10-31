@@ -161,7 +161,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 7. **Shader progress text.** *Done 2026-10-31: "Loading shaders... 42%" above the bar, on both renderers.*
 8. **Performance for 60 fps.** Make the game as fast as possible with `F1CE_60FPS=1`, aiming at a steady 60.
    *In progress (2026-10-31): Vulkan at scale 2 drives at 46-48 fps (was 38-42), the full grid at 34-35 (was 33). The SPUs
-   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35, see the progress log.*
+   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35; idle power use cut from ~6 to ~1.7 cores in menus, see the progress log.*
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
@@ -614,3 +614,20 @@ banks, then waits for SPU work.
   - Steam Deck estimate: this machine limited to 8 logical CPUs, scale 1, 2 faces: grid 26-30, driving 35-38. The Deck's cores
     are slower (Zen 2, 3.5 GHz against Zen 3, 4.4 GHz) and it has never been run there, so expect less. 60 fps there needs a
     lower SPU workload (fewer cars or LOD, shadow and cube culling in the game's jobs), not just a faster runtime.
+- **60 fps work, part 3: power use (2026-10-31, Vulkan, scale 1.5, `F1CE_60FPS=1`, Silverstone, Ryzen 5 5600G + RX 6600):**
+  - New log line `cpu: <n> cores at <f> fps`, every 5 s: cores used by the whole process.
+  - Menus at 60 fps: 6.1 -> ~1.7 cores. Idle SPU workers polled with `sleep_usec(100)`, which spins, so five idle workers took
+    five cores. `idle_wait` (kernel.h) sleeps for real after 3 ms without work, in the workers and in the RSX FIFO loop.
+  - Short `sleep_usec` waits pause between yields. The job manager's PPU waits 0x551228 and 0x5513BC (they only poll SPU counters)
+    are `PPU_SPIN` loops (`SPIN_LOOPS` in `tools/recomp.py`): no fps change, they matter when threads outnumber cores.
+  - SPU dispatch: one epoch per 4 KB of LS (`region_writes`, with `region_links` for blocks and clusters across regions) instead of
+    one global counter, so swapped job binaries and the handler's stack code leave other code valid: slow dispatches 15.5 -> ~2
+    million/s. `F1CE_SPU_VERIFY=1` runs every dispatch through this check: no mismatch in a race. The per-DMA debug ring is
+    off unless a watch is set and `write_ls` copies lines inline.
+  - Results: grid 30-33 -> 31-36, driving 43-58 in one 80 s run with no errors (not comparable sample by sample). 60 fps is still
+    **not** steady: race use is still ~7.2 cores, workers 80-91% busy.
+  - Tested and rejected: scale 1 + no MSAA changes nothing on the grid and the RSX idles 5-9 ms per frame there, so the grid is
+    not GPU- or renderer-limited. The hot clusters are real float maths, not polling. 6 workers give +2-4% for +0.9 cores (default
+    stays 5; the job manager's waits read exactly 6 counters, a likely reason why 7+ hang, not verified).
+  - One unrelated process at 100% of a core cost ~15% on the grid (25-28 instead of 30-33), so low-end machines will lose more
+    than core speed suggests. `pc_samples` only records blocks outside clusters: do not read them as an SPU profile.

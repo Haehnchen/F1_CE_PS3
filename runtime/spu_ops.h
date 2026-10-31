@@ -65,6 +65,7 @@ struct SpuLocal {
           interrupts(th.interrupts) {}
     u32 pref(int r) const { return gpr[r].w[3]; }
     void set_pref(int r, u32 v) { gpr[r].pi = _mm_setzero_si128(); gpr[r].w[3] = v; }
+    void code_hit(u32 l) { t.code_hit(l); }
 };
 
 // ------------------------------------------------------------------ memory
@@ -111,11 +112,10 @@ template <class S> FORCE_INLINE void stq(S& s, int rt, u32 a) {
         // changes revalidated every block of the SPU (and emptied its dispatch cache) after each interrupt.
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128(p), v)) == 0xFFFF) return;
         _mm_storeu_si128(p, v);
-        s.code_writes++;
         // the line's version is stale; the line counts as code again only when a block there is checked. Lines stayed
         // marked forever: the stack, where that handler generates its
         // code, then invalidated on every ordinary store (~7 million times per second per SPU)
-        s.line_code[(a >> 7) & 2047] = false;
+        s.code_hit((a >> 7) & 2047);
         return;
     }
     _mm_storeu_si128(p, v);
