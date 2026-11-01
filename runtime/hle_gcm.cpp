@@ -7,10 +7,13 @@
 #include "kernel.h"
 #include "rsx.h"
 
+#include <bit>
+#include <cmath>
 #include <vector>
 #include <deque>
 #include <memory>
 
+namespace rsx { u64 g_last_frame_draws = 0; }
 u64 g_rsx_idle_us = 0;   // profiling: time the FIFO reader waited for the PPU (read by rsx_gl.cpp)
 
 void profile_register_thread();   // core.cpp (host profiler)
@@ -134,6 +137,28 @@ struct Rsx {
 
 u32 label_ptr(u32 offset) { return g.label_addr + offset; }
 
+// the player's front wheel in the world, in a 3D scene: the swing of pace_ticks shows here, and only a stopped car has it. Frames of
+// two ticks hide the swing (the wheel reads the same each time), so once on, this holds until the car really moves or the scene ends.
+bool car_standing() {
+    const u32 wheel = 0x10110670;
+    static float px, pz;
+    static int small = 0, since_swing = 1000;
+    static bool hold = false;
+    const float x = std::bit_cast<float>(ld32(wheel)), z = std::bit_cast<float>(ld32(wheel + 8));
+    const float moved = std::fabs(x - px) + std::fabs(z - pz);
+    px = x;
+    pz = z;
+    if (moved >= 0.03f || rsx::g_last_frame_draws < 800) {
+        small = 0;
+        hold = false;
+        return false;
+    }
+    small++;
+    since_swing = moved > 0 ? 0 : since_swing + 1;
+    if (small >= 30 && since_swing < 30) hold = true;
+    return hold;
+}
+
 // F1CE_60FPS: the game logic runs one tick per 59.94 Hz vblank, so the next frame gets one tick for each vblank period
 // this one took. The range is the game's own at the top (2 ticks: 30 fps); below 30 fps it slows down as on the PS3.
 void pace_ticks() {
@@ -141,9 +166,20 @@ void pace_ticks() {
     static u64 last = time_usec(), window = last, flips = 0, ticks = 0;
     static s64 owed = 0;
     u64 now = time_usec();
+    const u64 previous = last;
     owed += (s64)(now - last);
     last = now;
     s64 n = std::clamp<s64>((owed + tick_us / 2) / tick_us, 1, 2);
+    // A stopped car does not settle: its tyre forces change sign every tick and the heading swings ~0.08 degrees (the wheels
+    // ~3 mm). The game shows every second tick, so that never appears; one tick per frame shows both phases and the car shakes
+    // on the grid. So while it stands, a frame takes two ticks and 33 ms, as in the original game.
+    static const bool no_hold = getenv("F1CE_60FPS_NOHOLD") != nullptr;
+    if (!no_hold && car_standing()) {
+        n = 2;
+        const u64 end = previous + 2 * tick_us;
+        if (now < end) { sleep_usec(end - now); last = end; }
+        owed = 0;
+    }
     owed = std::clamp<s64>(owed - n * tick_us, -tick_us, tick_us);
     st32(g_ticks_per_frame_ea, (u32)n);
     flips++;

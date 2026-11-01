@@ -2841,6 +2841,7 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
         static const double quit_after = getenv("F1CE_QUIT_AFTER_3D") ? atof(getenv("F1CE_QUIT_AFTER_3D")) : -1;
         static u64 last_draws = 0, start_us = 0;
         u64 frame_draws = g_draws - last_draws;
+        g_last_frame_draws = frame_draws;
         last_draws = g_draws;
         if (quit_after >= 0) {
             if (!start_us && frame_draws >= 800) {

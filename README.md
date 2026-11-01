@@ -108,7 +108,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_MSAA=2/4/8` | samples of the targets the game antialiases (default 4, as on the RSX) |
 | `F1CE_FXAA=1` | FXAA on the final image |
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
-| `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time) |
+| `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time); a stopped car in a race stays at 30 fps (`F1CE_60FPS_NOHOLD=1` turns that off) |
 | `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX) |
 | `F1CE_SPURS_SPUS=<n>` | SPU worker threads (default 5; 6 works, 7 and 8 hang at boot; 3 halves the grid fps) |
 | `F1CE_SPU_DMA_DIAG=1` | the per-DMA diagnostics of the SPURS workloads (off: they cost a shared atomic on every DMA) |
@@ -656,3 +656,9 @@ banks, then waits for SPU work.
   - Results: grid 35-36 -> 37-38 fps, sections that ran at 42-44 now ~50, no errors in an 80 s run. Peaks had already reached 60 with ~1500 draws. 60 is
     **not** steady: the grid has SPU workers at ~87% and ~7.3 cores. Largest SPU loops now: 0d800 cull ~19%, 0d628 transform ~8.5% (both software-pipelined, so
     a bulk version must rebuild many live registers).
+- **Car shaking on the grid with `F1CE_60FPS` (2026-11-01):** reported on Vulkan, but it is game logic. A stopped car never settles: tyre values at 0x101106F0
+  change sign every tick and the heading swings ~0.08 degrees, the wheels ~3 mm. The game shows one frame per two ticks, always the same phase, so it never
+  appears; adaptive ticks show both (fixed 1 tick per frame: the scenery jumps 1.9 px on every frame). `pace_ticks` now keeps 2 ticks and 33 ms per frame
+  while the player's car stands in a 3D scene (`car_standing`, wheel at 0x10110670), and leaves that as soon as it moves ~3 cm per frame or the frame has
+  under 800 draws. Scenery steps above 0.5 px: 434 -> 11 of 900 frames over a run that includes the race start. Measured with a strip copied per frame without waiting (full dumps slow the game to 13 fps and hide
+  this). Checked at Silverstone only; 0x10110670 is a static address, Monaco not measured.
