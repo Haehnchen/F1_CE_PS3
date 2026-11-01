@@ -9,6 +9,7 @@
 #include "kernel.h"
 
 #include <algorithm>
+#include <immintrin.h>
 #include <set>
 #include <sstream>
 
@@ -856,13 +857,33 @@ std::vector<ProgEntry> load_program_db() {
 }
 
 // ------------------------------------------------------------------ hashes and small helpers
-// change-detection hash of guest memory: four independent multiply chains (one chain is latency-bound);
+// change-detection hash of guest memory: 64-byte stripes in two AVX2 accumulators (data times data, as xxh3, with a key
+// that moves on per stripe so that swapped stripes differ), then four independent multiply chains for what is left;
 // step > 8 samples one 8-byte word per step
 u64 hash_range(const u8* p, u32 bytes, u32 step) {
     u64 h0 = 1469598103934665603ull, h1 = 0x9E3779B97F4A7C15ull, h2 = 0xC2B2AE3D27D4EB4Full, h3 = 0x165667B19E3779F9ull;
     constexpr u64 M = 1099511628211ull;
     u32 k = 0;
     if (step == 8) {
+        if (bytes >= 64) {
+            __m256i a0 = _mm256_set_epi64x(h0, h1, h2, h3), a1 = _mm256_set_epi64x(h3, h0, h1, h2);
+            __m256i k0 = _mm256_set_epi64x(0x243F6A8885A308D3ll, 0x13198A2E03707344ll, (long long)0xA4093822299F31D0ull, 0x082EFA98EC4E6C89ll);
+            __m256i k1 = _mm256_set_epi64x(0x452821E638D01377ll, (long long)0xBE5466CF34E90C6Cll, (long long)0xC0AC29B7C97C50DDull, 0x3F84D5B5B5470917ll);
+            const __m256i inc = _mm256_set1_epi64x((long long)0x9E3779B97F4A7C15ull);
+            for (; k + 64 <= bytes; k += 64) {
+                const __m256i d0 = _mm256_loadu_si256((const __m256i*)(p + k)), d1 = _mm256_loadu_si256((const __m256i*)(p + k + 32));
+                const __m256i x0 = _mm256_xor_si256(d0, k0), x1 = _mm256_xor_si256(d1, k1);
+                a0 = _mm256_add_epi64(a0, _mm256_add_epi64(_mm256_mul_epu32(x0, _mm256_srli_epi64(x0, 32)), _mm256_shuffle_epi32(d0, 0x4E)));
+                a1 = _mm256_add_epi64(a1, _mm256_add_epi64(_mm256_mul_epu32(x1, _mm256_srli_epi64(x1, 32)), _mm256_shuffle_epi32(d1, 0x4E)));
+                k0 = _mm256_add_epi64(k0, inc);
+                k1 = _mm256_add_epi64(k1, inc);
+            }
+            alignas(32) u64 w[8];
+            _mm256_store_si256((__m256i*)w, a0);
+            _mm256_store_si256((__m256i*)(w + 4), a1);
+            h0 = (h0 ^ w[0]) * M; h1 = (h1 ^ w[1]) * M; h2 = (h2 ^ w[2]) * M; h3 = (h3 ^ w[3]) * M;
+            h0 = (h0 ^ w[4]) * M; h1 = (h1 ^ w[5]) * M; h2 = (h2 ^ w[6]) * M; h3 = (h3 ^ w[7]) * M;
+        }
         for (; k + 32 <= bytes; k += 32) {
             u64 x0, x1, x2, x3;
             memcpy(&x0, p + k, 8); memcpy(&x1, p + k + 8, 8); memcpy(&x2, p + k + 16, 8); memcpy(&x3, p + k + 24, 8);
@@ -880,20 +901,16 @@ u64 hash_range(const u8* p, u32 bytes, u32 step) {
 // never rewritten: changed data gets a new block and the old one is reused only after the GPU finished the frame
 // that freed it.
 void heap_insert_free(BlockHeap& h, u32 off, u32 size) {   // with coalescing of neighbours
-    auto erase_size = [&h](u32 o, u32 sz) {
-        auto r = h.free_size.equal_range(sz);
-        for (auto it = r.first; it != r.second; ++it) if (it->second == o) { h.free_size.erase(it); return; }
-    };
     auto next = h.free_off.lower_bound(off);
     if (next != h.free_off.end() && next->first == off + size) {
         size += next->second;
-        erase_size(next->first, next->second);
+        h.free_size.erase({next->second, next->first});
         next = h.free_off.erase(next);
     }
     if (next != h.free_off.begin()) {
         auto prev = std::prev(next);
         if (prev->first + prev->second == off) {
-            erase_size(prev->first, prev->second);
+            h.free_size.erase({prev->second, prev->first});
             off = prev->first;
             size += prev->second;
             h.free_off.erase(prev);
@@ -906,7 +923,7 @@ void heap_insert_free(BlockHeap& h, u32 off, u32 size) {   // with coalescing of
 // a block of `bytes` in the heap (offset), ~0u when full
 u32 heap_alloc(BlockHeap& h, u32 bytes) {
     bytes = (bytes + BlockHeap::ALIGN - 1) & ~(BlockHeap::ALIGN - 1);
-    auto it = h.free_size.lower_bound(bytes);
+    auto it = h.free_size.lower_bound({bytes, 0u});
     if (it == h.free_size.end()) { h.failed++; return ~0u; }
     u32 off = it->second, size = it->first;
     h.free_size.erase(it);

@@ -1272,6 +1272,7 @@ Img* cube_texture(u32 u) {
     ce.checked_seq = g_square_write_seq;
     u32 face_bytes = w * w * 4;
     for (u32 f = 0; f < 6; f++) g_cube_faces.insert(offset + f * face_bytes);
+    bool copied = false;
     for (u32 f = 0; f < 6; f++) {
         auto it = g_surfaces.find(offset + f * face_bytes);
         if (it == g_surfaces.end() || !it->second.tex || it->second.width != w || it->second.height != w) continue;
@@ -1285,9 +1286,10 @@ Img* cube_texture(u32 u) {
         b.dstOffsets[0] = {0, (s32)pw, 0};
         b.dstOffsets[1] = {(s32)pw, 0, 1};
         vkCmdBlitImage(g_cb, it->second.tex->img, VK_IMAGE_LAYOUT_GENERAL, ce.tex->img, VK_IMAGE_LAYOUT_GENERAL, 1, &b, VK_FILTER_LINEAR);
-        memory_barrier(g_cb);
+        copied = true;
         ce.seq[f] = it->second.write_seq;
     }
+    if (copied) memory_barrier(g_cb);
     return ce.tex;
 }
 
@@ -1526,6 +1528,9 @@ void draw(bool indexed) {
             if (((a >> 12) & 0xF) == 1) conv |= 16;
         }
         if (reg(0x1A04 + u * 0x20) & 4) {
+            // the game leaves the cube map enabled while it renders that cube's faces: looking at it for a program that does
+            // not read it copied the face after nearly every draw of the pass (~440 blits per frame, each ending the render pass)
+            if (!(p->tex_used >> u & 1)) continue;
             Img* ct = cube_texture(u);
             if (ct) sampled(ct);
             SamplerKey k{};

@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <deque>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -124,7 +125,7 @@ struct BlockHeap {
     u32 buf = 0, tex = 0, ring_tex = 0;       // (OpenGL objects)
     u8* ptr = nullptr;                        // persistently mapped (index arena)
     std::map<u32, u32> free_off;              // offset -> size
-    std::multimap<u32, u32> free_size;        // size -> offset
+    std::set<std::pair<u32, u32>> free_size;  // size, offset
     struct Pending { u64 frame; u32 off, size; };
     std::deque<Pending> pending;              // freed blocks waiting for their frame's fence
     std::deque<std::pair<u64, void*>> fences;   // end-of-frame fences (OpenGL)

@@ -89,6 +89,9 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_SPU_NOAOT=1`, `F1CE_SPU_NOCLUSTER=1` | interpret all SPU code / use single-block translations only |
 | `F1CE_SPU_BENCH=1` | SPU interpreter benchmark and shufb self-test |
 | `F1CE_SPU_VERIFY=1` | compares every SPU block with the LS before it runs and logs mismatches (no dispatch cache, slower) |
+| `F1CE_SPU_NOIDIOM=1` | runs the table-building SPU loops as translated (`IDIOMS` in `tools/spu_aot.py`; for comparison) |
+| `F1CE_SPU_NOCULL=1` | the geometry jobs keep all triangles: SPU workers ~80% -> ~56% busy, but the renderer gets ~1000 more draws and 8x the indices, so fps drop (see the progress log) |
+| `SPU_AOT_HEAT=1 python -I tools/spu_aot.py` | builds counters per SPU block; the game writes `spu_heat.txt` every 10 s (regenerate without it afterwards) |
 | `F1CE_MAX_FRAMES_AHEAD=<n>` | frames the PPU may queue ahead of the renderer (default 1) |
 | `F1CE_TASK_DMA_LOG=1` | logs each distinct DMA of the SPURS tasks once |
 | `F1CE_SYNC_COMPILE=1` | link shader programs on the render thread instead of the background compile thread |
@@ -161,7 +164,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 7. **Shader progress text.** *Done 2026-10-31: "Loading shaders... 42%" above the bar, on both renderers.*
 8. **Performance for 60 fps.** Make the game as fast as possible with `F1CE_60FPS=1`, aiming at a steady 60.
    *In progress (2026-10-31): Vulkan at scale 2 drives at 46-48 fps (was 38-42), the full grid at 34-35 (was 33). The SPUs
-   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35; idle power use cut from ~6 to ~1.7 cores in menus, see the progress log.*
+   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35; idle power use cut from ~6 to ~1.7 cores in menus, see the progress log. 2026-11-01: grid 37-38, driving around 50 where it was 42-44.*
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
@@ -629,5 +632,27 @@ banks, then waits for SPU work.
   - Tested and rejected: scale 1 + no MSAA changes nothing on the grid and the RSX idles 5-9 ms per frame there, so the grid is
     not GPU- or renderer-limited. The hot clusters are real float maths, not polling. 6 workers give +2-4% for +0.9 cores (default
     stays 5; the job manager's waits read exactly 6 counters, a likely reason why 7+ hang, not verified).
+  - Where the SPU instructions go (`SPU_AOT_HEAT`): six loops are 42.7%. 0d800 triangle cull 15.3%, 05778 audio voice (resample,
+    two filters, 4 outputs, one sample per iteration) 7.3%, 0d628 vertex transform 6.8%, 08910 u16 ramp 5.7%, 0e3f0 age table 4.1%,
+    04ae4 word fill 3.5%. Those last three are bulk helpers now (`spu_idiom_*`, spu_ops.h): they do all iterations but the last,
+    the translated loop does the last one and so sets the final registers. `F1CE_SPU_BENCH=1` checks them against the interpreter.
+    Grid 30-32 -> ~35, workers 91% -> 81%, 7.4 -> 7.0 cores.
+  - Culling cannot simply go: the list is compacted in place (r3, 8 bytes per triangle, r13 output bytes) and skipping it
+    (`F1CE_SPU_NOCULL`) gives 1.44 million indices per frame instead of 0.17, grid 28-32. The transform table stays either way
+    (the caller keeps its pointer at 272(r80)). `foaDynamicCubeMap::Render` is 0x2F0D14 and 0x2F3B34 (virtual / from 0x2F4420), but
+    skipping them hangs the race: 0x2F0390 waits in 0x551228 for a job fence of the skipped pass. `F1CE_CUBE_FACES` only saves
+    renderer time for that reason. Removing those jobs means rebuilding that fence chain.
   - One unrelated process at 100% of a core cost ~15% on the grid (25-28 instead of 30-33), so low-end machines will lose more
     than core speed suggests. `pc_samples` only records blocks outside clusters: do not read them as an SPU profile.
+- **60 fps work, part 4 (2026-11-01, Vulkan, scale 1.5, `F1CE_60FPS=1`, Silverstone):**
+  - Audio voice loop 05778 is an idiom now (`spu_idiom_audio_voice`): all four lanes as on the SPU, last iteration as translated. 3000 random
+    states against the interpreter: no difference. In a race its block went from 7.3% of SPU instructions to almost nothing. No fps change on its own.
+  - Cube map: the game leaves the cube enabled on a texture unit while it renders that cube's faces, also for programs that do not read it. The
+    renderer copied the face just written after nearly every draw of that pass: 437 blits per frame, each ending the render pass, not the 6 expected.
+    A unit the program does not sample is now skipped (both renderers). Vulkan "uploads" 4.4 -> 2.2 ms per frame; reflections unchanged by eye.
+    Replacing the blit with an image copy changed nothing: the count was the problem, not the cost of one blit.
+  - `hash_range` uses two AVX2 accumulators (hash ~1.5 -> ~0.8 ms). `BlockHeap::free_size` is a set of (size, offset): freeing no longer scans all
+    blocks of one size.
+  - Results: grid 35-36 -> 37-38 fps, sections that ran at 42-44 now ~50, no errors in an 80 s run. Peaks had already reached 60 with ~1500 draws. 60 is
+    **not** steady: the grid has SPU workers at ~87% and ~7.3 cores. Largest SPU loops now: 0d800 cull ~19%, 0d628 transform ~8.5% (both software-pipelined, so
+    a bulk version must rebuild many live registers).

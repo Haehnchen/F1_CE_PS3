@@ -9727,6 +9727,7 @@ L_73931c0be8787679:
 	goto out;
 L_092ca26d9023040a:
 	s.instructions += 7;
+	spu_idiom_fill_word(L);
 	L.pc = 0x04AE4; op_lqx(L, 0x38944402u);
 	L.pc = 0x04AE8; op_cwx(L, 0x3AD44403u);
 	L.pc = 0x04AEC; op_shufb(L, 0xB0408383u);
@@ -14013,6 +14014,7 @@ void spu_aotc_211(SPUThread& __restrict s) {
 	}
 L_a8aee6c38fdd0291:
 	s.instructions += 78;
+	spu_idiom_audio_voice(L);
 	L.pc = 0x05778; op_csflt(L, 0x76A6C303u);
 	L.pc = 0x0577C; op_lqx(L, 0x3884C207u);
 	L.pc = 0x05780; op_a(L, 0x1804C206u);
@@ -27013,6 +27015,7 @@ L_21df5acf618ef358:
 	goto out;
 L_d9d2e4b223fd625f:
 	s.instructions += 10;
+	spu_idiom_ramp_u16(L);
 	L.pc = 0x08910; op_a(L, 0x1801C385u);
 	L.pc = 0x08914; op_shlhi(L, 0x0FE10389u);
 	L.pc = 0x08918; op_ai(L, 0x1C004387u);

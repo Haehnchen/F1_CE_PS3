@@ -611,7 +611,89 @@ static v128 shufb_ref(const v128& a, const v128& b, const v128& c) {
     return r;
 }
 
+bool g_spu_idiom = getenv("F1CE_SPU_NOIDIOM") == nullptr;
+bool g_spu_nocull = getenv("F1CE_SPU_NOCULL") != nullptr;
+
+// each idiom against the interpreter, from random states: same local store and registers at the end of the loop
+static void idiom_self_test() {
+    struct Case {
+        const char* name; std::vector<u32> code; void (*fn)(SPUThread&);
+        void (*setup)(SPUThread&, u64 (*)(), u32);
+    };
+    static u64 seed = 0x9E3779B97F4A7C15ull;
+    u64 (*rnd)() = [] { seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17; return seed; };
+    static auto set = [](SPUThread& t, int r, u32 v, u64 (*rd)()) { t.gpr[r].d[0] = rd(); t.gpr[r].d[1] = rd(); t.gpr[r].w[3] = v; };
+    const Case cases[] = {
+        {"fill_word", {0x38944402, 0x3AD44403, 0xB0408383, 0x28944402, 0x1C010408, 0x78010402, 0x207FFD02},
+         spu_idiom_fill_word<SPUThread>, [](SPUThread& t, u64 (*r)(), u32 n) {
+             u32 st = (u32)(r() % 16) * 4;
+             set(t, 8, st, r); set(t, 4, st + (n % 400 + 1) * 4, r); set(t, 81, 0x4000 + (u32)(r() % 0x1000) * 16, r); set(t, 7, (u32)r(), r);
+         }},
+        {"ramp_u16", {0x1801C385, 0x0FE10389, 0x1C004387, 0x38820284, 0x3AA20286, 0x7801C502, 0xB0810486, 0x28820284, 0x4020007F, 0x207FFB82},
+         spu_idiom_ramp_u16<SPUThread>, [](SPUThread& t, u64 (*r)(), u32 n) {
+             u32 st = (u32)(r() % 64);
+             set(t, 7, st, r); set(t, 10, st + n % 5000 + 1, r); set(t, 8, 0x4000 + (u32)(r() % 0x1000) * 2, r);
+         }},
+        {"age_table", {0x38940282, 0x09008302, 0x1821C103, 0x49024183, 0x8041C103, 0x28940282, 0x1C042850, 0x78022802, 0x4020007F, 0x207FFB82},
+         spu_idiom_age_table<SPUThread>, [](SPUThread& t, u64 (*r)(), u32 n) {
+             u32 st = (u32)(r() % 64) * 16;
+             set(t, 80, st, r); set(t, 8, st + (n % 800 + 1) * 16, r); set(t, 5, 0x4000 + (u32)(r() % 0x1000) * 16, r);
+             t.gpr[6].d[0] = r(); t.gpr[6].d[1] = r(); t.gpr[7].d[0] = r(); t.gpr[7].d[1] = r(); t.gpr[9].d[0] = r(); t.gpr[9].d[1] = r();
+         }},
+        {"audio_voice", {0x76A6C303, 0x3884C207, 0x1804C206, 0x3884C284, 0x18098D9B, 0x38888A0E, 0x3400050F, 0x4020007F, 0x4020007F, 0x3B818385,
+                         0x58A0D602, 0x3B834206, 0x3B840704, 0x3B828787, 0x58C14183, 0xE0418103, 0x58CB4102, 0x58C08F82, 0xE2E5D082, 0x58C5CF83,
+                         0xE2A55083, 0x58C54F02, 0xE2C59002, 0x58C58F03, 0xE2449003, 0x58810902, 0x58A10904, 0xB0408123, 0xB0810223, 0x58464103,
+                         0x58410C85, 0x80464103, 0x80864205, 0x58808204, 0xE08A8212, 0x58C11204, 0xE0411487, 0xB183C118, 0x4020007F, 0x2400050C,
+                         0x1C01050A, 0x34000482, 0x04000103, 0x3B824102, 0xE0411402, 0xB060C11A, 0x4020007F, 0x24000483, 0x1C010489, 0x34000402,
+                         0x04000103, 0x3B820102, 0xE0411282, 0xB060C11C, 0x4020007F, 0x24000403, 0x1C010408, 0x34000582, 0x04000103, 0x3B82C102,
+                         0xE0411382, 0xB060C11D, 0x24000583, 0x1C01058B, 0x0F5D0D82, 0x3EC00518, 0x1CFFC891, 0x3EC0049A, 0x182ACD86, 0x3EC0041C,
+                         0x18088A10, 0x3EC0059D, 0x0F608105, 0x1C004103, 0x7CFFC882, 0x0F608184, 0x1804C28D, 0x207FD982},
+         spu_idiom_audio_voice<SPUThread>, [](SPUThread& t, u64 (*r)(), u32 n) {
+             u32 word = (u32)(r() % 4) * 4;
+             set(t, 17, n % 200, r); set(t, 27, (u32)(r() % 0x400) << 12 | (u32)(r() & 0xFFF), r); set(t, 38, (u32)(r() % 0x2000), r);
+             set(t, 19, 0x8000 + (u32)(r() % 0x1000) * 4, r); set(t, 20, 0xC000, r); set(t, 34, (u32)(r() % 0x1000) * 4, r);
+             set(t, 10, 0x10000 + word, r); set(t, 9, 0x20000 + word, r); set(t, 8, 0x28000 + word, r); set(t, 11, 0x30000 + word, r);
+             t.gpr[43].pi = _mm_set1_epi32(0xFFF);
+             for (int b = 0; b < 16; b++) t.gpr[35].b[b] = (u8)(n & 1 ? (b & 12) | (3 - (b & 3)) : r() & 0x1F);   // a splat-like pattern or any
+             if (n % 3) {   // constants as the game has them; otherwise all random (saturation, NaN)
+                 const float base[] = {4096.f, 1.f / 4096.f, 0.3f, 0.7f, 0.2f, 0.8f, 1.f, 0.5f, 0.9f, 0.25f, 0.6f, 0.4f, 0.1f};
+                 const int regs[] = {44, 45, 31, 33, 30, 32, 25, 42, 36, 41, 40, 37, 39};
+                 for (int k = 0; k < 13; k++) t.gpr[regs[k]].ps = _mm_set1_ps(base[k]);
+                 for (u32 a = 0x8000; a < 0xF000; a += 4) { float f = (float)(s32)(r() & 0xFFFF) - 32768.f; u32 u; memcpy(&u, &f, 4); u = __builtin_bswap32(u); memcpy(t.ls + a, &u, 4); }
+             }
+             audio_voice_tail(t);
+         }},
+    };
+    auto run = [](SPUThread& t, u32 end) {
+        t.pc = 0x1000;
+        while (t.pc != end) {
+            u32 w = t.ls32(t.pc), idx = w >> 21;
+            g_table[idx](t, w);
+            if (!g_control[idx]) t.pc += 4;
+        }
+    };
+    auto a = std::make_unique<SPUThread>(), b = std::make_unique<SPUThread>();
+    for (const Case& c : cases) {
+        int bad = 0;
+        const u32 end = 0x1000 + (u32)c.code.size() * 4;
+        for (u32 n = 0; n < 3000; n++) {
+            for (u32 k = 0; k < 0x40000; k += 8) { u64 v = n < 3 || (k & 0xFF) == 0 ? rnd() : 0; memcpy(a->ls + k, &v, 8); }
+            for (int r = 0; r < 128; r++) { a->gpr[r].d[0] = rnd(); a->gpr[r].d[1] = rnd(); }
+            for (u32 i = 0; i < c.code.size(); i++) a->ls32(0x1000 + i * 4, c.code[i]);
+            c.setup(*a, rnd, n);
+            memcpy(b->ls, a->ls, 0x40000);
+            memcpy(b->gpr, a->gpr, sizeof(a->gpr));
+            run(*a, end);
+            c.fn(*b);
+            run(*b, end);
+            if (memcmp(a->ls, b->ls, 0x40000) || memcmp(a->gpr, b->gpr, sizeof(a->gpr))) bad++;
+        }
+        LOG_I("spu bench: idiom %s %s (%d of 3000 differ)", c.name, bad ? "FAILED" : "ok", bad);
+    }
+}
+
 void spu_bench() {
+    idiom_self_test();
     {   // shufb self-test against the scalar reference
         auto t = std::make_unique<SPUThread>();
         u64 seed = 88172645463325252ull;

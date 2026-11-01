@@ -1787,6 +1787,7 @@ void draw(bool indexed) {
             if (!no_bias && ((a >> 12) & 0xF) == 1) conv |= 16;
         }
         if ((reg(0x1A04 + u * 0x20) & 4) && !no_cube) {   // cube map: the program declares a samplerCube here
+            if (!(p->tex_used >> u & 1)) continue;   // left enabled while the cube's own faces are rendered: see rsx_vk.cpp
             static GLuint bound_cube[16];
             active_unit(u);
             GLuint ct = cube_texture(u);

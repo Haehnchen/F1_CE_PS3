@@ -2038,6 +2038,7 @@ void spu_aot_0923902c446fa525(SPUThread& __restrict s) {
 void spu_aot_092ca26d9023040a(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	for (u32 it = 0; ; it++) {
+		spu_idiom_fill_word(s);
 		s.pc = 0x04AE4; op_lqx(s, 0x38944402u);
 		s.pc = 0x04AE8; op_cwx(s, 0x3AD44403u);
 		s.pc = 0x04AEC; op_shufb(s, 0xB0408383u);
@@ -18057,6 +18058,7 @@ void spu_aot_57308a8f1aa1bda0(SPUThread& __restrict s) {
 void spu_aot_574299f4f8225cbc(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	for (u32 it = 0; ; it++) {
+		spu_idiom_age_table(s);
 		s.pc = 0x0E3F0; op_lqx(s, 0x38940282u);
 		s.pc = 0x0E3F4; op_sfh(s, 0x09008302u);
 		s.pc = 0x0E3F8; op_and_(s, 0x1821C103u);

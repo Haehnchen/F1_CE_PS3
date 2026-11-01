@@ -606,3 +606,167 @@ OP(invalid) { fatal("SPU %s: invalid instruction %08x at %05x", s.name.c_str(), 
 
 
 }  // namespace
+
+// ------------------------------------------------------------------ idioms
+// Hot job-code loops that build tables one element at a time (tools/spu_aot.py IDIOMS). Each runs at the head of the
+// loop's block and does all iterations but the last in bulk, leaving the counter as those iterations would; the last one
+// then runs as translated, so every other register ends as in the original. Conditions the bulk code does not cover
+// (decoded code in the range, misaligned addresses) just leave the work to the original loop. Checked against the
+// interpreter by F1CE_SPU_BENCH=1; F1CE_SPU_NOIDIOM=1 switches them off.
+extern bool g_spu_idiom;
+template <class S> FORCE_INLINE bool ls_plain_range(S& s, u32 a, u32 n) {
+    if (a + n > 0x40000) return false;
+    for (u32 l = a >> 7, e = (a + n - 1) >> 7; l <= e; l++) if (s.line_code[l]) return false;
+    return true;
+}
+template <class S> FORCE_INLINE void add_all_words(S& s, int r, u32 v) { R(r).pi = _mm_add_epi32(R(r).pi, _mm_set1_epi32((int)v)); }
+
+// 04ae4: for (i = r8; i != r4; i += 4) *(u32*)(r81 + i) = r7
+template <class S> void spu_idiom_fill_word(S& s) {
+    u32 i = s.pref(8), end = s.pref(4), a = (i + s.pref(81)) & 0x3FFFF;
+    if (!g_spu_idiom || end <= i || ((end - i) & 3) || (a & 3)) return;
+    u32 bulk = (end - i) / 4 - 1;
+    if (!bulk || !ls_plain_range(s, a, bulk * 4)) return;
+    u32 v = __builtin_bswap32(s.pref(7));
+    u32* p = (u32*)(s.ls + a);
+    for (u32 k = 0; k < bulk; k++) p[k] = v;
+    add_all_words(s, 8, bulk * 4);
+}
+// 08910: for (i = r7; i != r10; i++) *(u16*)(r8 + 2 * i) = i << 4
+template <class S> void spu_idiom_ramp_u16(S& s) {
+    u32 i = s.pref(7), end = s.pref(10), a = (i * 2 + s.pref(8)) & 0x3FFFF;
+    if (!g_spu_idiom || end <= i || (a & 1)) return;
+    u32 bulk = end - i - 1;
+    if (!bulk || !ls_plain_range(s, a, bulk * 2)) return;
+    u16* p = (u16*)(s.ls + a);
+    for (u32 k = 0; k < bulk; k++) p[k] = __builtin_bswap16((u16)((i + k) << 4));
+    add_all_words(s, 7, bulk);
+}
+// 0e3f0: per quad q of [r5 + r80, r5 + r8): x = q - r6 (halfwords); q = (x & r7) > r9 ? r7 : x, bitwise per halfword
+template <class S> void spu_idiom_age_table(S& s) {
+    u32 o = s.pref(80), end = s.pref(8), a = (o + s.pref(5)) & 0x3FFFF;
+    if (!g_spu_idiom || end <= o || ((end - o) & 15) || (a & 15)) return;
+    u32 bulk = (end - o) / 16 - 1;
+    if (!bulk || !ls_plain_range(s, a, bulk * 16)) return;
+    const __m256i sub = _mm256_broadcastsi128_si256(R(6).pi), mask = _mm256_broadcastsi128_si256(R(7).pi);
+    const __m256i limit = _mm256_broadcastsi128_si256(R(9).pi), order = _mm256_broadcastsi128_si256(rev());
+    u8* p = s.ls + a;
+    u32 k = 0;
+    for (; k + 2 <= bulk; k += 2, p += 32) {
+        __m256i x = _mm256_sub_epi16(_mm256_shuffle_epi8(_mm256_loadu_si256((const __m256i*)p), order), sub);
+        __m256i c = _mm256_cmpgt_epi16(_mm256_and_si256(x, mask), limit);
+        x = _mm256_or_si256(_mm256_and_si256(c, mask), _mm256_andnot_si256(c, x));
+        _mm256_storeu_si256((__m256i*)p, _mm256_shuffle_epi8(x, order));
+    }
+    if (k < bulk) {
+        __m128i x = _mm_sub_epi16(_mm_shuffle_epi8(_mm_loadu_si128((const __m128i*)p), rev()), R(6).pi);
+        __m128i c = _mm_cmpgt_epi16(_mm_and_si128(x, R(7).pi), R(9).pi);
+        x = _mm_or_si128(_mm_and_si128(c, R(7).pi), _mm_andnot_si128(c, x));
+        _mm_storeu_si128((__m128i*)p, _mm_shuffle_epi8(x, rev()));
+    }
+    add_all_words(s, 80, bulk * 16);
+}
+
+// tail of the 05778 loop: from the phase r27 and the output pointers, the sample addresses and insert patterns of the next pass
+template <class S> FORCE_INLINE void audio_voice_tail(S& s) {
+    op_rotmai(s, 0x0F5D0D82u);
+    op_cwd(s, 0x3EC00518u);
+    op_cwd(s, 0x3EC0049Au);
+    op_and_(s, 0x182ACD86u);
+    op_cwd(s, 0x3EC0041Cu);
+    op_a(s, 0x18088A10u);
+    op_cwd(s, 0x3EC0059Du);
+    op_shli(s, 0x0F608105u);
+    op_ai(s, 0x1C004103u);
+    op_shli(s, 0x0F608184u);
+    op_a(s, 0x1804C28Du);
+}
+// a shufb pattern with both sources the same register, as a pshufb control (no constant bytes)
+FORCE_INLINE bool one_reg_pattern(const v128& p, __m128i& ctl) {
+    alignas(16) u8 c[16];
+    for (int i = 0; i < 16; i++) {
+        if (p.b[i] & 0xC0) return false;
+        c[i] = 15 - (p.b[i] & 15);
+    }
+    ctl = _mm_load_si128((const __m128i*)c);
+    return true;
+}
+// 05778, audio voice, per sample: resample [r19 + (r27 >> 12) * 4] by the phase r27 += r38, four one-pole low-passes
+// (r23 r21 by r31 r33, r22 r18 by r30 r32), a clipper against r25 with the word at [r20 + r34], then mix into the outputs at
+// r10 r9 r8 r11 with the gains r41 r40 r37 r39. All four lanes run as on the SPU, since the filter state is kept in full.
+template <class S> void spu_idiom_audio_voice(S& s) {
+    const s32 bulk = (s32)s.pref(17);
+    u32 out[4] = {s.pref(10), s.pref(9), s.pref(8), s.pref(11)};
+    if (!g_spu_idiom || bulk <= 0 || bulk > 0x8000 || ((out[0] | out[1] | out[2] | out[3]) & 3)) return;
+    for (u32& o : out) { o &= 0x3FFFF; if (!ls_plain_range(s, o, (u32)bulk * 4)) return; }
+    __m128i clip_order;
+    if (!one_reg_pattern(R(35), clip_order)) return;
+
+    static constexpr u8 rot_tab[32] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    const auto rotq = [](__m128i v, u32 n) { return _mm_shuffle_epi8(v, _mm_loadu_si128((const __m128i*)(rot_tab + (16 - (n & 15))))); };
+    const auto load = [&](u32 a) { return _mm_shuffle_epi8(_mm_loadu_si128((const __m128i*)(s.ls + (a & 0x3FFF0))), rev()); };
+    const auto word = [&](u32 a) { return _mm_set1_epi32((int)__builtin_bswap32(*(const u32*)(s.ls + a))); };
+    const auto mix = [&](u32 a, __m128 gain, __m128 v) {
+        __m128 x = sat4(_mm_fmadd_ps(gain, v, _mm_castsi128_ps(word(a))));
+        *(u32*)(s.ls + a) = __builtin_bswap32((u32)_mm_extract_ps(x, 3));
+    };
+
+    __m128i phase = R(27).pi, frac = R(6).pi;
+    const __m128i step = R(38).pi, mask = R(43).pi;
+    __m128 f23 = R(23).ps, f21 = R(21).ps, f22 = R(22).ps, f18 = R(18).ps;
+    const __m128 c44 = R(44).ps, c45 = R(45).ps, c31 = R(31).ps, c33 = R(33).ps, c30 = R(30).ps, c32 = R(32).ps;
+    const __m128 c25 = R(25).ps, c42 = R(42).ps, c36 = R(36).ps, c41 = R(41).ps, c40 = R(40).ps, c37 = R(37).ps, c39 = R(39).ps;
+    const u32 base = s.pref(19), side = s.pref(20) + s.pref(34);
+    u32 a0 = s.pref(13), a1 = s.pref(4) + base;
+    for (s32 k = 0; k < bulk; k++) {
+        const __m128 fr = _mm_cvtepi32_ps(frac);
+        const __m128 s1 = _mm_castsi128_ps(rotq(load(a1), a1)), s0 = _mm_castsi128_ps(rotq(load(a0), a0));
+        const __m128 sd = _mm_castsi128_ps(rotq(load(side), side));
+        phase = _mm_add_epi32(phase, step);
+
+        __m128 x = sat4(_mm_sub_ps(c44, fr));
+        x = sat4(_mm_fmadd_ps(x, s0, sat4(_mm_mul_ps(fr, s1))));
+        x = sat4(_mm_mul_ps(x, c45));
+        f23 = sat4(_mm_fmadd_ps(c33, f23, sat4(_mm_mul_ps(c31, x))));
+        f21 = sat4(_mm_fmadd_ps(c33, f21, sat4(_mm_mul_ps(c31, f23))));
+        f22 = sat4(_mm_fmadd_ps(c32, f22, sat4(_mm_mul_ps(c30, f21))));
+        f18 = sat4(_mm_fmadd_ps(c32, f18, sat4(_mm_mul_ps(c30, f22))));
+
+        __m128 hi = sat4(_mm_add_ps(f18, sd)), lo = sat4(_mm_sub_ps(f18, sd));
+        hi = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(hi), clip_order));
+        lo = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(lo), clip_order));
+        hi = _mm_blendv_ps(hi, c25, _mm_cmpgt_ps(hi, c25));
+        lo = _mm_blendv_ps(lo, c25, _mm_cmpgt_ps(c25, lo));
+        __m128 v = sat4(_mm_add_ps(lo, hi));
+        v = sat4(_mm_fmadd_ps(v, c42, f18));
+        v = sat4(_mm_mul_ps(c36, v));
+        mix(out[0] + (u32)k * 4, c41, v);
+        mix(out[1] + (u32)k * 4, c40, v);
+        mix(out[2] + (u32)k * 4, c37, v);
+        mix(out[3] + (u32)k * 4, c39, v);
+
+        const s32 idx = (s32)_mm_extract_epi32(phase, 3) >> 12;
+        a0 = (u32)idx * 4 + base;
+        a1 = a0 + 4;
+        frac = _mm_and_si128(phase, mask);
+    }
+    R(27).pi = phase;
+    R(23).ps = f23; R(21).ps = f21; R(22).ps = f22; R(18).ps = f18;
+    add_all_words(s, 10, (u32)bulk * 4);
+    add_all_words(s, 9, (u32)bulk * 4);
+    add_all_words(s, 8, (u32)bulk * 4);
+    add_all_words(s, 11, (u32)bulk * 4);
+    add_all_words(s, 17, (u32)-bulk);
+    audio_voice_tail(s);
+}
+
+// F1CE_SPU_NOCULL=1, at 0d7f8: the geometry job keeps all triangles. Its loop compacts the list at r3 in place (8 bytes per
+// triangle) with back-face and small-triangle tests on the transformed vertices; the tail at 0ddf0 reports r13 / 8 of the
+// r33 triangles. Skipping it moves the work to the renderer and the GPU.
+extern bool g_spu_nocull;
+template <class S> bool spu_skip_triangle_cull(S& s) {
+    if (!g_spu_nocull) return false;
+    s.set_pref(13, s.pref(33) * 8);
+    s.pc = 0xDDF0;
+    return true;
+}

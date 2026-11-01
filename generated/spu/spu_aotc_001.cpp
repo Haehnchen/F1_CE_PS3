@@ -10888,6 +10888,7 @@ void spu_aotc_473(SPUThread& __restrict s) {
 	}
 L_c457e8a9f5454353:
 	s.instructions += 134;
+	if (spu_skip_triangle_cull(L)) goto out;
 	L.pc = 0x0D7F8; op_nop(L, 0x4020007Fu);
 	L.pc = 0x0D7FC; op_nop(L, 0x12800084u);
 	L.pc = 0x0D800; op_ceqi(L, 0x7C00030Bu);
@@ -12933,6 +12934,7 @@ L_f6112ae1d4015be3:
 	goto out;
 L_574299f4f8225cbc:
 	s.instructions += 10;
+	spu_idiom_age_table(s);
 	s.pc = 0x0E3F0; op_lqx(s, 0x38940282u);
 	s.pc = 0x0E3F4; op_sfh(s, 0x09008302u);
 	s.pc = 0x0E3F8; op_and_(s, 0x1821C103u);
