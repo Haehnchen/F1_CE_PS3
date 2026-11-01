@@ -1,6 +1,7 @@
 // What the OpenGL and Vulkan renderers share: the RSX register file, the microcode translators, hashes, the block
 // heap and the program database (rsx_common.cpp). Index lists and vertex regions: rsx_draw_shared.inl.
 #pragma once
+#include "rsx.h"
 #include <iterator>
 #include <set>
 #include "ppu_runtime.h"
@@ -34,7 +35,6 @@ u32 location_to_ea(u32 offset, bool main_memory);
 u64 mem_fingerprint(u32 ea, u32 bytes);
 constexpr u32 MAIN_SURFACE_KEY = 0x80000000;   // g_surfaces key bit for main-memory colour buffers
 bool scaled_glsl();
-float res_scale();
 // physical pixels of a guest length; every size and edge goes through this, so they agree at a fractional scale
 FORCE_INLINE u32 scaled(u32 v, float k) { return (u32)(v * k + 0.5f); }
 FORCE_INLINE s32 scaled_s(s32 v, float k) { return (s32)floorf(v * k + 0.5f); }
@@ -149,7 +149,7 @@ const char* present_glsl();
 extern bool g_shader_vk;
 struct VkDrawParams {   // layout(scalar) block DRAW in the translated programs
     float vp_scale[4], vp_offset[4], surface[4], alpha_test[4], fog[4];
-    float res_scale, ui_clamp, pad[2];
+    float res_scale[2], ui_clamp, pad;
     int va[64];
     float tex_flip[16], tex_scale[32], tex_depth[16], remap[16];
     int slot[16], vslot[4];   // descriptor array index of each texture unit / vertex texture unit

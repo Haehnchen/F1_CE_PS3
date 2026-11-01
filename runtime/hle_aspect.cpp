@@ -1,0 +1,97 @@
+// Output format (F1CE_SCALE). 480p and 576p are the PS3 video modes: the game finds them in cellVideoOutGetState and lays
+// out its picture and interface for them. Any other format keeps the game on 720p with the render targets scaled:
+// in a 3D scene the cameras take the format's aspect ratio (below) and the interface stays 16:9 in the middle of the
+// image; everything else (menus, loading screens) is the 16:9 picture between black bars.
+#include <algorithm>
+#include <bit>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include "kernel.h"
+#include "rsx.h"
+
+void sub_003FB310(PPUContext& __restrict c);
+
+namespace rsx {
+namespace {
+struct Format { float x = 1, y = 1; u8 lines = 0; bool narrow = false; };
+const Format& format() {
+    static const Format v = [] {
+        Format f;
+        const char* e = getenv("F1CE_SCALE");
+        int a = 0, b = 0;
+        if (!e) return f;
+        if (strchr(e, 'p')) {   // 480p, 576p, 480p:4x3, 576p:4x3
+            f.lines = atoi(e) == 576 ? 2 : 1;
+            f.narrow = strstr(e, ":4x3") != nullptr;
+        } else if (sscanf(e, "%dx%d", &a, &b) == 2 && a > 0 && b > 0) {
+            f.x = std::clamp(a / 1280.0f, 0.5f, 4.0f);
+            f.y = std::clamp(b / 720.0f, 0.5f, 4.0f);
+        } else {
+            f.x = f.y = std::clamp((float)atof(e), 1.0f, 4.0f);
+        }
+        return f;
+    }();
+    return v;
+}
+u32 g_display[8];   // offsets the game has flipped
+}  // namespace
+
+float res_scale_x() { static const float v = format().x; return v; }
+float res_scale_y() { static const float v = format().y; return v; }
+bool res_scaled() { return res_scale_x() != 1 || res_scale_y() != 1; }
+void video_mode(u8* id, u8* aspect) {
+    *id = format().lines == 1 ? 4 : format().lines == 2 ? 5 : 2;
+    *aspect = format().narrow ? 1 : 2;
+}
+// a 3D scene: at most a few hundred draws in the 2D screens, 1400 and up on track (the same test as car_standing)
+bool wide_frame() { return res_scale_x() != res_scale_y() && g_last_frame_draws >= 800; }
+double present_aspect(u32 w, u32 h) {
+    if (format().lines) return format().narrow ? 4.0 / 3.0 : 16.0 / 9.0;   // (the PS3 modes have non-square pixels)
+    return wide_frame() ? (double)w * res_scale_x() / (h * res_scale_y()) : (double)w / h;
+}
+void note_display(u32 offset) {
+    for (u32& d : g_display) {
+        if (d == offset) return;
+        if (!d) { d = offset; return; }
+    }
+}
+// The interface is the blended 2D work on the display buffer; the picture under it arrives there unblended.
+bool hud_draw(u32 offset, bool blend, bool depth_test) {
+    if (!blend || depth_test || !wide_frame()) return false;
+    for (u32 d : g_display)
+        if (d == offset) return true;
+    return false;
+}
+void hud_rect(u32 pw, u32 ph, float* x, float* y, float* w, float* h) {
+    *w = (float)pw; *h = (float)ph; *x = *y = 0;
+    if ((double)pw / ph > 16.0 / 9.0) { *w = ph * 16.0f / 9.0f; *x = (pw - *w) / 2; }
+    else { *h = pw * 9.0f / 16.0f; *y = (ph - *h) / 2; }
+}
+}  // namespace rsx
+
+// Every camera builds its projection and culling frustum in 0x3FB310 from a vertical field of view (+0x238) and an aspect
+// ratio (+0x23C); bit 0 of +0x234 asks for a rebuild. The picture camera is the one at 16:9. It is built for the format
+// from the same fields, so the frustum follows and nothing is culled at the new edges: a wider format keeps the vertical
+// field and opens the sides, a narrower one keeps the horizontal field and opens the top and bottom. The game's values
+// are put back: it reads them again for its own purposes.
+bool camera_projection_hook(PPUContext& c) {
+    static thread_local bool inside = false;
+    const u32 cam = (u32)c.r[3];
+    if (inside || !rsx::wide_frame()) return false;
+    const float aspect = std::bit_cast<float>(ld32(cam + 0x23C)), base = 16.0f / 9.0f;
+    if (std::fabs(aspect - base) > 0.001f) return false;
+    const float target = base * rsx::res_scale_x() / rsx::res_scale_y();
+    const u32 fov = ld32(cam + 0x238), aspect_bits = ld32(cam + 0x23C), flags = ld32(cam + 0x234);
+    if (target < base) st32(cam + 0x238, std::bit_cast<u32>(2 * std::atan(std::tan(std::bit_cast<float>(fov) / 2) * base / target)));
+    st32(cam + 0x23C, std::bit_cast<u32>(target));
+    st32(cam + 0x234, flags | 1);
+    inside = true;
+    sub_003FB310(c);
+    inside = false;
+    st32(cam + 0x238, fov);
+    st32(cam + 0x23C, aspect_bits);
+    return true;
+}

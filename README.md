@@ -100,11 +100,11 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_TRACE_COUNT=<k>` | extends `F1CE_TRACE_FRAME` to k consecutive frames |
 | `F1CE_WPOS_CLIP_W_FP=<fp hash>,..` | WPOS.w = clip w for those programs only (`-<hash>,..`: all but those) |
 | `F1CE_FULLSCREEN=1`, F11 / Alt+Enter | start in full screen / toggle it at any time |
-| `F1CE_WINDOW=<w>x<h>`, `F1CE_STRETCH=1` | initial window size / fill the window instead of keeping 16:9 (black bars) |
+| `F1CE_WINDOW=<w>x<h>`, `F1CE_STRETCH=1` | initial window size / fill the window instead of keeping the internal image's aspect ratio (black bars) |
 | `F1CE_COMPILE_THREADS=<n>`, `F1CE_NATIVE_GLSL=1` | shader compile threads (default 1) / the scale-1 shader sources of before |
 | `F1CE_NO_PRECOMPILE=1` | skips the start-up shader phase (the program database is still recorded) |
 | `F1CE_NO_LINEGEN=1` | SPU PUTLLC compares the line data only (no write generation: the old behaviour) |
-| `F1CE_SCALE=1..4` | internal resolution (x 1280x720; 1.5 = 1920x1080, 3 = 3840x2160): fractions allowed, supersampled to the window |
+| `F1CE_SCALE=1..4`, `<w>x<h>`, `480p`, `576p` | internal resolution (x 1280x720; 1.5 = 1920x1080, 3 = 3840x2160): fractions allowed, supersampled to the window. `<w>x<h>` (640x360 to 5120x2880), at another aspect ratio: the 3D scene takes that ratio and a wider field of view, its interface stays 16:9 in the middle, menus are 16:9 between black bars (`runtime/hle_aspect.cpp`). `480p`, `576p` (`:4x3` for 4:3): the PS3's own video modes, with the game's layouts for them |
 | `F1CE_MSAA=2/4/8` | samples of the targets the game antialiases (default 4, as on the RSX) |
 | `F1CE_FXAA=1` | FXAA on the final image |
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |

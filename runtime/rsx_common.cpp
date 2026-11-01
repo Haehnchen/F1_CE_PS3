@@ -51,7 +51,7 @@ u32 location_to_ea(u32 offset, bool main_memory) {
     return main_memory ? io_offset_to_ea(offset) : mem::RSX_LOCAL + offset;
 }
 
-// Resolution scaling (roadmap step 3, F1CE_SCALE=1..4, default 1): local render targets and depth buffers are
+// Resolution scaling (roadmap step 3, F1CE_SCALE, default 1): local render targets and depth buffers are
 // allocated at scale x their guest size and drawn with a scaled viewport and scissor; the vertex programs map window
 // coordinates through the guest size, so geometry needs no change. Main-memory targets (read back by the CPU) stay
 // native. Fragment programs see WPOS in guest pixels (u_res_scale), occlusion counts are divided by scale^2 (the
@@ -59,14 +59,8 @@ u32 location_to_ea(u32 offset, bool main_memory) {
 // The fragment programs read their scale from uniforms (u_res_scale, u_ui_clamp), so one source serves every scale
 // and the shader cache is shared: changing F1CE_SCALE no longer compiles every program again (the Driver garage stayed
 // white for seconds the first time at a new scale). F1CE_NATIVE_GLSL=1: the scale-1 sources of before.
+// The formats are in hle_aspect.cpp.
 bool scaled_glsl() { static const bool v = !getenv("F1CE_NATIVE_GLSL"); return v; }
-float res_scale() {
-    static const float v = [] {
-        const char* e = getenv("F1CE_SCALE");
-        return std::clamp(e ? (float)atof(e) : 1.0f, 1.0f, 4.0f);
-    }();
-    return v;
-}
 
 // 5x7 font of the progress label: the renderers have no text path of their own, so each lit run of a row is a rectangle
 // they clear (no shaders are ready at this point)
@@ -114,7 +108,7 @@ static const char* vk_header() {
            "#extension GL_EXT_nonuniform_qualifier : require\n"
            "layout(scalar, set = 0, binding = 1) uniform DRAW {\n"
            " vec4 u_vp_scale; vec4 u_vp_offset; vec4 u_surface; vec4 u_alpha_test; vec4 u_fog;\n"
-           " float u_res_scale; float u_ui_clamp; vec2 u_pad;\n"
+           " vec2 u_res_scale; float u_ui_clamp; float u_pad;\n"
            " ivec4 u_va[16];\n"
            " float u_tex_flip[16]; vec2 u_tex_scale[16]; float u_tex_depth[16]; float u_remap[16];\n"
            " int u_slot[16]; int u_vslot[4];\n"
@@ -717,7 +711,7 @@ FPInfo translate_fp(u32 ea, u32 shader_control, u32 cube_mask) {
         src << "layout(std140, set = 0, binding = 2) uniform FCB { vec4 FC[" << std::max(nconst, 1) << "]; };\n"
                "const vec2 u_prog_id = vec2(0.0);\nlayout(location = 0) out vec4 frag_color;\n";
     else {
-        if (scaled_glsl()) src << "uniform float u_res_scale;\n";
+        if (scaled_glsl()) src << "uniform vec2 u_res_scale;\n";
         src << "uniform vec4 FC[" << std::max(nconst, 1) << "];\nuniform vec4 u_alpha_test;\nuniform vec2 u_prog_id;\nout vec4 frag_color;\n";
     }
     src << "void main() {\n vec4 CC[2]; CC[0] = vec4(0.0); CC[1] = vec4(0.0);\n vec4 fogc = fog_value();\n";

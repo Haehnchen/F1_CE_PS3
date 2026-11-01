@@ -2,6 +2,7 @@
 #include "host.h"
 #include "kernel.h"
 #include "lv2_fs.h"
+#include "rsx.h"
 
 #include <array>
 #include <deque>
@@ -136,11 +137,13 @@ HLE_FUNC(cellSysutilGetSystemParamString) {
 // CellVideoOutState: state, colorSpace, reserved[6], displayMode{resolutionId, scanMode, conversion, aspect, reserved[2], refreshRates}
 HLE_FUNC(cellVideoOutGetState) {
     u32 p = (u32)ARG(2);
+    u8 id, aspect;
+    rsx::video_mode(&id, &aspect);
     memset(gmem(p), 0, 16);
     st8(p + 1, 1);       // RGB
-    st8(p + 8, 2);       // 720p
+    st8(p + 8, id);
     st8(p + 9, 0);       // progressive
-    st8(p + 11, 2);      // 16:9
+    st8(p + 11, aspect);   // 1 4:3, 2 16:9
     st16(p + 14, 1);     // 59.94 Hz
     RET(CELL_OK);
 }

@@ -25,7 +25,11 @@ struct Check {
 Combo g_combos[] = {
     {L"Renderer", L"F1CE_RENDERER", {{L"OpenGL", nullptr}, {L"Vulkan", L"vulkan"}}, 0},
     {L"Internal resolution", L"F1CE_SCALE",
-     {{L"1280x720 (original)", nullptr}, {L"1920x1080", L"1.5"}, {L"2560x1440", L"2"}, {L"3840x2160", L"3"}, {L"5120x2880", L"4"}}, 0},
+     {{L"720x480 (4:3, PS3 480p)", L"480p:4x3"}, {L"720x480 (16:9, PS3 480p)", L"480p"},
+      {L"720x576 (4:3, PS3 576p)", L"576p:4x3"}, {L"720x576 (16:9, PS3 576p)", L"576p"}, {L"904x565 (16:10)", L"904x565"},
+      {L"1280x720 (16:9, original)", nullptr}, {L"1280x800 (16:10)", L"1280x800"}, {L"1440x900 (16:10)", L"1440x900"},
+      {L"1920x1080 (16:9)", L"1.5"}, {L"2560x1080 (21:9)", L"2560x1080"}, {L"2560x1440 (16:9)", L"2"},
+      {L"3440x1440 (21:9)", L"3440x1440"}, {L"3840x2160 (16:9)", L"3"}, {L"5120x2880 (16:9)", L"4"}}, 5},
     {L"Anti-aliasing (MSAA)", L"F1CE_MSAA", {{L"2x", L"2"}, {L"4x (original)", nullptr}, {L"8x", L"8"}}, 1},
     {L"Reflection faces per frame", L"F1CE_CUBE_FACES", {{L"6 (original)", nullptr}, {L"3", L"3"}, {L"2 (faster)", L"2"}, {L"1 (fastest)", L"1"}}, 0},
     {L"Vertical sync", L"F1CE_VSYNC", {{L"On", nullptr}, {L"Off", L"0"}, {L"Adaptive", L"-1"}}, 0},
@@ -36,7 +40,7 @@ Check g_checks[] = {
     {L"Up to 60 fps (game speed unchanged)", L"F1CE_60FPS"},
     {L"FXAA on the final image", L"F1CE_FXAA"},
     {L"Start in full screen (F11 toggles it)", L"F1CE_FULLSCREEN"},
-    {L"Stretch to the window instead of keeping 16:9", L"F1CE_STRETCH"},
+    {L"Stretch to the window instead of keeping the aspect ratio", L"F1CE_STRETCH"},
 };
 
 enum { ID_START = 100, ID_BROWSE, ID_QUIT, WM_GAME_EXIT = WM_APP + 1 };

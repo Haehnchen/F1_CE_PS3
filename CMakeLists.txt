@@ -34,6 +34,7 @@ set(RUNTIME_SOURCES
   runtime/fs.cpp
   runtime/hle_sys.cpp
   runtime/hle_misc.cpp
+  runtime/hle_aspect.cpp
   runtime/hle_gcm.cpp
   runtime/hle_spurs.cpp
   runtime/hle_savedata.cpp

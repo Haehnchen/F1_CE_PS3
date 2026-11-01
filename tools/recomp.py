@@ -23,6 +23,7 @@ from ppc import (RA, RB, RC, RD, RS, SIMM, UIMM, DS, BO, BI, BD, LI, AA, LK, CRF
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "generated"
 CHUNK = 400
+HOOKS = {0x3FB310: "camera_projection_hook"}   # camera projection and frustum, see runtime/hle_aspect.cpp
 SPIN_LOOPS = {0x551228, 0x5513BC}   # the job manager's waits: they only poll counters the SPUs write
 
 LOAD_INT = {  # mnemonic: (size, signed, update, indexed)
@@ -162,6 +163,9 @@ class FuncGen:
             tail = f"{nxt}(c); return;" if nxt else "return;"
 
         out = [f"PPU_FUNC({self.rc.func_name(self.start)}) {{", f"\tc.cur_fn = 0x{self.start:X};"]
+        if self.start in HOOKS:   # runtime code that may take the function over
+            out.insert(0, f"bool {HOOKS[self.start]}(PPUContext& c);")
+            out.append(f"\tif ({HOOKS[self.start]}(c)) return;")
         for a, code, m in body:
             if a in self.labels or self.dispatch_all:
                 out.append(f"L_{a:X}:")

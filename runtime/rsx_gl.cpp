@@ -97,7 +97,7 @@ struct Surface {
     u64 mem_sig = 0, sig_checked = ~0ull;
     u32 sig_bytes = 0;
     bool stale = false;
-    float scale = 1;         // physical size = scaled(width), scaled(height) (resolution scaling)
+    float scale_x = 1, scale_y = 1;   // physical size = scaled(width, scale_x), scaled(height, scale_y) (resolution scaling)
     bool local_wb = false;   // local-memory target written back like a main-memory one (F1CE_WB_LOCAL)
     u64 write_seq = 0;       // g_write_seq of the last draw/clear that wrote colour into it
     // antialiased target (surface format bits 12-15): drawn into 4x multisampled renderbuffers (colour + its own
@@ -180,10 +180,11 @@ Surface* get_surface(u32 offset, u32 w, u32 h, u32 fmt) {
     if (!s.tex) {
         g_surf_epoch++;
         s.offset = offset; s.width = w; s.height = h; s.format = fmt;
-        s.scale = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale();
+        s.scale_x = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_x();
+        s.scale_y = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_y();
         glGenTextures(1, &s.tex);
         bind_tex2d(s.tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, 0x8C43 /*GL_SRGB8_ALPHA8*/, (GLsizei)(scaled(w, s.scale)), (GLsizei)(scaled(h, s.scale)), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, 0x8C43 /*GL_SRGB8_ALPHA8*/, (GLsizei)(scaled(w, s.scale_x)), (GLsizei)(scaled(h, s.scale_y)), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         // sampled raw: the TEXTURE_ADDRESS gamma bits decide the decode (in the shader)
         glTexParameteri(GL_TEXTURE_2D, 0x8A48 /*GL_TEXTURE_SRGB_DECODE_EXT*/, 0x8A4A /*GL_SKIP_DECODE_EXT*/);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -222,9 +223,9 @@ GLuint ensure_ms(Surface* s) {
             LOG_I("rsx: surface %08x %ux%u is antialiased: %ux multisampled", s->offset, s->width, s->height, msaa_samples());
         }
         glBindRenderbuffer(GL_RENDERBUFFER, s->ms_color);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples(), 0x8C43 /*GL_SRGB8_ALPHA8*/, (GLsizei)(scaled(s->width, s->scale)), (GLsizei)(scaled(s->height, s->scale)));
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples(), 0x8C43 /*GL_SRGB8_ALPHA8*/, (GLsizei)(scaled(s->width, s->scale_x)), (GLsizei)(scaled(s->height, s->scale_y)));
         glBindRenderbuffer(GL_RENDERBUFFER, s->ms_depth);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples(), GL_DEPTH24_STENCIL8, (GLsizei)(scaled(s->width, s->scale)), (GLsizei)(scaled(s->height, s->scale)));
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_samples(), GL_DEPTH24_STENCIL8, (GLsizei)(scaled(s->width, s->scale_x)), (GLsizei)(scaled(s->height, s->scale_y)));
         glBindFramebuffer(GL_FRAMEBUFFER, s->ms_fbo);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, s->ms_color);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, s->ms_depth);
@@ -242,7 +243,7 @@ bool resolve_ms(Surface& s) {
     glDisable(GL_SCISSOR_TEST);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, s.ms_fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s.fbo);
-    GLint pw = (GLint)(scaled(s.width, s.scale)), ph = (GLint)(scaled(s.height, s.scale));
+    GLint pw = (GLint)(scaled(s.width, s.scale_x)), ph = (GLint)(scaled(s.height, s.scale_y));
     glBlitFramebuffer(0, 0, pw, ph, 0, 0, pw, ph,
                       GL_COLOR_BUFFER_BIT | (s.attached_depth ? GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT : 0), GL_NEAREST);
     s.ms_dirty = false;
@@ -278,7 +279,7 @@ DepthSurface* get_depth(u32 offset, u32 w, u32 h) {
         d.offset = offset; d.width = w; d.height = h;
         glGenTextures(1, &d.tex);
         bind_tex2d(d.tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)(scaled(w, res_scale())), (GLsizei)(scaled(h, res_scale())), 0, GL_DEPTH_STENCIL,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)(scaled(w, res_scale_x())), (GLsizei)(scaled(h, res_scale_y())), 0, GL_DEPTH_STENCIL,
                      GL_UNSIGNED_INT_24_8, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -293,7 +294,7 @@ void dump_surface(u32 off, const char* tag) {
     if (it == g_surfaces.end() || !it->second.tex) return;
     Surface& sf = it->second;
     resolve_ms(sf);
-    const u32 pw = scaled(sf.width, sf.scale), ph = scaled(sf.height, sf.scale);   // (physical size)
+    const u32 pw = scaled(sf.width, sf.scale_x), ph = scaled(sf.height, sf.scale_y);   // (physical size)
     std::vector<u32> px((size_t)pw * ph), fl(px.size());
     glBindFramebuffer(GL_READ_FRAMEBUFFER, sf.fbo);
     srgb_write(false);
@@ -377,6 +378,7 @@ Surface* bind_target() {
         }
     }
     static GLuint bound_fbo;
+    static bool bound_hud;
     static u32 bound_w, bound_h, bound_sc0, bound_sc1;
     GLuint depth = 0;
     g_cur_depth = nullptr;
@@ -395,19 +397,25 @@ Surface* bind_target() {
     s->ms_active = !main && ((fmt >> 12) & 0xF) && !no_msaa;
     GLuint fb = s->ms_active ? ensure_ms(s) : s->fbo;
     if (!g_tgt_valid || bound_fbo != fb) glBindFramebuffer(GL_FRAMEBUFFER, fb);
-    if (g_tgt_valid && bound_fbo == fb && bound_w == w && bound_h == h && bound_sc0 == reg(0x08C0) && bound_sc1 == reg(0x08C4))
+    const bool hud = hud_draw(s->offset, reg(0x0310) & 1, reg(0x0A74) & 1);
+    if (g_tgt_valid && bound_fbo == fb && bound_w == w && bound_h == h && bound_sc0 == reg(0x08C0) && bound_sc1 == reg(0x08C4) && bound_hud == hud)
         return s;
-    const float k = s->scale;
-    glViewport(0, 0, (GLsizei)scaled(w, k), (GLsizei)scaled(h, k));
+    float kx = s->scale_x, ky = s->scale_y, ox = 0, oy = 0;
+    if (hud) {
+        float vw, vh;
+        hud_rect(scaled(w, kx), scaled(h, ky), &ox, &oy, &vw, &vh);
+        kx = vw / w; ky = vh / h;
+    }
+    glViewport((GLint)ox, (GLint)oy, (GLsizei)scaled(w, kx), (GLsizei)scaled(h, ky));
     u32 sx = reg(0x08C0) & 0xFFFF, sw = reg(0x08C0) >> 16, sy = reg(0x08C4) & 0xFFFF, sh = reg(0x08C4) >> 16;
     if (sw && sh && (sw < 4096 && sh < 4096)) {
         glEnable(GL_SCISSOR_TEST);
-        const GLint x0 = scaled_s(sx, k), y0 = scaled_s((s32)h - (s32)(sy + sh), k);
-        glScissor(x0, y0, scaled_s(sx + sw, k) - x0, scaled_s((s32)h - (s32)sy, k) - y0);
+        const GLint x0 = scaled_s(sx, kx), y0 = scaled_s((s32)h - (s32)(sy + sh), ky);
+        glScissor(x0 + (GLint)ox, y0 + (GLint)oy, scaled_s(sx + sw, kx) - x0, scaled_s((s32)h - (s32)sy, ky) - y0);
     } else {
         glDisable(GL_SCISSOR_TEST);
     }
-    bound_fbo = fb; bound_w = w; bound_h = h; bound_sc0 = reg(0x08C0); bound_sc1 = reg(0x08C4);
+    bound_fbo = fb; bound_w = w; bound_h = h; bound_sc0 = reg(0x08C0); bound_sc1 = reg(0x08C4); bound_hud = hud;
     g_tgt_valid = true;
     return s;
 }
@@ -439,7 +447,7 @@ struct Program {
     GLint loc_c = -1, loc_fc = -1, loc_scale = -1, loc_offset = -1, loc_surface = -1, loc_alpha = -1, loc_fog = -1;
     GLint loc_tex[16];
     GLint loc_flip = -1, loc_depth = -1, loc_tex_scale = -1, loc_remap = -1, loc_va = -1, loc_res_scale = -1, loc_ui_clamp = -1;
-    float u_res = -1, u_ui = -1;
+    float u_res[2] = {-1, -1}, u_ui = -1;
     int u_va[64];   // last uploaded u_va (vertex pulling)
     // last uploaded uniform values (uploads are skipped when unchanged); NaN-filled so the first upload happens
     float u_scale[4], u_offset[4], u_surface[4], u_alpha[4], u_fog[4], u_flip[16], u_tex_scale[32], u_depth[16], u_remap[16];
@@ -1254,7 +1262,7 @@ GLuint cube_texture(u32 u) {
     static std::unordered_map<u32, CubeEntry> cubes;
     static GLuint blit_fbo = 0;
     CubeEntry& ce = cubes[offset];
-    const u32 pw = scaled(w, res_scale());   // faces at the scale of the render targets they come from
+    const u32 pw = scaled(w, std::max(res_scale_x(), res_scale_y()));   // faces at the scale of the render targets they come from (square)
     if (!ce.tex || ce.w != w) {
         if (!ce.tex) glGenTextures(1, &ce.tex);
         glBindTexture(GL_TEXTURE_CUBE_MAP, ce.tex);
@@ -1290,8 +1298,8 @@ GLuint cube_texture(u32 u) {
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + f, ce.tex, 0);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, it->second.fbo);
         srgb_write(false);
-        GLint fw = (GLint)(scaled(it->second.width, it->second.scale));
-        glBlitFramebuffer(0, 0, fw, fw, 0, (GLint)pw, (GLint)pw, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        GLint fw = (GLint)(scaled(it->second.width, it->second.scale_x)), fh = (GLint)(scaled(it->second.height, it->second.scale_y));
+        glBlitFramebuffer(0, 0, fw, fh, 0, (GLint)pw, (GLint)pw, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
         ce.seq[f] = it->second.write_seq;
     }
     if (blitted) {   // back to the draw's target, viewport and scissor
@@ -1750,8 +1758,9 @@ void draw(bool indexed) {
         uniform_cached(p->loc_surface, p->u_surface, surface, glUniform4fv, 1);
         uniform_cached(p->loc_alpha, p->u_alpha, alpha, glUniform4fv, 1);
         uniform_cached(p->loc_fog, p->u_fog, fog, glUniform4fv, 1);
-        if (p->loc_res_scale >= 0 && p->u_res != (float)target->scale) { p->u_res = (float)target->scale; glUniform1fv(p->loc_res_scale, 1, &p->u_res); }
-        float ui = target->scale > 1 && !(reg(0x0A74) & 1) ? 1.0f : 0.0f;   // (see sample_unit: no depth test)
+        const float res[2] = {target->scale_x, target->scale_y};
+        uniform_cached(p->loc_res_scale, p->u_res, res, glUniform2fv, 1);
+        float ui = (target->scale_x != 1 || target->scale_y != 1) && !(reg(0x0A74) & 1) ? 1.0f : 0.0f;   // (see sample_unit: no depth test)
         if (p->loc_ui_clamp >= 0 && p->u_ui != ui) { p->u_ui = ui; glUniform1fv(p->loc_ui_clamp, 1, &p->u_ui); }
     }
     u64 ta0 = prof_usec();
@@ -2461,8 +2470,8 @@ void method_2d(u32 sub, u32 mm, u32 arg) {
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, d->fbo); g_tgt_valid = false;
             glDisable(GL_SCISSOR_TEST);
             srgb_write(false);
-            glBlitFramebuffer(0, 0, (GLint)(scaled(cw, s.scale)), (GLint)(scaled(ch, s.scale)), 0, 0, (GLint)(scaled(cw, d->scale)), (GLint)(scaled(ch, d->scale)),
-                              GL_COLOR_BUFFER_BIT, s.scale == d->scale ? GL_NEAREST : GL_LINEAR);
+            glBlitFramebuffer(0, 0, (GLint)(scaled(cw, s.scale_x)), (GLint)(scaled(ch, s.scale_y)), 0, 0, (GLint)(scaled(cw, d->scale_x)), (GLint)(scaled(ch, d->scale_y)),
+                              GL_COLOR_BUFFER_BIT, s.scale_x == d->scale_x && s.scale_y == d->scale_y ? GL_NEAREST : GL_LINEAR);
             glBindFramebuffer(GL_FRAMEBUFFER, 0); g_tgt_valid = false;
             d->last_use = g_frame;
         }
@@ -2512,7 +2521,7 @@ void zpass_resolve() {
     for (auto& p : g_zpass.pending) {
         u32 total = 0;
         for (GLuint q : p.spans) total += value(q);
-        total = (u32)(total / (res_scale() * res_scale()));   // (the counted targets are scaled local ones)
+        total = (u32)(total / (res_scale_x() * res_scale_y()));   // (the counted targets are scaled local ones)
         st32(p.ea + 8, total);
         static const bool zlog = getenv("F1CE_ZPASS_LOG") != nullptr;   // debug
         if (zlog && g_frame % 300 == 0) LOG_I("zpass report @%08x = %u (%zu spans)", p.ea, total, p.spans.size());
@@ -2522,18 +2531,18 @@ void zpass_resolve() {
     g_zpass.retired.clear();
 }
 
-// Presentation (roadmap step 3) when the image is scaled (F1CE_SCALE > 1) or FXAA is on (F1CE_FXAA=1): a full-window
+// Presentation (roadmap step 3) when the image is scaled (F1CE_SCALE) or FXAA is on (F1CE_FXAA=1): a full-window
 // pass instead of the blit. Downscaling samples a mip chain of the display buffer trilinearly at the level that
 // matches the window (the linear blit skipped pixels from 4K to 1080p: supersampling without its smoothing); FXAA
 // smooths the remaining edges on the sampled level. Otherwise the original blit is kept.
 bool fxaa_on() { static const bool v = getenv("F1CE_FXAA") && atoi(getenv("F1CE_FXAA")) != 0; return v; }
 
-// the window area the image goes to: the guest image's aspect ratio, centred (black bars), unless F1CE_STRETCH=1
+// the window area the image goes to: the internal image's aspect ratio, centred (black bars), unless F1CE_STRETCH=1
 void present_rect(const Surface& s, GLint ww, GLint wh, GLint* x, GLint* y, GLint* w, GLint* h) {
     static const bool stretch = getenv("F1CE_STRETCH") && atoi(getenv("F1CE_STRETCH")) != 0;
     *x = 0; *y = 0; *w = ww; *h = wh;
     if (stretch || !s.width || !s.height) return;
-    double a = (double)s.width / s.height;
+    double a = present_aspect(s.width, s.height);
     if ((double)ww / wh > a) { *w = (GLint)(wh * a + 0.5); *x = (ww - *w) / 2; }
     else { *h = (GLint)(ww / a + 0.5); *y = (wh - *h) / 2; }
 }
@@ -2569,9 +2578,9 @@ bool present_pass(Surface& s, GLint ww, GLint wh) {
         glUniform1i(glGetUniformLocation(prog, "u_src"), 0);
         loc_p = glGetUniformLocation(prog, "u_p");
         loc_win = glGetUniformLocation(prog, "u_win");
-        LOG_I("rsx: presentation pass (scale %.2f, FXAA %s)", res_scale(), fxaa_on() ? "on" : "off");
+        LOG_I("rsx: presentation pass (scale %.2f x %.2f, FXAA %s)", res_scale_x(), res_scale_y(), fxaa_on() ? "on" : "off");
     }
-    const u32 pw = scaled(s.width, s.scale), ph = scaled(s.height, s.scale);
+    const u32 pw = scaled(s.width, s.scale_x), ph = scaled(s.height, s.scale_y);
     GLint rx, ry, rw, rh;
     present_rect(s, ww, wh, &rx, &ry, &rw, &rh);
     float level = std::max(0.0f, std::log2(std::min((float)pw / (float)rw, (float)ph / (float)rh)));
@@ -2701,6 +2710,7 @@ void method(u32 m, u32 arg) {
 }
 
 void flip(u32 ea, u32 pitch, u32 width, u32 height) {
+    note_display(ea - mem::RSX_LOCAL);
     gl_init_once();
     if (gl_ok) resolve_all_ms();
     {   // debug: F1CE_RSX_STALL=<frame>:<ms>[:<count>] stalls the renderer (tests the PPU throttle / FIFO robustness)
@@ -2765,8 +2775,8 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, s.fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); g_tgt_valid = false;
         srgb_write(false);
-        const u32 pw = scaled(s.width, s.scale), ph = scaled(s.height, s.scale);
-        if (!((res_scale() > 1 || fxaa_on()) && present_pass(s, ww, wh))) {
+        const u32 pw = scaled(s.width, s.scale_x), ph = scaled(s.height, s.scale_y);
+        if (!((res_scaled() || fxaa_on()) && present_pass(s, ww, wh))) {
             GLint rx, ry, rw, rh;
             present_rect(s, ww, wh, &rx, &ry, &rw, &rh);
             if (rw != ww || rh != wh) {   // black bars around the image
