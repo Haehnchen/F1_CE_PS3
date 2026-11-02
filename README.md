@@ -91,6 +91,9 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_SPU_VERIFY=1` | compares every SPU block with the LS before it runs and logs mismatches (no dispatch cache, slower) |
 | `F1CE_SPU_NOIDIOM=1` | runs the table-building SPU loops as translated (`IDIOMS` in `tools/spu_aot.py`; for comparison) |
 | `F1CE_SPU_NOCULL=1` | the geometry jobs keep all triangles: SPU workers ~80% -> ~56% busy, but the renderer gets ~1000 more draws and 8x the indices, so fps drop (see the progress log) |
+| `F1CE_PIN=0/1` | thread placement with 12+ logical processors (Windows). Default: the renderer has a core of its own. 0: all threads left to the system; 1: the main PPU thread gets a core too |
+| `F1CE_SPU_NOFASTCULL=1` | runs the geometry job's vertex transform and triangle cull as translated, not the native versions (`spu_fast_*` in `runtime/spu_ops.h`) |
+| `F1CE_SPU_CULL_CHECK=1/2` | every 64th transform and cull also runs on two copies of the SPU, interpreter against native, and logs differences; 2 puts NaN, infinities and huge values into the copies' input |
 | `SPU_AOT_HEAT=1 python -I tools/spu_aot.py` | builds counters per SPU block; the game writes `spu_heat.txt` every 10 s (regenerate without it afterwards) |
 | `F1CE_MAX_FRAMES_AHEAD=<n>` | frames the PPU may queue ahead of the renderer (default 1) |
 | `F1CE_TASK_DMA_LOG=1` | logs each distinct DMA of the SPURS tasks once |
@@ -662,3 +665,12 @@ banks, then waits for SPU work.
   while the player's car stands in a 3D scene (`car_standing`, wheel at 0x10110670), and leaves that as soon as it moves ~3 cm per frame or the frame has
   under 800 draws. Scenery steps above 0.5 px: 434 -> 11 of 900 frames over a run that includes the race start. Measured with a strip copied per frame without waiting (full dumps slow the game to 13 fps and hide
   this). Checked at Silverstone only; 0x10110670 is a static address, Monaco not measured.
+- **60 fps work, part 5 (2026-11-02, Vulkan, scale 1.5, `F1CE_60FPS=1`, Silverstone):**
+  - The geometry job's vertex transform (0d628) and triangle cull (0d800) are native (`spu_fast_vertex_transform`, `spu_fast_triangle_cull`): the whole software-pipelined loop is
+    replaced from its head, because nothing after it reads the loop's registers (only r13 and the compacted list). The conditions were read from an SSA trace of the loop. `F1CE_SPU_CULL_CHECK` runs the interpreter
+    against them on copies of the SPU: ~24000 of each compared in races, real data and with NaN/infinity input, no difference.
+  - Measured on the grid with `F1CE_60FPS_NOHOLD=1`, three runs each: 38.2 -> 41 fps. Instructions in the geometry workloads drop ~44%. The driving part of `race_test.sh DRIVE=1` cannot compare builds: the car crashes at different times.
+  - The freed SPU time became polling (more dispatches and atomics) and the renderer ran slower. The CPU has 6 cores and 12 logical processors at ~7.3 cores of load, with no placement set: a worker on the renderer's
+    core costs it ~15%. The renderer now has a core of its own (`F1CE_PIN`): grid ~42.5, ~11% in all. Also giving the main thread a core gives the same fps but workers at 97%.
+  - Tried and rejected: keeping indirect branches inside clusters (a pc switch at the end of the cluster, plus return points and `ila` targets as cluster members). Dispatches fell ~20% and slow ones 3.3 -> 1.3 M/s, but the grid
+    lost ~6% in alternating runs in all three variants (local registers forced, not forced, sync blocks kept apart); the cause was not found. The hottest loop left is a morton texture copy (0be98/0beb8, ~9% of SPU instructions, its back edge is `binz`), and the profile is flat after it.

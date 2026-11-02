@@ -16,6 +16,7 @@
 namespace rsx { u64 g_last_frame_draws = 0; }
 u64 g_rsx_idle_us = 0;   // profiling: time the FIFO reader waited for the PPU (read by rsx_gl.cpp)
 
+void place_thread(int kind);      // core.cpp
 void profile_register_thread();   // core.cpp (host profiler)
 
 extern u32 g_ticks_per_frame_ea;
@@ -524,6 +525,7 @@ u32 g_my_get = ~0u;   // the GET value the front end last wrote
 void set_get(u32 v) { st32(g.control_addr + 4, v); g_my_get = v; }
 
 void rsx_thread() {
+    place_thread(0);
     if (getenv("F1CE_HOST_PROFILE_RSX")) profile_register_thread();
     const bool verify = getenv("F1CE_FIFO_VERIFY") != nullptr;
     if (verify) {

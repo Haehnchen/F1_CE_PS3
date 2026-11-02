@@ -31,7 +31,8 @@ IDIOMS = {(0x04AE4, 0x38944402, 7): "spu_idiom_fill_word",
 
 
 # optional shortcuts at a block's head: the helper returns true after setting pc to where to continue
-SKIPS = {(0x0D7F8, 0x4020007F, 134): "spu_skip_triangle_cull"}
+SKIPS = {(0x0D7F8, 0x4020007F, 134): "spu_skip_triangle_cull",
+         (0x0D628, 0x7A8FDCBF, 44): "spu_skip_vertex_transform"}
 
 
 def skip_call(pc, words, ctx, leave):

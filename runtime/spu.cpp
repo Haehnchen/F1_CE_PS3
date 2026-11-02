@@ -613,6 +613,87 @@ static v128 shufb_ref(const v128& a, const v128& b, const v128& c) {
 
 bool g_spu_idiom = getenv("F1CE_SPU_NOIDIOM") == nullptr;
 bool g_spu_nocull = getenv("F1CE_SPU_NOCULL") != nullptr;
+bool g_spu_fastcull = getenv("F1CE_SPU_NOFASTCULL") == nullptr;
+int g_spu_cull_check = getenv("F1CE_SPU_CULL_CHECK") ? atoi(getenv("F1CE_SPU_CULL_CHECK")) : 0;
+
+// F1CE_SPU_CULL_CHECK=1: every 64th transform and triangle cull of the geometry job runs on two copies of the SPU, by the
+// interpreter and by the native version, and the results are compared. =2 also replaces some input values in the copies
+// (NaN, infinities, huge values, denormals). The game's own state is untouched.
+namespace {
+struct CheckCounts { std::atomic<u32> calls{0}, checked{0}, bad{0}, declined{0}; };
+struct CheckPair { std::unique_ptr<SPUThread> a = std::make_unique<SPUThread>(), b = std::make_unique<SPUThread>(); };
+void check_poison(SPUThread& t, u32 base, u32 quads, u32 seed) {
+    static const u32 odd[] = {0x7FC00000, 0xFFC00000, 0x7F800000, 0xFF800000, 0x7F7FFFFF, 0xFF7FFFFF, 0x4F000000, 0xCF000000, 0x00000001, 0x80000001, 0, 0x80000000};
+    if (!quads || base + quads * 16 > 0x40000) return;
+    for (u32 k = 0; k < 16; k++) {
+        seed = seed * 1103515245u + 12345u;
+        u32 v = __builtin_bswap32(odd[(seed >> 8) % 12]);
+        memcpy(t.ls + base + ((seed >> 12) % quads) * 16 + ((seed >> 4) & 3) * 4, &v, 4);
+    }
+}
+bool check_interpret(SPUThread& t, u32 from, u32 to) {
+    t.pc = from;
+    for (u32 steps = 0; t.pc != to; steps++) {
+        if (steps > 40000000) return false;
+        u32 w = t.ls32(t.pc), idx = w >> 21;
+        g_table[idx](t, w);
+        if (!g_control[idx]) t.pc += 4;
+    }
+    return true;
+}
+}  // namespace
+
+void spu_cull_check(const v128* gpr, const u8* ls) {
+    static CheckCounts c;
+    const u32 call = c.calls++;
+    if (call & 63) return;
+    thread_local CheckPair p;
+    SPUThread& a = *p.a; SPUThread& b = *p.b;
+    memcpy(a.ls, ls, 0x40000);
+    memcpy(a.gpr, gpr, sizeof(a.gpr));
+    const u32 n = a.pref(33), list = a.pref(3);
+    if (g_spu_cull_check >= 2) check_poison(a, a.pref(8) & 0x3FFF0, 256, call * 2654435761u);
+    memcpy(b.ls, a.ls, 0x40000);
+    memcpy(b.gpr, a.gpr, sizeof(a.gpr));
+    if (!check_interpret(a, 0xD7F8, 0xDDF0)) { LOG_W("spu cull check: the interpreter did not reach the tail"); return; }
+    if (!spu_fast_triangle_cull(b)) { c.declined++; return; }
+    const u32 kept = a.pref(13), no = c.checked++;
+    if (kept != b.pref(13) || memcmp(a.ls + list, b.ls + list, kept)) {
+        if (c.bad++ < 10) {
+            u32 m = 0;
+            while (m < kept && !memcmp(a.ls + list + m, b.ls + list + m, 8)) m += 8;
+            LOG_W("spu cull check: DIFFERENT, %u triangles, kept %u vs %u, first difference at triangle %u", n, kept / 8, b.pref(13) / 8, m / 8);
+        }
+    }
+    if ((no & 1023) == 0) LOG_I("spu cull check: %u compared, %u differ, %u left to the translated loop", no + 1, c.bad.load(), c.declined.load());
+}
+
+void spu_xform_check(const v128* gpr, const u8* ls) {
+    static CheckCounts c;
+    const u32 call = c.calls++;
+    if (call & 63) return;
+    thread_local CheckPair p;
+    SPUThread& a = *p.a; SPUThread& b = *p.b;
+    memcpy(a.ls, ls, 0x40000);
+    memcpy(a.gpr, gpr, sizeof(a.gpr));
+    const u32 size = a.pref(37) << 4, src = (a.pref(29) - size) & 0x3FFFF, dst = (a.pref(41) - size) & 0x3FFFF;
+    // the first four vertices are already in the pipeline's registers here
+    if (g_spu_cull_check >= 2 && size > 64) check_poison(a, src + 64, size / 16 - 4, call * 2654435761u);
+    memcpy(b.ls, a.ls, 0x40000);
+    memcpy(b.gpr, a.gpr, sizeof(a.gpr));
+    if (!check_interpret(a, 0xD628, 0xD6D8)) { LOG_W("spu transform check: the interpreter did not reach the end"); return; }
+    if (!spu_fast_vertex_transform(b)) { c.declined++; return; }
+    const u32 no = c.checked++;
+    if (memcmp(a.ls + dst, b.ls + dst, size)) {
+        if (c.bad++ < 10) {
+            u32 m = 0;
+            while (m < size && !memcmp(a.ls + dst + m, b.ls + dst + m, 4)) m += 4;
+            LOG_W("spu transform check: DIFFERENT, %u vertices, first difference at vertex %u word %u: %08x vs %08x", size / 16, m / 16, (m / 4) & 3,
+                  __builtin_bswap32(*(u32*)(a.ls + dst + m)), __builtin_bswap32(*(u32*)(b.ls + dst + m)));
+        }
+    }
+    if ((no & 1023) == 0) LOG_I("spu transform check: %u compared, %u differ, %u left to the translated loop", no + 1, c.bad.load(), c.declined.load());
+}
 
 // each idiom against the interpreter, from random states: same local store and registers at the end of the loop
 static void idiom_self_test() {

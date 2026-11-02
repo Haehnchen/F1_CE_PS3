@@ -303,6 +303,7 @@ void spu_aot_f036496ce3b3d7b3(SPUThread& __restrict s) {
 void spu_aot_f05dc3fd7bd54b97(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	for (u32 it = 0; ; it++) {
+		if (spu_skip_vertex_transform(s)) return;
 		s.pc = 0x0D628; op_fi(s, 0x7A8FDCBFu);
 		s.pc = 0x0D62C; op_lqx(s, 0x388C49C0u);
 		s.pc = 0x0D630; op_nop(s, 0x4020000Eu);

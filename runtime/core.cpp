@@ -452,8 +452,10 @@ PPUThread* thread_create(u32 entry_opd, u64 arg, s32 prio, u32 stack_size, bool 
     return t.get();
 }
 
+void place_thread(int kind);
 static void thread_body(PPUThread* t) {
     t_self = t;
+    if (t->id == 0x01000000) place_thread(1);
     try {
         call_indirect(t->ctx, t->ctx.pc);
         t->exit_status = t->ctx.r[3];
@@ -523,6 +525,22 @@ void start_profiler() {
             hist.clear();
         }
     }).detach();
+}
+
+// With at least 12 logical processors (assumed two per core): the renderer gets a core, with its second logical processor
+// left to the rest of the process, and the SPU workers stay off it, so their polling does not slow the renderer down.
+// F1CE_PIN=1 also gives the main PPU thread a core, F1CE_PIN=0 leaves all threads to the system.
+void place_thread(int kind) {
+#ifdef _WIN32
+    static const char* pin = getenv("F1CE_PIN");
+    const u32 n = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    if ((pin && pin[0] == '0') || n < 12 || n > 64 || (n & 1)) return;
+    const u64 all = n == 64 ? ~0ull : (1ull << n) - 1;
+    const bool only_rsx = !pin || pin[0] != '1';
+    if (only_rsx && kind == 1) return;
+    const u64 mask = kind == 0 ? 1ull << (n - 2) : kind == 1 ? 1ull << (n - 4) : all >> (only_rsx ? 2 : 4);
+    if (!SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)mask)) LOG_W("place_thread: affinity not set");
+#endif
 }
 
 std::mutex g_prof_threads_mutex;

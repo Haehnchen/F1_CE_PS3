@@ -763,10 +763,146 @@ template <class S> void spu_idiom_audio_voice(S& s) {
 // F1CE_SPU_NOCULL=1, at 0d7f8: the geometry job keeps all triangles. Its loop compacts the list at r3 in place (8 bytes per
 // triangle) with back-face and small-triangle tests on the transformed vertices; the tail at 0ddf0 reports r13 / 8 of the
 // r33 triangles. Skipping it moves the work to the renderer and the GPU.
-extern bool g_spu_nocull;
-template <class S> bool spu_skip_triangle_cull(S& s) {
-    if (!g_spu_nocull) return false;
-    s.set_pref(13, s.pref(33) * 8);
+extern bool g_spu_nocull, g_spu_fastcull;
+extern int g_spu_cull_check;
+void spu_cull_check(const v128* gpr, const u8* ls);
+void spu_xform_check(const v128* gpr, const u8* ls);
+
+FORCE_INLINE __m128i cflts_scale1(__m128 x) {
+    __m128i v = _mm_cvttps_epi32(x);
+    if (__builtin_expect(_mm_movemask_epi8(_mm_cmpeq_epi32(v, _mm_set1_epi32(INT32_MIN))) != 0, 0)) {   // out of range or NaN
+        alignas(16) float f[4]; alignas(16) s32 r[4];
+        _mm_store_ps(f, x);
+        for (int i = 0; i < 4; i++) r[i] = std::isnan(f[i]) ? 0 : f[i] >= 2147483648.0f ? INT32_MAX : f[i] <= -2147483648.0f ? INT32_MIN : (s32)f[i];
+        return _mm_load_si128((const __m128i*)r);
+    }
+    return v;
+}
+// 0d7f8-0da0c without its software pipeline: four triangles per pass (8 bytes each, u16 a b c + one more, indices into the
+// quads at r8: x y z w, big-endian). A triangle is dropped if it covers no pixel row or column, is behind the edges r71 r69
+// or below 0, or faces away (sign of an area with an error margin r34 r55, r57 flips it, r54 = 16 turns the test off);
+// any vertex nearer than r52 keeps it. Kept ones compact the list at r3 in place. After the tail at 0ddf0 only r13 and that
+// list matter. Indices of 4096 or more (the two quads of a pass address them differently) stay with the translated loop.
+template <class S> bool spu_fast_triangle_cull(S& s) {
+    const u32 n = s.pref(33), list = s.pref(3), verts = s.pref(8), area_shift = s.pref(54) & 31;
+    if (!g_spu_fastcull || !n || n > 0x8000 || (list & 15) || (area_shift && area_shift < 16) || !ls_plain_range(s, list, n * 8)) return false;
+    u64* const tris = (u64*)(s.ls + list);
+    u64 seen = 0;
+    for (u32 i = 0; i < n; i++) seen |= tris[i];
+    if (seen & 0x000000F000F000F0ull) return false;
+
+    const auto splat = [&](int r) { return _mm_castsi128_ps(_mm_set1_epi32((int)s.pref(r))); };
+    const __m128 c34 = splat(34), c55 = splat(55), c45 = splat(45), c52 = splat(52), c69 = splat(69), c71 = splat(71), c57 = splat(57);
+    const __m128 sign = _mm_castsi128_ps(_mm_set1_epi32(INT32_MIN));
+    const __m128i swap = _mm_setr_epi8(3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12);
+    const auto vtx = [&](u32 i) { return _mm_castsi128_ps(_mm_shuffle_epi8(_mm_loadu_si128((const __m128i*)(s.ls + ((verts + (i << 4)) & 0x3FFF0))), swap)); };
+    const auto idx = [](u64 t, int k) { return (u32)__builtin_bswap16((u16)(t >> (k * 16))); };
+
+    u64* out = tris;
+    for (u32 i = 0; i < n; i += 4) {
+        const u32 rem = n - i;
+        const u64 t0 = tris[i], t1 = rem > 1 ? tris[i + 1] : 0, t2 = rem > 2 ? tris[i + 2] : 0, t3 = rem > 3 ? tris[i + 3] : 0;
+        __m128 ax = vtx(idx(t0, 0)), ay = vtx(idx(t1, 0)), az = vtx(idx(t2, 0)), aw = vtx(idx(t3, 0));
+        __m128 bx = vtx(idx(t0, 1)), by = vtx(idx(t1, 1)), bz = vtx(idx(t2, 1)), bw = vtx(idx(t3, 1));
+        __m128 cx = vtx(idx(t0, 2)), cy = vtx(idx(t1, 2)), cz = vtx(idx(t2, 2)), cw = vtx(idx(t3, 2));
+        _MM_TRANSPOSE4_PS(ax, ay, az, aw);
+        _MM_TRANSPOSE4_PS(bx, by, bz, bw);
+        _MM_TRANSPOSE4_PS(cx, cy, cz, cw);
+
+        const __m128 dcy = sat4(_mm_sub_ps(cy, ay)), dbx = sat4(_mm_sub_ps(bx, ax)), dby = sat4(_mm_sub_ps(by, ay)), dcx = sat4(_mm_sub_ps(cx, ax));
+        const __m128 gx = _mm_cmpgt_ps(ax, bx), gy = _mm_cmpgt_ps(ay, by);
+        __m128 maxx = _mm_blendv_ps(bx, ax, gx), minx = _mm_blendv_ps(ax, bx, gx);
+        __m128 maxy = _mm_blendv_ps(by, ay, gy), miny = _mm_blendv_ps(ay, by, gy);
+        maxy = _mm_blendv_ps(maxy, cy, _mm_cmpgt_ps(cy, maxy));
+        miny = _mm_blendv_ps(cy, miny, _mm_cmpgt_ps(cy, miny));
+        maxx = _mm_blendv_ps(maxx, cx, _mm_cmpgt_ps(cx, maxx));
+        minx = _mm_blendv_ps(cx, minx, _mm_cmpgt_ps(cx, minx));
+
+        const __m128 sum_y = sat4(_mm_add_ps(_mm_andnot_ps(sign, dcy), _mm_andnot_ps(sign, dby)));
+        const __m128 sum_x = sat4(_mm_add_ps(_mm_andnot_ps(sign, dbx), _mm_andnot_ps(sign, dcx)));
+        const __m128 margin = sat4(_mm_fmadd_ps(c34, sat4(_mm_add_ps(sum_x, sum_y)), c55));
+        const __m128 area = sat4(_mm_fmadd_ps(dcx, dby, sat4(_mm_fnmadd_ps(dcy, dbx, margin))));
+        const __m128 facing = area_shift ? _mm_setzero_ps() : _mm_xor_ps(c57, area);
+
+        const __m128 hx = sat4(_mm_add_ps(c45, maxx)), hy = sat4(_mm_add_ps(c45, maxy));
+        const __m128 same_col = _mm_castsi128_ps(_mm_cmpeq_epi32(cflts_scale1(minx), cflts_scale1(hx)));
+        const __m128 same_row = _mm_castsi128_ps(_mm_cmpeq_epi32(cflts_scale1(miny), cflts_scale1(hy)));
+        const __m128 drop = _mm_or_ps(_mm_or_ps(_mm_or_ps(same_col, same_row), _mm_or_ps(hx, hy)),
+                                      _mm_or_ps(facing, _mm_or_ps(_mm_cmpgt_ps(minx, c71), _mm_cmpgt_ps(miny, c69))));
+        const __m128 near = _mm_or_ps(_mm_cmpgt_ps(c52, az), _mm_or_ps(_mm_cmpgt_ps(c52, bz), _mm_cmpgt_ps(c52, cz)));
+        const u32 keep = (u32)(~_mm_movemask_ps(drop) | _mm_movemask_ps(near));
+        *out = t0; out += keep & 1;
+        if (rem > 1) { *out = t1; out += (keep >> 1) & 1; }
+        if (rem > 2) { *out = t2; out += (keep >> 2) & 1; }
+        if (rem > 3) { *out = t3; out += (keep >> 3) & 1; }
+    }
+    s.set_pref(13, (u32)(out - tris) * 8);
     s.pc = 0xDDF0;
     return true;
+}
+// 0d628-0d6d4, the vertex transform before that cull: the block before it has run the pipeline's first pass, whose stores
+// only touch the first output quads. Vertices (x y z, r37 rounded to 4) go through a 3x4 matrix (r53 r18 r54 + r6, r28 r30 r31
+// + r13, r48 r50 r51 + r52) and a 1/w with one refinement step. Output per four: x y w + x3, x y w + y3, x y w, x y w. Nothing
+// after the loop reads the registers it changes.
+template <class S> bool spu_fast_vertex_transform(S& s) {
+    const u32 size = s.pref(37) << 4, src = (s.pref(29) - size) & 0x3FFFF, dst = (s.pref(41) - size) & 0x3FFFF;
+    if (!g_spu_fastcull || !size || size > 0x20000 || (size & 63) || ((src | dst) & 15)) return false;
+    if (src + size > 0x40000 || dst + size > 0x40000 || (src < dst + size && dst < src + size) || !ls_plain_range(s, dst, size)) return false;
+
+    const auto splat = [&](int r) { return _mm256_castsi256_ps(_mm256_set1_epi32((int)s.pref(r))); };
+    const __m256 c53 = splat(53), c6 = splat(6), c28 = splat(28), c13 = splat(13), c48 = splat(48), c52 = splat(52);
+    const __m256 c18 = splat(18), c30 = splat(30), c50 = splat(50), c54 = splat(54), c51 = splat(51), c31 = splat(31);
+    const __m256 c34 = splat(34), c16 = splat(16), one = _mm256_set1_ps(1.0f);
+    const __m256 hi = _mm256_set1_ps(FLT_MAX), lo = _mm256_set1_ps(-FLT_MAX);
+    const auto sat = [&](__m256 x) { return _mm256_max_ps(_mm256_min_ps(x, hi), lo); };
+    const __m256i swap = _mm256_broadcastsi128_si256(_mm_setr_epi8(3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12));
+    const u8* in = s.ls + src;
+    u8* out = s.ls + dst;
+    for (u32 o = 0; o < size; o += 128) {
+        const u32 b = size - o > 64 ? 64 : 0;   // a last group of four fills both halves
+        const auto row = [&](u32 k) {
+            __m256i v = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(in + o + k))),
+                                                _mm_loadu_si128((const __m128i*)(in + o + b + k)), 1);
+            return _mm256_castsi256_ps(_mm256_shuffle_epi8(v, swap));
+        };
+        const __m256 r0 = row(0), r1 = row(16), r2 = row(32), r3 = row(48);
+        const __m256 t0 = _mm256_unpacklo_ps(r0, r1), t1 = _mm256_unpackhi_ps(r0, r1), t2 = _mm256_unpacklo_ps(r2, r3), t3 = _mm256_unpackhi_ps(r2, r3);
+        const __m256 x = _mm256_shuffle_ps(t0, t2, 0x44), y = _mm256_shuffle_ps(t0, t2, 0xEE), z = _mm256_shuffle_ps(t1, t3, 0x44);
+
+        const __m256 p = sat(_mm256_fmadd_ps(c18, y, sat(_mm256_fmadd_ps(x, c53, c6))));
+        const __m256 q = sat(_mm256_fmadd_ps(c30, y, sat(_mm256_fmadd_ps(x, c28, c13))));
+        const __m256 u = sat(_mm256_fmadd_ps(c50, y, sat(_mm256_fmadd_ps(x, c48, c52))));
+        const __m256 w = sat(_mm256_fmadd_ps(z, c54, p)), hy = sat(_mm256_fmadd_ps(z, c51, u)), hx = sat(_mm256_fmadd_ps(z, c31, q));
+        const __m256 est = sat(_mm256_div_ps(one, w));
+        const __m256 inv = sat(_mm256_fmadd_ps(sat(_mm256_fnmadd_ps(est, w, c16)), est, est));
+        const __m256 ox = sat(_mm256_fmsub_ps(inv, hx, c34)), oy = sat(_mm256_fmsub_ps(inv, hy, c34));
+
+        const __m256 u0 = _mm256_unpacklo_ps(ox, oy), u1 = _mm256_unpackhi_ps(ox, oy);
+        const __m256 last = _mm256_castsi256_ps(_mm256_srli_si256(_mm256_castps_si256(u1), 8));   // x3 y3 0 0
+        const __m256 v0 = _mm256_unpacklo_ps(w, last), v1 = _mm256_unpackhi_ps(w, last);
+        const auto put = [&](u32 k, __m256 v) {
+            const __m256i e = _mm256_shuffle_epi8(_mm256_castps_si256(v), swap);
+            _mm_storeu_si128((__m128i*)(out + o + k), _mm256_castsi256_si128(e));
+            if (b) _mm_storeu_si128((__m128i*)(out + o + b + k), _mm256_extracti128_si256(e, 1));
+        };
+        put(0, _mm256_shuffle_ps(u0, v0, 0x44));
+        put(16, _mm256_shuffle_ps(u0, v0, 0xEE));
+        put(32, _mm256_shuffle_ps(u1, v1, 0x44));
+        put(48, _mm256_shuffle_ps(u1, v1, 0xEE));
+    }
+    s.pc = 0xD6D8;
+    return true;
+}
+template <class S> bool spu_skip_vertex_transform(S& s) {
+    if (g_spu_cull_check) spu_xform_check(s.gpr, s.ls);
+    return spu_fast_vertex_transform(s);
+}
+template <class S> bool spu_skip_triangle_cull(S& s) {
+    if (g_spu_cull_check) spu_cull_check(s.gpr, s.ls);
+    if (g_spu_nocull) {
+        s.set_pref(13, s.pref(33) * 8);
+        s.pc = 0xDDF0;
+        return true;
+    }
+    return spu_fast_triangle_cull(s);
 }

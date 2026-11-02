@@ -10505,6 +10505,7 @@ L_8e96b8e0c04aa986:
 	goto out;
 L_f05dc3fd7bd54b97:
 	s.instructions += 44;
+	if (spu_skip_vertex_transform(L)) goto out;
 	L.pc = 0x0D628; op_fi(L, 0x7A8FDCBFu);
 	L.pc = 0x0D62C; op_lqx(L, 0x388C49C0u);
 	L.pc = 0x0D630; op_nop(L, 0x4020000Eu);

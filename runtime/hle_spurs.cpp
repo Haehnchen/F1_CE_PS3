@@ -17,6 +17,7 @@
 double watch_after();   // core.cpp (debug)
 u64 dma_count(int k);   // spu.cpp (profiling)
 void line_written(u32 ea);         // core.cpp: a write under the lock (fails SPU PUTLLCs on the line)
+void place_thread(int kind);   // core.cpp
 void profile_register_thread();   // core.cpp (host profiler)
 
 namespace {
@@ -163,6 +164,7 @@ u64 run_workload(SPUThread& spu, u32 wid, const Workload& w) {
 }
 
 void spu_worker(u32 num) {
+    place_thread(2);
     if (!getenv("F1CE_HOST_PROFILE_RSX")) profile_register_thread();
     auto spu = std::make_unique<SPUThread>();
     spu->id = num;
