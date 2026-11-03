@@ -374,8 +374,9 @@ void trap_hit(PPUContext& c, u32 addr) {
 // shared by PPU lwarx/stwcx. and SPU getllar/putllc so both kinds of atomic update exclude each other; striped by
 // 128-byte line (every user updates a single line under it)
 struct alignas(64) PaddedLock { SpinLock m; };
-static PaddedLock g_atomic_locks[64];
-SpinLock& atomic_lock(u32 ea) { return g_atomic_locks[(ea >> 7) & 63].m; }
+// (1024 stripes, hashed: with 64 the SPURS lines shared locks and the SPU workers spun on them ~3% of their time)
+static PaddedLock g_atomic_locks[1024];
+SpinLock& atomic_lock(u32 ea) { return g_atomic_locks[((ea >> 7) ^ (ea >> 17)) & 1023].m; }
 
 // Write generation per 128-byte line (hashed; a collision only fails a conditional store, which is retried). Every
 // write made under the line's reservation lock (PPU stwcx./stdcx., SPU PUTLLC/PUTLLUC, the HLE SPURS writers) bumps it,
@@ -383,6 +384,7 @@ SpinLock& atomic_lock(u32 ea) { return g_atomic_locks[(ea >> 7) & 63].m; }
 // data alone missed stores of an unchanged value. The SPURS job manager read ready count 1 and an empty queue, the
 // game queued jobs and stored ready count 1 again (no change), and the PM's PUTLLC of ready 0 succeeded: work queued
 // with nobody scheduled to run it (freeze at the race start: main thread in cellSpursEventFlagWait for ever).
+// (Tried 2026-11-03: the generation in the lock stripe's cache line was ~2% slower on the grid.)
 static std::atomic<u32> g_line_gen[4096];
 u32 line_generation(u32 ea) { return g_line_gen[(ea >> 7) & 4095].load(std::memory_order_relaxed); }
 void line_written(u32 ea) { g_line_gen[(ea >> 7) & 4095].fetch_add(1, std::memory_order_relaxed); }
@@ -504,6 +506,19 @@ void start_profiler() {
                     if (hle) snprintf(b, sizeof(b), "hle %s", hle);
                     else snprintf(b, sizeof(b), "fn %08x", t->ctx.cur_fn);
                     hist[t->name][b]++;
+                    // what the SPU workers run while main waits for them (job counters / task event flag)
+                    if (t->name == "main" && (strcmp(b, "fn 00551228") == 0 || strcmp(b, "hle cellSpursEventFlagWait") == 0)) {
+                        extern std::atomic<int> g_worker_wid[8];
+                        std::string s = b[0] == 'f' ? "jobwait" : "flagwait";
+                        int idle = 0;
+                        std::map<int, int> per;
+                        for (int k = 0; k < 5; k++) { int w = g_worker_wid[k].load(); if (w < 0) idle++; else per[w]++; }
+                        char c[32];
+                        snprintf(c, sizeof(c), " idle%d", idle);
+                        s += c;
+                        for (auto& [w, n] : per) { snprintf(c, sizeof(c), " w%d:%d", w, n); s += c; }
+                        hist["main-wait"][s]++;
+                    }
                 }
             }
             if (time_usec() - last < 10000000) continue;

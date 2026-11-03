@@ -47,13 +47,27 @@ struct RawRegion {
     u64 hash = 0, checked_frame = ~0ull, last_frame = 0, seen_frame = 0, last_change = 0;
 };
 std::unordered_map<u64, RawRegion> g_raw_regions;
+// direct-mapped in front of the map: ~18000 lookups per frame, the map's nodes are scattered (cleared when entries go)
+struct RawLookup { u64 key; RawRegion* r; };
+RawLookup g_raw_lookup[2048];
+RawRegion& raw_region(u64 key) {
+    RawLookup& l = g_raw_lookup[key & 2047];
+    if (l.key != key || !l.r) l = {key, &g_raw_regions[key]};
+    return *l.r;
+}
 
 void evict_raw_regions() {
+    memset(g_raw_lookup, 0, sizeof(g_raw_lookup));
     for (auto it = g_raw_regions.begin(); it != g_raw_regions.end();)
         if (g_frame - it->second.last_frame > 120) {
             heap_free(g_heap, it->second.off, it->second.bytes);
             it = g_raw_regions.erase(it);
         } else ++it;
+}
+
+inline u32 g_first_attr(const u32* group_of, u32 g) {
+    for (u32 i = 0; i < 16; i++) if (group_of[i] == g) return i;
+    return 0;
 }
 
 // sets u_va for the attributes of this draw (vertices min_v .. max_v); the draw then uses base vertex 0
@@ -83,6 +97,28 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
         g_prof.t_conv += prof_usec() - tc;
         return (long long)roff;
     };
+    // Attributes interleaved in one record share a region: the buffer is hashed and copied once, not once per attribute
+    // (va_fetch reads bytes at any offset). Same stride, and together they fit in a record.
+    u32 group_ea[16], group_end[16], group_of[16];
+    u32 ngroups = 0;
+    for (u32 i = 0; i < 16; i++) {
+        u32 fmt = reg(0x1740 + i * 4);
+        u32 type = fmt & 0xF, size = (fmt >> 4) & 0xF, stride = (fmt >> 8) & 0xFF;
+        group_of[i] = 16;
+        if (!size || !(input_mask & (1u << i)) || !stride || (fmt >> 16) > 1) continue;
+        u32 off = reg(0x1680 + i * 4);
+        u32 ea = location_to_ea(off & 0x7FFFFFFF, off >> 31);
+        u32 end = ea + (type == 6 ? 4 : std::min(size, 4u) * (type == 2 ? 4 : type == 4 || type == 7 ? 1 : 2));
+        u32 g = 0;
+        for (; g < ngroups; g++) {
+            if (((reg(0x1740 + g_first_attr(group_of, g) * 4) >> 8) & 0xFF) != stride) continue;
+            if (std::max(end, group_end[g]) - std::min(ea, group_ea[g]) <= stride) break;
+        }
+        if (g == ngroups) { group_ea[g] = ea; group_end[g] = end; ngroups++; }
+        group_ea[g] = std::min(ea, group_ea[g]);
+        group_end[g] = std::max(end, group_end[g]);
+        group_of[i] = g;
+    }
     for (u32 i = 0; i < 16; i++) {
         u32 fmt = reg(0x1740 + i * 4);
         u32 type = fmt & 0xF, size = (fmt >> 4) & 0xF;
@@ -100,9 +136,11 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
         u32 src = base_ea + rmin * stride, bytes = (rmax - rmin) * stride + elem;
         long long base = -1;   // byte offset of the attribute's record rmin
         bool in_ring = true;
+        const u32 attr_ea = base_ea;
         if (stride && freq <= 1) {
+            const u32 base_ea = group_ea[group_of[i]], elem = group_end[group_of[i]] - base_ea;
             u64 key = mix64(((u64)base_ea << 32) ^ (stride << 8) ^ elem) ^ 0x7f4a7c15ull;
-            RawRegion& re = g_raw_regions[key];
+            RawRegion& re = raw_region(key);
             if (re.base_ea != base_ea || re.stride != stride || re.elem != elem) {
                 heap_free(g_heap, re.off, re.bytes);
                 re = RawRegion{};
@@ -158,7 +196,7 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
                 re.seen_frame = g_frame;   // first sighting (ring-buffer data at a new address every frame): streamed
             }
             if (re.off != ~0u && min_v >= re.first && max_v < re.first + re.count) {
-                base = (long long)re.off + (long long)(rmin - re.first) * stride;
+                base = (long long)re.off + (long long)(rmin - re.first) * stride + (attr_ea - base_ea);
                 in_ring = false;
             }
         }

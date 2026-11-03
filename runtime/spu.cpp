@@ -519,20 +519,35 @@ void SPUThread::dma(u32 cmd) {
             break;
         }
         case 0xD0: {   // GETLLAR
-            std::lock_guard lk(atomic_lock(ea));
+            // without taking the lock: every locked writer stores the line, then bumps its generation, so a copy made
+            // while the lock was free and the generation did not move is a consistent snapshot (as with a seqlock)
             ea &= ~127u;
-            memcpy(res_data, gmem(ea), 128);
+            SpinLock& l = atomic_lock(ea);
+            for (;;) {
+                while (l.held.load(std::memory_order_acquire)) _mm_pause();
+                u32 g = line_generation(ea);
+                std::atomic_thread_fence(std::memory_order_acquire);
+                memcpy(res_data, gmem(ea), 128);
+                std::atomic_thread_fence(std::memory_order_acquire);
+                if (!l.held.load(std::memory_order_relaxed) && line_generation(ea) == g) { res_gen = g; break; }
+            }
             write_ls(lsa & 0x3FF80, res_data, 128);
             res_addr = ea;
-            res_gen = line_generation(ea);
             has_reservation = true;
             atomic_stat = 4;   // MFC_GETLLAR_SUCCESS
             break;
         }
         case 0xB4: {   // PUTLLC
-            std::lock_guard lk(atomic_lock(ea));
             ea &= ~127u;
             static const bool no_gen = getenv("F1CE_NO_LINEGEN") != nullptr;   // debug: data comparison only
+            // a reservation already lost (generations only grow) fails without the lock
+            if (!has_reservation || res_addr != ea || (!no_gen && res_gen != line_generation(ea))) {
+                g_dma_counters[id & 15].c[4].fetch_add(1, std::memory_order_relaxed);
+                has_reservation = false;
+                atomic_stat = 1;
+                break;
+            }
+            std::lock_guard lk(atomic_lock(ea));
             bool ok = has_reservation && res_addr == ea && (no_gen || res_gen == line_generation(ea)) && same_bytes(gmem(ea), res_data, 128);
             if (ok) { memcpy(gmem(ea), ls + (lsa & 0x3FF80), 128); line_written(ea); }
             if (!ok) g_dma_counters[id & 15].c[4].fetch_add(1, std::memory_order_relaxed);

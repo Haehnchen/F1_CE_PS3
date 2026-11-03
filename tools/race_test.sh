@@ -15,7 +15,7 @@ if [ -n "$DRIVE" ]; then
 else
     for t in $(seq 16 4 140); do IN="$IN,$t:cross"; done
 fi
-cd "$d" && env "$@" F1CE_QUIT_AFTER_3D="${QUIT_AFTER:-10}" F1CE_INPUT="$IN" timeout ${TIMEOUT:-400} ../../build-win/f1ce.exe "$GAME" > log.txt 2>&1
+cd "$d" && env "$@" F1CE_QUIT_AFTER_3D="${QUIT_AFTER:-10}" F1CE_INPUT="$IN" timeout ${TIMEOUT:-400} ${EXE:-../../build-win/f1ce.exe} "$GAME" > log.txt 2>&1
 rc=$?; cp f1ce_recomp.log log.txt 2>/dev/null   # (the console only gets warnings/errors)
 echo "exit $rc"
 python -I ../../tools/frames_to_png.py . > /dev/null

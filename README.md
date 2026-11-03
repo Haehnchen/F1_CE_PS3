@@ -85,6 +85,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_QUIT_AFTER_3D=<s>` | exits that many seconds after the first frame with 800+ draws (saves the last frame) |
 | `F1CE_PROFILE=1` | every few seconds: what each guest thread spends its time on (functions, HLE calls) |
 | `F1CE_HOST_PROFILE=<s>` | after s seconds, samples the SPU worker threads for 10 s: hottest host functions and addresses, and the callers of time spent in DLLs; `F1CE_HOST_PROFILE_RSX=1` samples the renderer thread instead |
+| `F1CE_SPU_PROFILE=<s>` | s seconds after the SPU workers start, samples each worker's workload and SPU pc every ms for 10 s (sees cluster code and DMA time, unlike `pc_samples`); with `F1CE_PROFILE=1` the `main-wait` line shows what the workers run while main waits for them |
 | `F1CE_SPU_DUMP_BLOCKS=<file>` | records SPU blocks that have no translation (input of `tools/spu_aot.py`) |
 | `F1CE_SPU_NOAOT=1`, `F1CE_SPU_NOCLUSTER=1` | interpret all SPU code / use single-block translations only |
 | `F1CE_SPU_BENCH=1` | SPU interpreter benchmark and shufb self-test |
@@ -674,3 +675,27 @@ banks, then waits for SPU work.
     core costs it ~15%. The renderer now has a core of its own (`F1CE_PIN`): grid ~42.5, ~11% in all. Also giving the main thread a core gives the same fps but workers at 97%.
   - Tried and rejected: keeping indirect branches inside clusters (a pc switch at the end of the cluster, plus return points and `ila` targets as cluster members). Dispatches fell ~20% and slow ones 3.3 -> 1.3 M/s, but the grid
     lost ~6% in alternating runs in all three variants (local registers forced, not forced, sync blocks kept apart); the cause was not found. The hottest loop left is a morton texture copy (0be98/0beb8, ~9% of SPU instructions, its back edge is `binz`), and the profile is flat after it.
+  - Renderer thread on the grid (`F1CE_HOST_PROFILE_RSX`): vk draw 21%, FIFO front end ~30% (`rsx_thread` 14, `rsx::vk::method` 8, `fifo_ptr` 4.4, `rsx::method` 3.4), hash_range 10, amdvlk 9. Each command re-read PUT and GET, ran the flow checks and two `fifo_ptr` calls.
+    After a command, the front end now runs plain commands in a row from the same source (at most 64). It stops at PUT, at any flow command or NOP, at the end of the source, when the reference moves and when a list copy appears; so flow commands still take every check.
+    Grid 43.4 -> 44.5 fps in three alternating pairs. A 100 s drive on Vulkan and three OpenGL runs with `F1CE_RSX_DRAW_STALL=3100:300:3 F1CE_NO_RSX_THROTTLE=1` (the stall only exists in the OpenGL backend; fps fell to 0.2-8 there) had no faults or list copy warnings.
+  - Renderer, measured by section: uniforms 0.65 ms (not the 7.5 KB constant copies, as suspected), `setup_attrs_gpu` 3.3 ms. Interleaved attributes each had their own region, so a buffer was hashed and copied once per attribute. Attributes of one record now share a region (`va_fetch` reads bytes at any offset) and a direct-mapped table sits before the region map: hashed 29.5 -> 13 MB per frame, vertices 7.8 -> 6.6 ms, vertex heap 41 -> 17 MB. Plain register writes skip the calls down to the backend (`rsx::g_plain`, Vulkan only).
+    Grid ~45-46 fps; the renderer now idles ~4 ms there, so the grid waits for the SPUs again. Scripted driving cannot judge this: the 60 fps of that run were the car stopped on the grass.
+- **60 fps work, part 6 (2026-11-03, Vulkan, scale 1.5, `F1CE_60FPS=1 F1CE_60FPS_NOHOLD=1`, Silverstone grid):**
+  - Where main waits (`F1CE_PROFILE`, new `main-wait` line): ~45% in 00551228 (job counters) and ~10% in `cellSpursEventFlagWait`, and in those samples
+    all five workers are busy (w0 on one, w1/w2 on the other four). The SPUs are the limit, not their scheduling.
+  - `F1CE_SPU_PROFILE` (new): w1/w2 spend about a third of their time in the job manager's policy module, but its hot pcs are DMA sites
+    (`wrch ch21`): 16 KB GETs of job data (01f24), list GETs (01eec), and the job-grab loop GETLLAR 022ac -> PUTLLC 02388 (about 25% of the PUTLLCs fail).
+    The host profile had ~5% of worker time spinning on the reservation locks.
+  - GETLLAR takes no lock now: it waits for the stripe to be free, reads the generation, copies the line and checks that the lock is still free and the
+    generation did not move (every locked writer stores, then bumps the generation). PUTLLC fails without the lock when its generation already moved. The
+    locks are 1024 hashed stripes instead of 64. Grid 41.2 -> 43.5 and 39.8 -> 43.0 fps in alternating pairs; a 90 s drive had no faults or freezes.
+  - Tried and reverted: the generation in the lock stripe's cache line (two cache lines per atomic instead of three) was ~2% slower in three pairs.
+  - The PM's poll service (`others_waiting`, asked on every job) reads the workloads without `g_sp.m` (the mutex was ~2.7% of worker time): 43.9 -> 44.8 fps
+    over three pairs.
+  - Stopped-car hold (`car_standing`): it took 30 frames to engage, so the car shook for ~0.6 s each time the grid appeared; now 8 frames (~0.2 s). Its
+    transitions are logged (`60 fps: hold on/off at <s>`, `entering/leaving 3D scene`), so a user log shows whether it dropped out.
+  - Tried and reverted: a 16-byte dispatch cache entry (`fast[]` 64 KB instead of 128 KB; the hottest address in `run()` is the `fe.pc` compare, 5%) was ~2%
+    slower in three pairs, so that sample is the landing point of the indirect call, not a cache miss.
+  - 6 SPU workers against 5 with these changes: 45.7 against 46.2 fps, +0.9 cores. The 6-core CPU already carries ~7.3 cores of load (renderer, main, five
+    workers), so a sixth worker only shares a core. Reaching 60 on the grid needs less work in total, not more threads.
+  - Scripted driving (`DRIVE=1`) ran 55-59 fps with main waiting for the SPUs ~50% of the time, but the car was on the grass again by then.

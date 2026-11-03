@@ -205,6 +205,7 @@ struct SPUThread {
     // written since the block was verified (the block objects are scattered on the heap, and the cache misses of
     // the full lookup were the largest single cost of the SPU threads). Cluster code: cluster >= 0 (it counts itself),
     // and the entry stays good once any block of its cluster was verified again.
+    // (Tried 2026-11-03: 16-byte entries, the table at 64 KB, were ~2% slower on the grid.)
     struct FastEnt { u64 checked; void (*fn)(SPUThread&); u32 pc, home; s32 cluster; u32 count_n; };
     FastEnt fast[4096] = {};
     Block* build_block(u32 pc);

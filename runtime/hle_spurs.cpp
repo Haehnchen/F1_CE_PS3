@@ -19,6 +19,7 @@ u64 dma_count(int k);   // spu.cpp (profiling)
 void line_written(u32 ea);         // core.cpp: a write under the lock (fails SPU PUTLLCs on the line)
 void place_thread(int kind);   // core.cpp
 void profile_register_thread();   // core.cpp (host profiler)
+std::atomic<int> g_worker_wid[8] = {-1, -1, -1, -1, -1, -1, -1, -1};   // profiling (F1CE_PROFILE): workload each SPU worker runs
 
 namespace {
 // diagnostics: the first 0x80 bytes of a workload's argument block (job manager control: counters, SPU slots, queue)
@@ -78,10 +79,15 @@ std::atomic<u64> g_worker_busy[8];   // profiling: microseconds each SPU worker 
 
 // true if another workload has signalled work (ready count > 0) and has no SPU. Workloads that are
 // merely polled for work do not count, so a parallel job is not forced to give up its SPU.
+// Read without g_sp.m: the PM asks this on every job (the mutex was ~2.7% of the workers' time), and the answer is only
+// a hint, so a value one update old is fine (the PM asks again at its next job).
 bool others_waiting(u32 self) {
-    std::lock_guard lk(g_sp.m);
-    for (u32 i = 0; i < 16; i++)
-        if (i != self && g_sp.wkl[i].used && g_sp.wkl[i].running == 0 && ld8(g_sp.ea + i) > 0) return true;
+    for (u32 i = 0; i < 16; i++) {
+        Workload& w = g_sp.wkl[i];
+        if (i != self && std::atomic_ref<bool>(w.used).load(std::memory_order_relaxed) &&
+            std::atomic_ref<u32>(w.running).load(std::memory_order_relaxed) == 0 && ld8(g_sp.ea + i) > 0)
+            return true;
+    }
     return false;
 }
 
@@ -163,6 +169,48 @@ u64 run_workload(SPUThread& spu, u32 wid, const Workload& w) {
     return spu.instructions;
 }
 
+// Profiling aid (F1CE_SPU_PROFILE=<seconds before start>): samples the workload and SPU pc of every worker each
+// millisecond for 10 s. Unlike pc_samples it sees cluster code (pc is the cluster's entry block while it runs).
+void spu_profiler(u32 n) {
+    sleep_usec((u64)(atof(getenv("F1CE_SPU_PROFILE")) * 1e6));
+    std::map<u32, u32> by_pc;   // wid << 20 | pc
+    std::map<int, u32> by_wid;
+    u32 total = 0;
+    for (u64 end = time_usec() + 10000000; time_usec() < end;) {
+        sleep_usec(1000);
+        for (u32 k = 0; k < n && k < 8; k++) {
+            int wid = g_worker_wid[k].load(std::memory_order_relaxed);
+            SPUThread* t = g_worker_spu[k];
+            total++;
+            by_wid[wid]++;
+            if (wid >= 0 && t) by_pc[(u32)wid << 20 | (t->pc & 0x3FFFC)]++;
+        }
+    }
+    std::string s;
+    for (auto& [w, c] : by_wid) { char b[32]; snprintf(b, sizeof(b), " %s%d %.1f%%", w < 0 ? "idle" : "w", w < 0 ? 0 : w, 100.0 * c / total); s += b; }
+    LOG_I("spu profile: %u samples:%s", total, s.c_str());
+    std::vector<std::pair<u32, u32>> v;
+    for (auto& [k, c] : by_pc) v.push_back({c, k});
+    std::sort(v.rbegin(), v.rend());
+    for (size_t i = 0; i < v.size() && i < 40; i++)
+        LOG_I("spu profile %5.1f%% w%u %05x", 100.0 * v[i].first / total, v[i].second >> 20, v[i].second & 0xFFFFF);
+    // policy module pcs over all workloads (they share one PM)
+    std::map<u32, u32> pm_pc;
+    for (auto& [k, c] : by_pc) if ((k & 0xFFFFF) < 0x3580) pm_pc[k & 0xFFFFF] += c;
+    v.clear();
+    for (auto& [k, c] : pm_pc) v.push_back({c, k});
+    std::sort(v.rbegin(), v.rend());
+    s.clear();
+    for (size_t i = 0; i < v.size() && i < 60; i++) { char b[24]; snprintf(b, sizeof(b), " %05x:%.1f", v[i].second, 100.0 * v[i].first / total); s += b; }
+    LOG_I("spu profile pm pcs:%s", s.c_str());
+    // per workload: policy module (< 0x3580) against job / task code
+    std::map<u32, std::pair<u32, u32>> pm;
+    for (auto& [k, c] : by_pc) ((k & 0xFFFFF) < 0x3580 ? pm[k >> 20].first : pm[k >> 20].second) += c;
+    s.clear();
+    for (auto& [w, p] : pm) { char b[48]; snprintf(b, sizeof(b), " w%u pm %.1f%% code %.1f%%", w, 100.0 * p.first / total, 100.0 * p.second / total); s += b; }
+    LOG_I("spu profile by part:%s", s.c_str());
+}
+
 void spu_worker(u32 num) {
     place_thread(2);
     if (!getenv("F1CE_HOST_PROFILE_RSX")) profile_register_thread();
@@ -220,7 +268,9 @@ void spu_worker(u32 num) {
         if (wid < 0) { idle_wait(idle_since, 100); continue; }
         idle_since = 0;
         u64 run_t0 = time_usec();
+        g_worker_wid[num & 7].store(wid, std::memory_order_relaxed);
         u64 n = run_workload(*spu, (u32)wid, w);
+        g_worker_wid[num & 7].store(-1, std::memory_order_relaxed);
         if (w.runs < 8) {   // diagnostics: rarely run workloads (the pit-entry job manager)
             LOG_I("SPURS wkl %d run %llu on spu%u ended after %llu instructions", wid, (unsigned long long)w.runs + 1, num,
                   (unsigned long long)n);
@@ -427,6 +477,7 @@ HLE_FUNC(cellSpursAddWorkload) {
         u32 n = std::max(1u, g_sp.nspus);
         if (const char* e = getenv("F1CE_SPURS_SPUS")) n = std::max(1, atoi(e));
         for (u32 i = 0; i < n; i++) std::thread(spu_worker, i).detach();
+        if (getenv("F1CE_SPU_PROFILE")) std::thread(spu_profiler, n).detach();
     }
     w.used = true;
     RET(CELL_OK);

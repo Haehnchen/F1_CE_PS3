@@ -1433,6 +1433,10 @@ void apply_state(const Surface* target, VkPrimitiveTopology topo) {
     const bool hud = hud_draw(target->offset, reg(0x0310) & 1, reg(0x0A74) & 1);
     float vx = 0, vy = 0, vw = (float)scaled(target->width, target->scale_x), vh = (float)scaled(target->height, target->scale_y);
     if (hud) hud_rect((u32)vw, (u32)vh, &vx, &vy, &vw, &vh);
+    // A point on a pixel edge covers the pixel below it in OpenGL (floor) but the one before it in Vulkan, which shifted
+    // the per-car lighting table (32 points at integer x) by one entry: the last car of the grid got an unwritten texel
+    // (blue). A quarter-pixel shift gives the OpenGL pixel for points at integer and half-integer positions.
+    if (topo == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) { vx += 0.25f; vy += 0.25f; }
     set_viewport(vx, vy, vw, vh);
     set_scissor(target_scissor(target, hud));
     const bool v = g_dyn.valid;
@@ -2465,6 +2469,10 @@ void method(u32 m, u32 arg) {
     if (__builtin_expect(inited, 1) && m < 0x2000 && !special[m >> 2]) { R[m >> 2] = arg; return; }
     vk_init_once();
     inited = true;
+    if (!g_plain_on) {
+        for (u32 i = 0; i < 0x800; i++) g_plain[i] = !special[i];
+        g_plain_on = true;
+    }
     if (m == 0x1D7C) { R[m >> 2] = arg; zpass_enable(arg & 1); return; }   // ANTI_ALIASING_CONTROL / ZPASS_PIXEL_COUNT_ENABLE
     if (m == 0x17C8 && arg == 1) {                                         // CLEAR_REPORT_VALUE (ZPASS_PIXEL_CNT)
         bool on = g_q.enabled;

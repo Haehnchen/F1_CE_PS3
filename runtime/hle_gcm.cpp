@@ -7,6 +7,7 @@
 #include "kernel.h"
 #include "rsx.h"
 
+#include <array>
 #include <bit>
 #include <cmath>
 #include <vector>
@@ -149,14 +150,26 @@ bool car_standing() {
     const float moved = std::fabs(x - px) + std::fabs(z - pz);
     px = x;
     pz = z;
+    static int changes = 0;
+    static bool in_3d = false;
+    if ((rsx::g_last_frame_draws >= 800) != in_3d) {
+        in_3d = !in_3d;
+        if (changes++ < 200) LOG_I("60 fps: %s 3D scene at %.2f s", in_3d ? "entering" : "leaving", time_usec() / 1e6);
+    }
     if (moved >= 0.03f || rsx::g_last_frame_draws < 800) {
+        if (hold && changes++ < 200)
+            LOG_I("60 fps: hold off at %.2f s (moved %.4f, %u draws)", time_usec() / 1e6, moved, (u32)rsx::g_last_frame_draws);
         small = 0;
         hold = false;
         return false;
     }
     small++;
     since_swing = moved > 0 ? 0 : since_swing + 1;
-    if (small >= 30 && since_swing < 30) hold = true;
+    // (8 frames: with 30 the car shook for ~0.6 s each time the grid appeared)
+    if (!hold && small >= 8 && since_swing < 8) {
+        hold = true;
+        if (changes++ < 200) LOG_I("60 fps: hold on at %.2f s", time_usec() / 1e6);
+    }
     return hold;
 }
 
@@ -267,6 +280,21 @@ void exec_method(u32 method, u32 arg) {
         }
         case GCM_FLIP_COMMAND: do_flip(arg); break;
         default: rsx::method(method, arg); break;
+    }
+}
+
+// the arguments of one command. Most are register writes: with a renderer that says so, they skip the calls above
+FORCE_INLINE void exec_command(u32 method, bool non_inc, const u32* args, u32 count) {
+    static const auto front = [] {   // the methods exec_method handles itself
+        std::array<bool, 0x800> t{};
+        for (u32 x : {0x0050u, 0x0064u, 0x0068u, 0x006Cu, 0x1D6Cu, 0x1D70u, 0x1D74u, 0x1800u}) t[x >> 2] = true;
+        return t;
+    }();
+    const bool plain = rsx::g_plain_on;
+    for (u32 i = 0; i < count; i++) {
+        const u32 m = non_inc ? method : method + i * 4;
+        if (plain && m < 0x2000 && rsx::g_plain[m >> 2] && !front[m >> 2]) rsx::R[m >> 2] = args[i];
+        else exec_method(m, args[i]);
     }
 }
 
@@ -459,6 +487,12 @@ const u32* fifo_ptr(u32 io, u32 n) {
     u32 page = g.io_map[(io >> 20) & 4095];
     if (page == 0xFFFFFFFF || (io & 0xFFFFF) + 4 * n > 0x100000) return nullptr;
     return (const u32*)gmem(page + (io & 0xFFFFF));
+}
+
+// words left at io in the source fifo_ptr just used
+u32 fifo_avail(u32 io) {
+    if (g_cur_snap) return io < g_cur_snap->hi ? (g_cur_snap->hi - io) / 4 : 0;
+    return (0x100000 - (io & 0xFFFFF)) / 4;
 }
 
 u32 fifo_word(u32 io) {
@@ -657,13 +691,40 @@ void rsx_thread() {
         u32 method = cmd & 0xFFFC, count = (cmd >> 18) & 0x7FF;
         bool non_inc = cmd & 0x40000000;
         static u32 args[2048];   // fetched before the pending writes of earlier commands are made visible
-        if (const u32* ap = fifo_ptr(get + 4, count))
+        const u32* ap = fifo_ptr(get + 4, count);
+        if (ap)
             for (u32 i = 0; i < count; i++) args[i] = __builtin_bswap32(ap[i]);
         else
             for (u32 i = 0; i < count; i++) args[i] = fifo_word(get + 4 + i * 4);
         flush_pending();
-        for (u32 i = 0; i < count; i++) exec_method(non_inc ? method : method + i * 4, args[i]);
-        set_get(get + 4 + count * 4);
+        exec_command(method, non_inc, args, count);
+        get += 4 + count * 4;
+        set_get(get);
+        if (!ap || verify) continue;
+        // Register writes in a row: the checks above are about flow commands and list copies, so a run of plain commands
+        // from one source only needs to stop where those could matter: at PUT, at any flow command or NOP, at the end
+        // of the source, when the reference moved (a copy may go stale) or when a copy appeared.
+        const u32 ref = g_front_ref, snap_gen = g_snap_gen.load(std::memory_order_relaxed);
+        u32 avail = fifo_avail(get);
+        ap += count;
+        for (u32 burst = 64; --burst && get != put && avail; ) {
+            cmd = __builtin_bswap32(*ap);
+            if (!cmd || (cmd & 3) || (cmd & 0xE0000003) == 0x20000000 || cmd == 0x00020000) break;
+            count = (cmd >> 18) & 0x7FF;
+            if (count + 1 > avail || g_front_ref != ref || g_snap_gen.load(std::memory_order_relaxed) != snap_gen) break;
+            method = cmd & 0xFFFC;
+            non_inc = cmd & 0x40000000;
+            g_cur_get = get;
+            g_front_get = get;
+            g_hist[g_hist_pos++ % 32] = {get, cmd};
+            for (u32 i = 0; i < count; i++) args[i] = __builtin_bswap32(ap[i + 1]);
+            flush_pending();
+            exec_command(method, non_inc, args, count);
+            get += 4 + count * 4;
+            set_get(get);
+            ap += count + 1;
+            avail -= count + 1;
+        }
     }
 }
 
