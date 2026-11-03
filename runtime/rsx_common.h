@@ -45,7 +45,7 @@ std::vector<TextRect> progress_label(double frac, const char* what, s32 ww, s32 
 extern u64 g_frame;
 bool trace_on(long long first);
 // profiling: microseconds per frame section (reported every 120 frames by flip())
-struct Prof { u64 program = 0, textures = 0, vertices = 0, submit = 0, other = 0, draws = 0, verts = 0, frame_start = 0, conv_verts = 0, conv_inst = 0, hashed = 0, tex_hashed = 0, t_index = 0, t_hash = 0, t_conv = 0, conv_new = 0, conv_changed = 0, idx_built = 0, ir_grow = 0, ir_changed = 0, idx_old = 0, t_pre = 0, t_apply = 0, t_upload = 0, t_bind = 0, binds = 0, t_draw = 0, t_ringwait = 0, ring_segs = 0, t_texdec = 0, tex_decoded = 0, memo_hits = 0, memo_miss = 0, t_miss = 0; };
+struct Prof { u64 program = 0, textures = 0, vertices = 0, submit = 0, other = 0, draws = 0, verts = 0, frame_start = 0, conv_verts = 0, conv_inst = 0, hashed = 0, tex_hashed = 0, t_index = 0, t_hash = 0, t_conv = 0, conv_new = 0, conv_changed = 0, idx_built = 0, ir_grow = 0, ir_changed = 0, idx_old = 0, t_pre = 0, t_apply = 0, t_upload = 0, t_bind = 0, binds = 0, t_draw = 0, t_ringwait = 0, ring_segs = 0, t_texdec = 0, tex_decoded = 0, memo_hits = 0, memo_miss = 0, t_miss = 0, tex_lin = 0, tex_small = 0, tex_big = 0, t_texhash = 0; };
 extern Prof g_prof;
 extern const u32 g_watch_fp;
 
@@ -107,6 +107,10 @@ void db_record(u32 vp_start, u32 vp_len, u32 fp_ea, u32 fp_size, u32 shader_cont
 
 // ------------------------------------------------------------------ hashes and small helpers
 u64 hash_range(const u8* p, u32 bytes, u32 step);
+// guest index buffer -> host list: byte swap, the restart index (rv; 0xFFFF for 16-bit lists when rv >= 0xFFFF) becomes
+// 0xFFFFFFFF; lo/hi take the min/max of the other indices (unchanged when there are none)
+void convert_indices(const u8* src, u32 n, bool u16idx, bool restart, u32 rv, u32* out, u32& lo, u32& hi);
+void index_minmax(const u32* p, u32 n, u32& lo, u32& hi);   // as above, over a converted list
 FORCE_INLINE u64 mix64(u64 x) {   // splitmix64 finalizer
     x ^= x >> 30; x *= 0xBF58476D1CE4E5B9ull;
     x ^= x >> 27; x *= 0x94D049BB133111EBull;

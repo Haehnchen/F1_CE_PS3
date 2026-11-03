@@ -75,6 +75,7 @@ const bool g_spu_num_mode = !(getenv("F1CE_SPU_NUM") && atoi(getenv("F1CE_SPU_NU
 SPUThread* g_spu_by_wkl[16] = {};
 std::atomic<u32> g_ready_calls[16];
 SPUThread* g_worker_spu[8] = {};   // diagnostics
+std::atomic<u64> g_task_interp{0};  // instructions the SPURS tasks ran in the interpreter (summed when each task ends)
 std::atomic<u64> g_worker_busy[8];   // profiling: microseconds each SPU worker spent running workloads   // cellSpursReadyCountStore calls per workload (diagnostics)   // SPU currently running each workload (diagnostics)
 
 // true if another workload has signalled work (ready count > 0) and has no SPU. Workloads that are
@@ -176,6 +177,10 @@ void spu_profiler(u32 n) {
     std::map<u32, u32> by_pc;   // wid << 20 | pc
     std::map<int, u32> by_wid;
     u32 total = 0;
+    // F1CE_SPU_PROFILE_DUMP=<wid>: also saves the LS of a worker running that workload (ls_w<wid>_<n>.bin, 4 times)
+    const char* dump_env = getenv("F1CE_SPU_PROFILE_DUMP");
+    int dump_wid = dump_env ? atoi(dump_env) : -1, dumps = 0;
+    u64 next_dump = time_usec() + 2000000;
     for (u64 end = time_usec() + 10000000; time_usec() < end;) {
         sleep_usec(1000);
         for (u32 k = 0; k < n && k < 8; k++) {
@@ -184,6 +189,14 @@ void spu_profiler(u32 n) {
             total++;
             by_wid[wid]++;
             if (wid >= 0 && t) by_pc[(u32)wid << 20 | (t->pc & 0x3FFFC)]++;
+            if (wid == dump_wid && t && dumps < 4 && time_usec() >= next_dump) {
+                std::vector<u8> copy(t->ls, t->ls + 0x40000);
+                char name[64];
+                snprintf(name, sizeof(name), "ls_w%d_%d.bin", wid, dumps++);
+                if (FILE* f = fopen(name, "wb")) { fwrite(copy.data(), 1, copy.size(), f); fclose(f); }
+                LOG_I("spu profile: LS of worker %u (wkl %d, pc %05x) saved to %s", k, wid, t->pc, name);
+                next_dump = time_usec() + 2000000;
+            }
         }
     }
     std::string s;
@@ -379,13 +392,19 @@ void spu_worker(u32 num) {
                             cw += b; last_cw[k] = t->code_writes;
                         }
                     LOG_I("SPU code invalidations per second:%s", cw.c_str());
-                    static u64 last_st[3] = {};
-                    u64 st[3] = {};
+                    static u64 last_st[4] = {};
+                    u64 st[4] = {};
                     for (u32 k = 0; k < 8; k++)
-                        if (SPUThread* t = g_worker_spu[k]) { st[0] += t->st_fast; st[1] += t->st_slow; st[2] += t->st_build; }
+                        if (SPUThread* t = g_worker_spu[k]) { st[0] += t->st_fast; st[1] += t->st_slow; st[2] += t->st_build; st[3] += t->st_interp; }
+                    st[3] += g_task_interp.load(std::memory_order_relaxed);
                     LOG_I("SPU dispatches per second: fast %llu slow %llu rebuilt %llu", (unsigned long long)((st[0] - last_st[0]) / 5),
                           (unsigned long long)((st[1] - last_st[1]) / 5), (unsigned long long)((st[2] - last_st[2]) / 5));
-                    for (int k = 0; k < 3; k++) last_st[k] = st[k];
+                    // untranslated code is ~10x slower: a game situation never recorded (rain was) shows up here
+                    const u64 interp = (st[3] - last_st[3]) / 5;
+                    if (interp > 2000000)
+                        LOG_W("SPU: %.1f M interpreted instructions/s - record them with F1CE_SPU_DUMP_BLOCKS and run tools/spu_aot.py",
+                              interp / 1e6);
+                    for (int k = 0; k < 4; k++) last_st[k] = st[k];
                 }
                 LOG_I("SPURS runs/instructions:%s  ready=%02x%02x%02x%02x%02x%02x%02x%02x%02x", r.c_str(),
                       ld8(g_sp.ea), ld8(g_sp.ea + 1), ld8(g_sp.ea + 2), ld8(g_sp.ea + 3), ld8(g_sp.ea + 4),
@@ -532,6 +551,9 @@ std::unique_ptr<SPUThread> take_task_context(u32 elf) {
     }
     auto spu = std::make_unique<SPUThread>();
     memset(spu->ls, 0, 0x40000);
+    // debug: F1CE_SPU_NOAOT_TASK=<elf hex> runs the tasks of that ELF in the interpreter (AOT against interpreter)
+    static const char* noaot = getenv("F1CE_SPU_NOAOT_TASK");
+    if (noaot && (u32)strtoul(noaot, nullptr, 16) == elf) spu->no_aot = true;
     return spu;
 }
 
@@ -660,20 +682,27 @@ void run_task(u32 tid, Task t) {
         return false;
     };
     // diagnostics (F1CE_TASK_DMA_LOG): each distinct (pc, command, 128-byte line) DMA of the tasks once
-    static const bool dma_log = getenv("F1CE_TASK_DMA_LOG") != nullptr;
-    if (dma_log) spu->on_dma = [tid](SPUThread& s, u32 cmd, u32 lsa, u32 ea, u32 size) {
+    // (F1CE_TASK_DMA_LOG=<elf hex> limits it to the tasks of that ELF)
+    static const char* dma_env = getenv("F1CE_TASK_DMA_LOG");
+    static const u32 dma_elf = dma_env ? (u32)strtoul(dma_env, nullptr, 16) : 0;
+    if (dma_env && (dma_elf <= 1 || dma_elf == t.elf)) spu->on_dma = [tid](SPUThread& s, u32 cmd, u32 lsa, u32 ea, u32 size) {
         static std::mutex m;
         static std::set<u64> seen;
         u64 key = ((u64)s.pc << 40) ^ ((u64)(cmd & 0xFF) << 32) ^ (ea & ~127u);
         std::lock_guard lk(m);
-        if (seen.size() < 2000 && seen.insert(key).second)
-            LOG_I("task %u dma pc=%05x cmd=%02x lsa=%05x ea=%08x size=%x", tid, s.pc, cmd & 0xFF, lsa, ea, size);
+        if (seen.size() < 2000 && seen.insert(key).second) {
+            std::string words;   // small transfers (parameter blocks): their data too
+            for (u32 o = 0; size <= 0x80 && o < size; o += 4) { char b[12]; snprintf(b, sizeof(b), " %08x", ld32(ea + o)); words += b; }
+            LOG_I("task %u dma pc=%05x cmd=%02x lsa=%05x ea=%08x size=%x%s", tid, s.pc, cmd & 0xFF, lsa, ea, size, words.c_str());
+        }
     };
     static std::atomic<int> logged{0};
     if (logged++ < 30)
         LOG_I("SPURS task %u: start elf=%08x entry=%05x arg=%016llx%016llx", tid, t.elf, entry, (unsigned long long)t.arg[0],
               (unsigned long long)t.arg[1]);
     spu->run();
+    g_task_interp.fetch_add(spu->st_interp, std::memory_order_relaxed);   // (SPURS report: untranslated code)
+    spu->st_interp = 0;
     {
         std::lock_guard lk(g_live_m);
         g_live.erase(tid);

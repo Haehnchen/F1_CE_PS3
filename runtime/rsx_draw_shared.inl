@@ -249,13 +249,8 @@ bool gather_indices(bool indexed, DrawGeom& out) {
                 ir.first = f; ir.count = n;
                 ir.cpu.resize(n);
                 const u8* q = gmem(ea + f * isz);
-                for (u32 k = 0; k < n; k++) {
-                    u32 v;
-                    if (u16idx) { u16 x; memcpy(&x, q + k * 2, 2); v = __builtin_bswap16(x); }
-                    else { u32 x; memcpy(&x, q + k * 4, 4); v = __builtin_bswap32(x); }
-                    if (restart && (v == rv || (u16idx && v == 0xFFFF && rv >= 0xFFFF))) v = RESTART;
-                    ir.cpu[k] = v;
-                }
+                u32 lo = ~0u, hi = 0;
+                convert_indices(q, n, u16idx, restart, rv, ir.cpu.data(), lo, hi);
                 idx_store(ir.cpu.data(), n, ir.off, ir.bytes);   // (full arena: off stays ~0u, the draws stream)
                 ir.hash = hash_range(q, n * isz, 8);
                 ir.checked_frame = g_frame;
@@ -288,13 +283,8 @@ bool gather_indices(bool indexed, DrawGeom& out) {
             auto mm = ir.minmax.find(mk);
             if (mm == ir.minmax.end()) {
                 u32 lo = ~0u, hi = 0;
-                for (u32 k = first - ir.first, e = k + count; k < e; k++) {
-                    u32 v = ir.cpu[k];
-                    if (v == RESTART) continue;
-                    lo = std::min(lo, v);
-                    hi = std::max(hi, v);
-                }
-                mm = ir.minmax.emplace(mk, std::make_pair(lo, hi)).first;
+                index_minmax(&ir.cpu[first - ir.first], count, lo, hi);
+                mm =ir.minmax.emplace(mk, std::make_pair(lo, hi)).first;
             }
             min_v = mm->second.first;
             max_v = mm->second.second;
@@ -332,26 +322,10 @@ bool gather_indices(bool indexed, DrawGeom& out) {
             static std::vector<u32> indices;
             indices.resize(count);
             u32* o = indices.data();
-            u32 rv16 = (u16idx && rv >= 0xFFFF) ? 0xFFFF : rv;
             for (auto& r : ranges) {
                 if (indexed) {
-                    const u8* q = gmem(ea + r.first * isz);
-                    if (u16idx)
-                        for (u32 i = 0; i < r.count; i++) {
-                            u16 x; memcpy(&x, q + i * 2, 2);
-                            u32 v = __builtin_bswap16(x);
-                            if (restart && (v == rv || v == rv16)) { *o++ = RESTART; continue; }
-                            min_v = std::min(min_v, v); max_v = std::max(max_v, v);
-                            *o++ = v;
-                        }
-                    else
-                        for (u32 i = 0; i < r.count; i++) {
-                            u32 x; memcpy(&x, q + i * 4, 4);
-                            u32 v = __builtin_bswap32(x);
-                            if (restart && v == rv) { *o++ = RESTART; continue; }
-                            min_v = std::min(min_v, v); max_v = std::max(max_v, v);
-                            *o++ = v;
-                        }
+                    convert_indices(gmem(ea + r.first * isz), r.count, u16idx, restart, rv, o, min_v, max_v);
+                    o += r.count;
                 } else if (r.count) {
                     for (u32 i = 0; i < r.count; i++) *o++ = r.first + i;
                     min_v = std::min(min_v, r.first); max_v = std::max(max_v, r.first + r.count - 1);

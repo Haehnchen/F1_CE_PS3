@@ -691,6 +691,19 @@ FPInfo translate_fp(u32 ea, u32 shader_control, u32 cube_mask) {
            " return vec4(pass ? 1.0 : 0.0);\n"
            "}\n";
     if (g_shader_vk) src << "#undef t\n#define sample_unit(T, c, u, proj) sample_unit_(c, u, proj)\n";
+    // Rain drops on the screen ("PostEffects: Rain Drops"): this program moves the image by 0.04 x the slope of a
+    // 512x288 B8 water map that the SpuRainDroplet task writes as trails one texel wide. Read as they are, the steep
+    // trail edges move the image by tens of pixels in hard-edged patches (posterised look). F1CE_RAIN_SMOOTH (default
+    // on, =0 off) reads the map through a 3x3 tent filter (four bilinear taps half a texel apart), which turns the
+    // trails into smooth streaks. Not checked against the console: there is no rain reference.
+    static const bool rain_smooth = !getenv("F1CE_RAIN_SMOOTH") || atoi(getenv("F1CE_RAIN_SMOOTH")) != 0;
+    const bool smooth_map = rain_smooth && g_fp_hash_cur == 0x8213ee750eb96053ull;
+    if (smooth_map)
+        src << "vec4 sample_smooth0(vec4 c, int u, bool proj) {\n"
+               " vec2 h = 0.5 / vec2(textureSize(tex0, 0));\n"
+               " return 0.25 * (sample_unit(tex0, c + vec4(h.x, h.y, 0.0, 0.0), u, proj) + sample_unit(tex0, c + vec4(-h.x, h.y, 0.0, 0.0), u, proj) +\n"
+               "                sample_unit(tex0, c + vec4(h.x, -h.y, 0.0, 0.0), u, proj) + sample_unit(tex0, c + vec4(-h.x, -h.y, 0.0, 0.0), u, proj));\n"
+               "}\n";
     // FOGC input: x = the VP fog output, y = fog factor from FOG_MODE / FOG_PARAMS (u_fog = mode, p0, p1)
     src << "vec4 h_lo(uvec4 r) { return vec4(unpackHalf2x16(r.x), unpackHalf2x16(r.y)); }\n"
            "vec4 h_hi(uvec4 r) { return vec4(unpackHalf2x16(r.z), unpackHalf2x16(r.w)); }\n"
@@ -733,6 +746,12 @@ FPInfo translate_fp(u32 ea, u32 shader_control, u32 cube_mask) {
         src << (fp_h_alias() ? " uvec4 R[" : " vec4 R[") << nr << "]; for (int i = 0; i < " << nr << "; i++) R[i] = "
             << (fp_h_alias() ? "uvec4(0u)" : "vec4(0.0)") << ";\n"
             << " vec4 H[" << nh << "]; for (int i = 0; i < " << nh << "; i++) H[i] = vec4(0.0);\n";
+    }
+    if (smooth_map) {   // the water map's lookups (unit 0) go through the tent filter above
+        std::string b = body.str();
+        for (size_t at; (at = b.find("sample_unit(tex0, ")) != std::string::npos;) b.replace(at, 18, "sample_smooth0(");
+        body.str(b);
+        body.seekp(0, std::ios::end);
     }
     src << body.str();
     static const bool force_r0 = getenv("F1CE_FP_FORCE_R0") != nullptr;   // debug experiment
@@ -889,6 +908,70 @@ u64 hash_range(const u8* p, u32 bytes, u32 step) {
         for (; k + 8 <= bytes; k += step) { u64 x; memcpy(&x, p + k, 8); h0 = (h0 ^ x) * M; }
     }
     return h0 ^ (h1 * 3) ^ (h2 * 5) ^ (h3 * 7) ^ bytes;
+}
+
+// Eight indices per step (the scalar loop was ~6 ns per index, ~3 ms per frame while driving). A restart index turns into
+// all ones, which never lowers the min; for the max it is masked to 0.
+static inline void minmax_reduce(__m256i vmin, __m256i vmax, u32& lo, u32& hi) {
+    alignas(32) u32 a[8], b[8];
+    _mm256_store_si256((__m256i*)a, vmin);
+    _mm256_store_si256((__m256i*)b, vmax);
+    for (int i = 0; i < 8; i++) {
+        if (a[i] != ~0u) lo = std::min(lo, a[i]);
+        if (a[i] != ~0u || b[i]) hi = std::max(hi, b[i]);
+    }
+}
+void convert_indices(const u8* src, u32 n, bool u16idx, bool restart, u32 rv, u32* out, u32& lo, u32& hi) {
+    const u32 cmp = u16idx && rv >= 0xFFFF ? 0xFFFF : rv;
+    const __m256i vc = _mm256_set1_epi32(restart ? (int)cmp : -1), ones = _mm256_set1_epi32(-1);
+    // (without restart, a raw 0xFFFFFFFF index compares equal to the all-ones sentinel and stays all ones: same value)
+    __m256i vmin = ones, vmax = _mm256_setzero_si256();
+    u32 k = 0;
+    if (u16idx) {
+        const __m128i sw = _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+        for (; k + 8 <= n; k += 8) {
+            __m256i v = _mm256_cvtepu16_epi32(_mm_shuffle_epi8(_mm_loadu_si128((const __m128i*)(src + k * 2)), sw));
+            __m256i m = _mm256_cmpeq_epi32(v, vc);
+            v = _mm256_or_si256(v, m);
+            _mm256_storeu_si256((__m256i*)(out + k), v);
+            vmin = _mm256_min_epu32(vmin, v);
+            vmax = _mm256_max_epu32(vmax, _mm256_andnot_si256(m, v));
+        }
+    } else {
+        const __m256i sw = _mm256_setr_epi8(3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12,
+                                             3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12);
+        for (; k + 8 <= n; k += 8) {
+            __m256i v = _mm256_shuffle_epi8(_mm256_loadu_si256((const __m256i*)(src + k * 4)), sw);
+            __m256i m = _mm256_cmpeq_epi32(v, vc);
+            v = _mm256_or_si256(v, m);
+            _mm256_storeu_si256((__m256i*)(out + k), v);
+            vmin = _mm256_min_epu32(vmin, v);
+            vmax = _mm256_max_epu32(vmax, _mm256_andnot_si256(m, v));
+        }
+    }
+    minmax_reduce(vmin, vmax, lo, hi);
+    for (; k < n; k++) {
+        u32 v;
+        if (u16idx) { u16 x; memcpy(&x, src + k * 2, 2); v = __builtin_bswap16(x); }
+        else { u32 x; memcpy(&x, src + k * 4, 4); v = __builtin_bswap32(x); }
+        if (restart && v == cmp) { out[k] = ~0u; continue; }
+        out[k] = v;
+        lo = std::min(lo, v);
+        hi = std::max(hi, v);
+    }
+}
+void index_minmax(const u32* p, u32 n, u32& lo, u32& hi) {
+    const __m256i ones = _mm256_set1_epi32(-1);
+    __m256i vmin = ones, vmax = _mm256_setzero_si256();
+    u32 k = 0;
+    for (; k + 8 <= n; k += 8) {
+        __m256i v = _mm256_loadu_si256((const __m256i*)(p + k));
+        vmin = _mm256_min_epu32(vmin, v);
+        vmax = _mm256_max_epu32(vmax, _mm256_andnot_si256(_mm256_cmpeq_epi32(v, ones), v));
+    }
+    minmax_reduce(vmin, vmax, lo, hi);
+    for (; k < n; k++)
+        if (p[k] != ~0u) { lo = std::min(lo, p[k]); hi = std::max(hi, p[k]); }
 }
 
 // Block heaps: raw vertex data (vertex pulling) and converted index lists that stay for several frames. Blocks are

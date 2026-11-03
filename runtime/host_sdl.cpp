@@ -213,6 +213,33 @@ PadState pad_state() {
             }
         }
     }
+    {   // debug: F1CE_MEM_DUMP=<s>,<s>,.. saves the data segment and user memory (mem_<s>.bin: 16 MB at 10000000, then
+        // 192 MB at 30000000) at those input times, to find game variables by comparing snapshots
+        static std::vector<double> at = [] {
+            std::vector<double> v;
+            if (const char* e = getenv("F1CE_MEM_DUMP"))
+                for (const char* q = e; *q; q = strchr(q, ',') ? strchr(q, ',') + 1 : q + strlen(q)) v.push_back(atof(q));
+            return v;
+        }();
+        static size_t next = 0;
+        static std::mutex m;
+        std::lock_guard lk(m);
+        if (next < at.size() && now >= at[next]) {
+            // (copied here, written by a thread: a slow write would hold up input polling and lose scripted presses)
+            char nb[48];
+            snprintf(nb, sizeof(nb), "mem_%g.bin", at[next]);
+            std::string name = nb;
+            auto* img = new std::vector<u8>(0x0D000000);
+            memcpy(img->data(), gmem(0x10000000), 0x01000000);
+            memcpy(img->data() + 0x01000000, gmem(mem::USER_BASE), 0x0C000000);
+            std::thread([img, name] {
+                if (FILE* f = fopen(name.c_str(), "wb")) { fwrite(img->data(), 1, img->size(), f); fclose(f); }
+                delete img;
+            }).detach();
+            LOG_I("memory dump %s", name.c_str());
+            next++;
+        }
+    }
     for (auto& e : script)
         if (now >= e.t && now < e.t + e.dur) {
             if (e.word == 1) p.digital1 |= e.bit;
@@ -252,6 +279,7 @@ void dump_frame(const u32* argb, u32 width, u32 height) {
         fwrite(argb, 4, (size_t)width * height, f);
         fclose(f);
     }
+    LOG_I("frame dump %u at input time %.2f s", count, (time_usec() - input_clock_start.load()) / 1e6);
 }
 
 void present(u32 ea, u32 pitch, u32 width, u32 height) {

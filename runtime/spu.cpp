@@ -289,7 +289,7 @@ SPUThread::Block* SPUThread::build_block(u32 pc) {
             if (g_spu_aot[mid].key < key) lo = mid + 1; else hi = mid;
         }
         static const bool no_aot = getenv("F1CE_SPU_NOAOT") != nullptr;   // debug: interpret everything
-        if (!no_aot && lo < g_spu_aot_count && g_spu_aot[lo].key == key) b->aot = (s32)lo;
+        if (!no_aot && !this->no_aot && lo < g_spu_aot_count && g_spu_aot[lo].key == key) b->aot = (s32)lo;
     }
     static const char* dump_path = getenv("F1CE_SPU_DUMP_BLOCKS");
     if (dump_path && b->aot < 0) {   // record blocks without a native version for tools/spu_aot.py
@@ -386,6 +386,7 @@ void SPUThread::run() {
         }
         u64 before = instructions;
         instructions += n;
+        st_interp += n;
         if ((before >> 12) != (instructions >> 12)) pc_samples[(instructions >> 12) & 255] = pc;
     }
 }
@@ -438,6 +439,9 @@ void SPUThread::dma(u32 cmd) {
             bool write = c8 == 0x20 || c8 == 0xB4 || c8 == 0xB0 || c8 == 0xB8;
             auto w32 = [&](const u8* p, u32 o) { u32 v; memcpy(&v, p + o, 4); return __builtin_bswap32(v); };
             const u8* m = gmem(watch);
+            static std::atomic<bool> ls_saved{false};   // the writer's code: LS of the first SPU that puts to the line
+            if (write && !ls_saved.exchange(true))
+                if (FILE* f = fopen("watch_ls.bin", "wb")) { fwrite(ls, 1, 0x40000, f); fclose(f); }
             LOG_I("watch %s cmd=%02x pc=%05x lsa=%05x | mem %08x %08x .. +20 %08x | %s %08x %08x .. +20 %08x", name.c_str(), c8,
                   pc, lsa, w32(m, 0), w32(m, 4), w32(m, 0x20), write ? "ls" : "--", write ? w32(src, 0) : 0,
                   write ? w32(src, 4) : 0, write ? w32(src, 0x20) : 0);

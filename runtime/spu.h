@@ -114,6 +114,7 @@ struct SPUThread {
     struct BlockPage { std::unique_ptr<Block> b[256]; };
     std::unique_ptr<BlockPage> block_pages[256];
     bool blocks_on = false;   // block cache in use (host LS writes must invalidate)
+    bool no_aot = false;      // debug: this thread interprets everything (F1CE_SPU_NOAOT_TASK)
     Block* find_block(u32 pc) const {
         const BlockPage* p = block_pages[(pc >> 10) & 255].get();
         return p ? p->b[(pc >> 2) & 255].get() : nullptr;
@@ -166,6 +167,7 @@ struct SPUThread {
         return line_ver[l];
     }
     u64 st_fast = 0, st_slow = 0, st_build = 0;   // dispatch statistics (logged with the SPURS report)
+    u64 st_interp = 0;   // instructions run by the interpreter (blocks without an ahead-of-time translation)
     std::vector<u64> cluster_ver;   // per cluster: version sum of its lines when its words last matched (0 = never)
     std::vector<u64> cluster_ok;    // per cluster: epoch of its home region when its lines last matched that sum
     u64 lines_ver(const u16* l, u32 n) {

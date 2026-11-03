@@ -2,7 +2,1705 @@
 #define SPU_AOT_FAST
 #include "spu_ops.h"
 
-void spu_aotc_358(SPUThread& __restrict s) {
+void spu_aotc_367(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08710: goto L_3cf72a520893ac71;
+		case 0x08728: goto L_3f7b11fdd0a0b9d5;
+		default: goto out;
+	}
+L_3cf72a520893ac71:
+	s.instructions += 6;
+	s.pc = 0x08710; op_wrch(s, 0x21A00B03u);
+	if (s.halted) { s.pc = 0x08714; goto out; }
+	s.pc = 0x08714; op_il(s, 0x40800102u);
+	s.pc = 0x08718; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x0871C; goto out; }
+	s.pc = 0x0871C; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x08720; goto out; }
+	s.pc = 0x08720; op_nop(s, 0x00200000u);
+	s.pc = 0x08724; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08728) { if (s.can_chain(cw, 0x08728) && --budget) goto L_3f7b11fdd0a0b9d5; goto out; }
+	goto out;
+L_3f7b11fdd0a0b9d5:
+	s.instructions += 2;
+	s.pc = 0x08728; op_ai(s, 0x1C020102u);
+	s.pc = 0x0872C; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_368(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08730: goto L_4dbe16115c2dbc67;
+		case 0x08750: goto L_e7faab568e07bbf4;
+		default: goto out;
+	}
+L_4dbe16115c2dbc67:
+	s.instructions += 8;
+	s.pc = 0x08730; op_nop(s, 0x00200000u);
+	s.pc = 0x08734; op_ai(s, 0x1C08008Au);
+	s.pc = 0x08738; op_lqd(s, 0x341E4082u);
+	s.pc = 0x0873C; op_shli(s, 0x0F608102u);
+	s.pc = 0x08740; op_a(s, 0x18028102u);
+	s.pc = 0x08744; op_lqd(s, 0x341E4103u);
+	s.pc = 0x08748; op_rotqby(s, 0x3B808182u);
+	s.pc = 0x0874C; op_brsl(s, 0x33000083u);
+	if (s.pc == 0x08750) { if (s.can_chain(cw, 0x08750) && --budget) goto L_e7faab568e07bbf4; goto out; }
+	goto out;
+L_e7faab568e07bbf4:
+	s.instructions += 2;
+	s.pc = 0x08750; op_ai(s, 0x1C020183u);
+	s.pc = 0x08754; op_bi(s, 0x35080180u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_369(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08758: goto L_db59fa00123f511f;
+		case 0x08780: goto L_39a0963b8e9720dd;
+		default: goto out;
+	}
+L_db59fa00123f511f:
+	s.instructions += 10;
+	s.pc = 0x08758; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0875C; goto out; }
+	s.pc = 0x0875C; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x08760; goto out; }
+	s.pc = 0x08760; op_sf(s, 0x0801C402u);
+	s.pc = 0x08764; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x08768; goto out; }
+	s.pc = 0x08768; op_lqd(s, 0x341E8083u);
+	s.pc = 0x0876C; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x08770; goto out; }
+	s.pc = 0x08770; op_il(s, 0x40802002u);
+	s.pc = 0x08774; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x08778; goto out; }
+	s.pc = 0x08778; op_nop(s, 0x00200000u);
+	s.pc = 0x0877C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08780) { if (s.can_chain(cw, 0x08780) && --budget) goto L_39a0963b8e9720dd; goto out; }
+	goto out;
+L_39a0963b8e9720dd:
+	s.instructions += 2;
+	s.pc = 0x08780; op_ai(s, 0x1C020102u);
+	s.pc = 0x08784; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_370(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[20] = s.gpr[20]; L.gpr[22] = s.gpr[22]; L.gpr[32] = s.gpr[32]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[89] = s.gpr[89]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x088E0: goto L_3216981db0704d2f;
+		case 0x0890C: goto L_21df5acf618ef358;
+		case 0x08910: goto L_d9d2e4b223fd625f;
+		case 0x08938: goto L_6d11e051ffd0f151;
+		case 0x08970: goto L_513276ea31590f3e;
+		case 0x089A4: goto L_7ceb9f86a45d79b2;
+		case 0x089BC: goto L_ec00fc7074084a8b;
+		case 0x089D8: goto L_cd90fc2a65cec2a3;
+		case 0x08A28: goto L_5dc367461f84f44d;
+		case 0x08C80: goto L_4090f2d4a358d80e;
+		default: goto out;
+	}
+L_3216981db0704d2f:
+	s.instructions += 11;
+	L.pc = 0x088E0; op_il(L, 0x4080BC02u);
+	L.pc = 0x088E4; op_nop(L, 0x10112214u);
+	L.pc = 0x088E8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x088EC; op_lqd(L, 0x340E8185u);
+	L.pc = 0x088F0; op_a(L, 0x18008184u);
+	L.pc = 0x088F4; op_lqx(L, 0x38808182u);
+	L.pc = 0x088F8; op_rotqby(L, 0x3B80C288u);
+	L.pc = 0x088FC; op_rotqby(L, 0x3B81010Bu);
+	L.pc = 0x08900; op_ai(L, 0x1C01C582u);
+	L.pc = 0x08904; op_andi(L, 0x14FE010Au);
+	L.pc = 0x08908; op_brz(L, 0x2000060Au);
+	if (L.pc == 0x08938) { if (s.can_chain(cw, 0x08938) && --budget) goto L_6d11e051ffd0f151; goto out; }
+	if (L.pc == 0x0890C) { if (s.can_chain(cw, 0x0890C) && --budget) goto L_21df5acf618ef358; goto out; }
+	goto out;
+L_21df5acf618ef358:
+	s.instructions += 11;
+	L.pc = 0x0890C; op_il(L, 0x40800007u);
+	L.pc = 0x08910; op_a(L, 0x1801C385u);
+	L.pc = 0x08914; op_shlhi(L, 0x0FE10389u);
+	L.pc = 0x08918; op_ai(L, 0x1C004387u);
+	L.pc = 0x0891C; op_lqx(L, 0x38820284u);
+	L.pc = 0x08920; op_chx(L, 0x3AA20286u);
+	L.pc = 0x08924; op_ceq(L, 0x7801C502u);
+	L.pc = 0x08928; op_shufb(L, 0xB0810486u);
+	L.pc = 0x0892C; op_stqx(L, 0x28820284u);
+	L.pc = 0x08930; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08934; op_brz(L, 0x207FFB82u);
+	if (L.pc == 0x08910) { if (s.can_chain(cw, 0x08910) && --budget) goto L_d9d2e4b223fd625f; goto out; }
+	if (L.pc == 0x08938) { if (s.can_chain(cw, 0x08938) && --budget) goto L_6d11e051ffd0f151; goto out; }
+	goto out;
+L_d9d2e4b223fd625f:
+	s.instructions += 10;
+	spu_idiom_ramp_u16(L);
+	L.pc = 0x08910; op_a(L, 0x1801C385u);
+	L.pc = 0x08914; op_shlhi(L, 0x0FE10389u);
+	L.pc = 0x08918; op_ai(L, 0x1C004387u);
+	L.pc = 0x0891C; op_lqx(L, 0x38820284u);
+	L.pc = 0x08920; op_chx(L, 0x3AA20286u);
+	L.pc = 0x08924; op_ceq(L, 0x7801C502u);
+	L.pc = 0x08928; op_shufb(L, 0xB0810486u);
+	L.pc = 0x0892C; op_stqx(L, 0x28820284u);
+	L.pc = 0x08930; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08934; op_brz(L, 0x207FFB82u);
+	if (L.pc == 0x08910) { if (s.can_chain(cw, 0x08910) && --budget) goto L_d9d2e4b223fd625f; goto out; }
+	if (L.pc == 0x08938) { if (s.can_chain(cw, 0x08938) && --budget) goto L_6d11e051ffd0f151; goto out; }
+	goto out;
+L_6d11e051ffd0f151:
+	s.instructions += 13;
+	L.pc = 0x08938; op_il(L, 0x4081D205u);
+	L.pc = 0x0893C; op_nop(L, 0x00200000u);
+	L.pc = 0x08940; op_il(L, 0x4081D406u);
+	L.pc = 0x08944; op_lqx(L, 0x38814182u);
+	L.pc = 0x08948; op_cwx(L, 0x3AC14184u);
+	L.pc = 0x0894C; op_cwx(L, 0x3AC18187u);
+	L.pc = 0x08950; op_shufb(L, 0xB0408584u);
+	L.pc = 0x08954; op_il(L, 0x40FFFF84u);
+	L.pc = 0x08958; op_stqx(L, 0x28814182u);
+	L.pc = 0x0895C; op_lqx(L, 0x38818182u);
+	L.pc = 0x08960; op_shufb(L, 0xB0408207u);
+	L.pc = 0x08964; op_stqx(L, 0x28818182u);
+	L.pc = 0x08968; op_bi(L, 0x35000000u);
+	goto out;
+L_513276ea31590f3e:
+	s.instructions += 13;
+	L.pc = 0x08970; op_il(L, 0x4080BC05u);
+	L.pc = 0x08974; op_lqd(L, 0x340E8182u);
+	L.pc = 0x08978; op_stqd(L, 0x24FF80D1u);
+	L.pc = 0x0897C; op_stqd(L, 0x24FFC0D0u);
+	L.pc = 0x08980; op_ori(L, 0x040001D0u);
+	L.pc = 0x08984; op_stqd(L, 0x24FF40D2u);
+	L.pc = 0x08988; op_ori(L, 0x04000252u);
+	L.pc = 0x0898C; op_stqd(L, 0x24004080u);
+	L.pc = 0x08990; op_a(L, 0x18014184u);
+	L.pc = 0x08994; op_stqd(L, 0x24FEC081u);
+	L.pc = 0x08998; op_ai(L, 0x1CEC0081u);
+	L.pc = 0x0899C; op_rotqby(L, 0x3B80C151u);
+	L.pc = 0x089A0; op_brz(L, 0x200003D1u);
+	if (L.pc == 0x089BC) { if (s.can_chain(cw, 0x089BC) && --budget) goto L_ec00fc7074084a8b; goto out; }
+	if (L.pc == 0x089A4) { if (s.can_chain(cw, 0x089A4) && --budget) goto L_7ceb9f86a45d79b2; goto out; }
+	goto out;
+L_7ceb9f86a45d79b2:
+	s.instructions += 6;
+	L.pc = 0x089A4; op_ai(L, 0x1C140081u);
+	L.pc = 0x089A8; op_lqd(L, 0x34FFC0D0u);
+	L.pc = 0x089AC; op_lqd(L, 0x34FF80D1u);
+	L.pc = 0x089B0; op_lqd(L, 0x34FF40D2u);
+	L.pc = 0x089B4; op_lqd(L, 0x34004080u);
+	L.pc = 0x089B8; op_bi(L, 0x35000000u);
+	goto out;
+L_ec00fc7074084a8b:
+	s.instructions += 7;
+	L.pc = 0x089BC; op_lqx(L, 0x38814182u);
+	L.pc = 0x089C0; op_rotqby(L, 0x3B810104u);
+	L.pc = 0x089C4; op_ai(L, 0x1C07C204u);
+	L.pc = 0x089C8; op_andi(L, 0x14FC0204u);
+	L.pc = 0x089CC; op_nop(L, 0x00200000u);
+	L.pc = 0x089D0; op_a(L, 0x18010204u);
+	L.pc = 0x089D4; op_brsl(L, 0x3376FD80u);
+	goto out;
+L_cd90fc2a65cec2a3:
+	s.instructions += 20;
+	L.pc = 0x089D8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x089DC; op_lqd(L, 0x340EA805u);
+	L.pc = 0x089E0; op_il(L, 0x4081D207u);
+	L.pc = 0x089E4; op_cwd(L, 0x3EC82806u);
+	L.pc = 0x089E8; op_il(L, 0x4081D408u);
+	L.pc = 0x089EC; op_nop(L, 0x10111C14u);
+	L.pc = 0x089F0; op_ceqbi(L, 0x7E002902u);
+	L.pc = 0x089F4; op_cwx(L, 0x3AC1E809u);
+	L.pc = 0x089F8; op_cwx(L, 0x3AC2280Au);
+	L.pc = 0x089FC; op_xsbh(L, 0x56C00102u);
+	L.pc = 0x08A00; op_shufb(L, 0xB0A14186u);
+	L.pc = 0x08A04; op_ori(L, 0x04002803u);
+	L.pc = 0x08A08; op_stqd(L, 0x240EA805u);
+	L.pc = 0x08A0C; op_lqx(L, 0x3881E805u);
+	L.pc = 0x08A10; op_shufb(L, 0xB0A16889u);
+	L.pc = 0x08A14; op_stqx(L, 0x2881E805u);
+	L.pc = 0x08A18; op_lqx(L, 0x38822805u);
+	L.pc = 0x08A1C; op_shufb(L, 0xB0A1688Au);
+	L.pc = 0x08A20; op_stqx(L, 0x28822805u);
+	L.pc = 0x08A24; op_brhnz(L, 0x237FF002u);
+	if (L.pc == 0x089A4) { if (s.can_chain(cw, 0x089A4) && --budget) goto L_7ceb9f86a45d79b2; goto out; }
+	if (L.pc == 0x08A28) { if (s.can_chain(cw, 0x08A28) && --budget) goto L_5dc367461f84f44d; goto out; }
+	goto out;
+L_5dc367461f84f44d:
+	s.instructions += 6;
+	L.pc = 0x08A28; op_ai(L, 0x1C140081u);
+	L.pc = 0x08A2C; op_lqd(L, 0x34004080u);
+	L.pc = 0x08A30; op_lqd(L, 0x34FFC0D0u);
+	L.pc = 0x08A34; op_lqd(L, 0x34FF80D1u);
+	L.pc = 0x08A38; op_lqd(L, 0x34FF40D2u);
+	L.pc = 0x08A3C; op_br(L, 0x327FD480u);
+	if (L.pc == 0x088E0) { if (s.can_chain(cw, 0x088E0) && --budget) goto L_3216981db0704d2f; goto out; }
+	goto out;
+L_4090f2d4a358d80e:
+	s.instructions += 23;
+	L.pc = 0x08C80; op_nop(L, 0x10112E16u);
+	L.pc = 0x08C84; op_stqd(L, 0x24FF40D2u);
+	L.pc = 0x08C88; op_ori(L, 0x040001D2u);
+	L.pc = 0x08C8C; op_stqd(L, 0x24FE40D6u);
+	L.pc = 0x08C90; op_stqd(L, 0x24004080u);
+	L.pc = 0x08C94; op_stqd(L, 0x24FFC0D0u);
+	L.pc = 0x08C98; op_stqd(L, 0x24FF80D1u);
+	L.pc = 0x08C9C; op_stqd(L, 0x24FF00D3u);
+	L.pc = 0x08CA0; op_stqd(L, 0x24FEC0D4u);
+	L.pc = 0x08CA4; op_stqd(L, 0x24FE80D5u);
+	L.pc = 0x08CA8; op_stqd(L, 0x24FE00D7u);
+	L.pc = 0x08CAC; op_stqd(L, 0x24FDC0D8u);
+	L.pc = 0x08CB0; op_stqd(L, 0x24FD80D9u);
+	L.pc = 0x08CB4; op_stqd(L, 0x24FD40DAu);
+	L.pc = 0x08CB8; op_stqd(L, 0x24FD00DBu);
+	L.pc = 0x08CBC; op_stqd(L, 0x24F84081u);
+	L.pc = 0x08CC0; op_ai(L, 0x1C840081u);
+	L.pc = 0x08CC4; op_nop(L, 0x00200000u);
+	L.pc = 0x08CC8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CCC; op_stqd(L, 0x24044084u);
+	L.pc = 0x08CD0; op_il(L, 0x40800084u);
+	L.pc = 0x08CD4; op_stqd(L, 0x24048085u);
+	L.pc = 0x08CD8; op_brsl(L, 0x337F9300u);
+	if (L.pc == 0x08970) { if (s.can_chain(cw, 0x08970) && --budget) goto L_513276ea31590f3e; goto out; }
+	goto out;
+out:
+	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82];
+	s.pc = L.pc;
+}
+void spu_aotc_371(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08950: goto L_b044dd15c3fee36c;
+		case 0x08980: goto L_e338f8ed8c470b2b;
+		default: goto out;
+	}
+L_b044dd15c3fee36c:
+	s.instructions += 12;
+	s.pc = 0x08950; op_il(s, 0x40823003u);
+	s.pc = 0x08954; op_ai(s, 0x1C080085u);
+	s.pc = 0x08958; op_a(s, 0x1800C282u);
+	s.pc = 0x0895C; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x08960; goto out; }
+	s.pc = 0x08960; op_ori(s, 0x04000203u);
+	s.pc = 0x08964; op_wrch(s, 0x21A00903u);
+	if (s.halted) { s.pc = 0x08968; goto out; }
+	s.pc = 0x08968; op_il(s, 0x40802002u);
+	s.pc = 0x0896C; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x08970; goto out; }
+	s.pc = 0x08970; op_wrch(s, 0x21A00A6Au);
+	if (s.halted) { s.pc = 0x08974; goto out; }
+	s.pc = 0x08974; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x08978; goto out; }
+	s.pc = 0x08978; op_nop(s, 0x00200000u);
+	s.pc = 0x0897C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08980) { if (s.can_chain(cw, 0x08980) && --budget) goto L_e338f8ed8c470b2b; goto out; }
+	goto out;
+L_e338f8ed8c470b2b:
+	s.instructions += 2;
+	s.pc = 0x08980; op_ai(s, 0x1C020102u);
+	s.pc = 0x08984; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_372(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08988: goto L_73b5a3d4bf6e9807;
+		case 0x08990: goto L_cd5af842e3231017;
+		default: goto out;
+	}
+L_73b5a3d4bf6e9807:
+	s.instructions += 2;
+	s.pc = 0x08988; op_nop(s, 0x00200000u);
+	s.pc = 0x0898C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08990) { if (s.can_chain(cw, 0x08990) && --budget) goto L_cd5af842e3231017; goto out; }
+	goto out;
+L_cd5af842e3231017:
+	s.instructions += 2;
+	s.pc = 0x08990; op_ai(s, 0x1C020102u);
+	s.pc = 0x08994; op_bi(s, 0x35080100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_373(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08998: goto L_318831d5cf2e97f8;
+		case 0x089B0: goto L_bc5c342d129d241b;
+		default: goto out;
+	}
+L_318831d5cf2e97f8:
+	s.instructions += 6;
+	s.pc = 0x08998; op_wrch(s, 0x21A00B68u);
+	if (s.halted) { s.pc = 0x0899C; goto out; }
+	s.pc = 0x0899C; op_il(s, 0x40800102u);
+	s.pc = 0x089A0; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x089A4; goto out; }
+	s.pc = 0x089A4; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x089A8; goto out; }
+	s.pc = 0x089A8; op_nop(s, 0x00200000u);
+	s.pc = 0x089AC; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x089B0) { if (s.can_chain(cw, 0x089B0) && --budget) goto L_bc5c342d129d241b; goto out; }
+	goto out;
+L_bc5c342d129d241b:
+	s.instructions += 2;
+	s.pc = 0x089B0; op_ai(s, 0x1C020102u);
+	s.pc = 0x089B4; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_374(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08BF0: goto L_12f783dcb355a5c3;
+		case 0x08C20: goto L_305ba2d50abab96c;
+		default: goto out;
+	}
+L_12f783dcb355a5c3:
+	s.instructions += 12;
+	s.pc = 0x08BF0; op_ori(s, 0x04003182u);
+	s.pc = 0x08BF4; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x08BF8; goto out; }
+	s.pc = 0x08BF8; op_ori(s, 0x04000B03u);
+	s.pc = 0x08BFC; op_wrch(s, 0x21A00903u);
+	if (s.halted) { s.pc = 0x08C00; goto out; }
+	s.pc = 0x08C00; op_a(s, 0x1805CB82u);
+	s.pc = 0x08C04; op_a(s, 0x1805C102u);
+	s.pc = 0x08C08; op_shli(s, 0x0F610102u);
+	s.pc = 0x08C0C; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x08C10; goto out; }
+	s.pc = 0x08C10; op_wrch(s, 0x21A00A6Au);
+	if (s.halted) { s.pc = 0x08C14; goto out; }
+	s.pc = 0x08C14; op_il(s, 0x40802002u);
+	s.pc = 0x08C18; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x08C1C; goto out; }
+	s.pc = 0x08C1C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08C20) { if (s.can_chain(cw, 0x08C20) && --budget) goto L_305ba2d50abab96c; goto out; }
+	goto out;
+L_305ba2d50abab96c:
+	s.instructions += 2;
+	s.pc = 0x08C20; op_ai(s, 0x1C020102u);
+	s.pc = 0x08C24; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_375(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08C28: goto L_319c5fc4cd4ec7f4;
+		case 0x08C30: goto L_a80bcfac37e768e0;
+		default: goto out;
+	}
+L_319c5fc4cd4ec7f4:
+	s.instructions += 2;
+	s.pc = 0x08C28; op_nop(s, 0x00200000u);
+	s.pc = 0x08C2C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08C30) { if (s.can_chain(cw, 0x08C30) && --budget) goto L_a80bcfac37e768e0; goto out; }
+	goto out;
+L_a80bcfac37e768e0:
+	s.instructions += 2;
+	s.pc = 0x08C30; op_ai(s, 0x1C020102u);
+	s.pc = 0x08C34; op_bi(s, 0x35080100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_376(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08C38: goto L_14ba53f739c56b63;
+		case 0x08C50: goto L_97280b966778449c;
+		default: goto out;
+	}
+L_14ba53f739c56b63:
+	s.instructions += 6;
+	s.pc = 0x08C38; op_wrch(s, 0x21A00B68u);
+	if (s.halted) { s.pc = 0x08C3C; goto out; }
+	s.pc = 0x08C3C; op_il(s, 0x40800102u);
+	s.pc = 0x08C40; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x08C44; goto out; }
+	s.pc = 0x08C44; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x08C48; goto out; }
+	s.pc = 0x08C48; op_nop(s, 0x00200000u);
+	s.pc = 0x08C4C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08C50) { if (s.can_chain(cw, 0x08C50) && --budget) goto L_97280b966778449c; goto out; }
+	goto out;
+L_97280b966778449c:
+	s.instructions += 2;
+	s.pc = 0x08C50; op_ai(s, 0x1C020102u);
+	s.pc = 0x08C54; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_377(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[23] = s.gpr[23]; L.gpr[83] = s.gpr[83]; L.gpr[98] = s.gpr[98]; L.gpr[99] = s.gpr[99]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x08C58: goto L_032d3ee48c544e45;
+		case 0x08C88: goto L_e991f39f2e0bf212;
+		case 0x08C94: goto L_74acbaf693d62972;
+		case 0x08CA0: goto L_57709b04abba9c47;
+		case 0x08CBC: goto L_9477143469e61e33;
+		case 0x08CD4: goto L_8e340d4a64e71ffb;
+		case 0x08CEC: goto L_e2e8d6b142f20f17;
+		case 0x08D14: goto L_867a44d0d208b780;
+		case 0x08D24: goto L_0e7ec72aa6ef6f5b;
+		case 0x08D54: goto L_212233286d6735b5;
+		case 0x08D64: goto L_315e1519e67c7027;
+		case 0x08D68: goto L_3ba6730c6873c104;
+		case 0x08D74: goto L_ea2677d0ee27592e;
+		case 0x08DAC: goto L_c50e783bbae2707f;
+		case 0x08DB8: goto L_d9d7e5ac3e68aee1;
+		case 0x08DBC: goto L_6f68afb673e36ac8;
+		case 0x08DDC: goto L_c9ada4e9ae6e7351;
+		case 0x08E48: goto L_82d88050a1796b9d;
+		case 0x08E74: goto L_d557309add702acc;
+		case 0x08F10: goto L_6f66a2dab576c00c;
+		case 0x08F18: goto L_b67931e4cd77c549;
+		case 0x090EC: goto L_415e90bc46e8fed9;
+		default: goto out;
+	}
+L_032d3ee48c544e45:
+	s.instructions += 15;
+	L.pc = 0x08C58; op_lqr(L, 0x338A2911u);
+	L.pc = 0x08C5C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08C60; op_lqr(L, 0x338A240Cu);
+	L.pc = 0x08C64; op_il(L, 0x4081F810u);
+	L.pc = 0x08C68; op_lqr(L, 0x338A250Du);
+	L.pc = 0x08C6C; op_il(L, 0x4080000Fu);
+	L.pc = 0x08C70; op_nop(L, 0x00200000u);
+	L.pc = 0x08C74; op_ai(L, 0x1C080083u);
+	L.pc = 0x08C78; op_shlqbyi(L, 0x3FE03107u);
+	L.pc = 0x08C7C; op_ori(L, 0x04003188u);
+	L.pc = 0x08C80; op_a(L, 0x18040182u);
+	L.pc = 0x08C84; op_ai(L, 0x1C0C010Eu);
+	L.pc = 0x08C88; op_clgt(L, 0x5803CB82u);
+	L.pc = 0x08C8C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08C90; op_brz(L, 0x20001882u);
+	if (L.pc == 0x08D54) { if (s.can_chain(cw, 0x08D54) && --budget) goto L_212233286d6735b5; goto out; }
+	if (L.pc == 0x08C94) { if (s.can_chain(cw, 0x08C94) && --budget) goto L_74acbaf693d62972; goto out; }
+	goto out;
+L_e991f39f2e0bf212:
+	s.instructions += 3;
+	L.pc = 0x08C88; op_clgt(L, 0x5803CB82u);
+	L.pc = 0x08C8C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08C90; op_brz(L, 0x20001882u);
+	if (L.pc == 0x08D54) { if (s.can_chain(cw, 0x08D54) && --budget) goto L_212233286d6735b5; goto out; }
+	if (L.pc == 0x08C94) { if (s.can_chain(cw, 0x08C94) && --budget) goto L_74acbaf693d62972; goto out; }
+	goto out;
+L_74acbaf693d62972:
+	s.instructions += 10;
+	L.pc = 0x08C94; op_ai(L, 0x1C080085u);
+	L.pc = 0x08C98; op_shlqbyi(L, 0x3FE00403u);
+	L.pc = 0x08C9C; op_a(L, 0x18040284u);
+	L.pc = 0x08CA0; op_lqd(L, 0x34000182u);
+	L.pc = 0x08CA4; op_ai(L, 0x1C040183u);
+	L.pc = 0x08CA8; op_stqd(L, 0x24000202u);
+	L.pc = 0x08CAC; op_ai(L, 0x1C040204u);
+	L.pc = 0x08CB0; op_ceq(L, 0x78010702u);
+	L.pc = 0x08CB4; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CB8; op_brz(L, 0x207FFD02u);
+	if (L.pc == 0x08CA0) { if (s.can_chain(cw, 0x08CA0) && --budget) goto L_57709b04abba9c47; goto out; }
+	if (L.pc == 0x08CBC) { if (s.can_chain(cw, 0x08CBC) && --budget) goto L_9477143469e61e33; goto out; }
+	goto out;
+L_57709b04abba9c47:
+	s.instructions += 7;
+	L.pc = 0x08CA0; op_lqd(L, 0x34000182u);
+	L.pc = 0x08CA4; op_ai(L, 0x1C040183u);
+	L.pc = 0x08CA8; op_stqd(L, 0x24000202u);
+	L.pc = 0x08CAC; op_ai(L, 0x1C040204u);
+	L.pc = 0x08CB0; op_ceq(L, 0x78010702u);
+	L.pc = 0x08CB4; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CB8; op_brz(L, 0x207FFD02u);
+	if (L.pc == 0x08CA0) { if (s.can_chain(cw, 0x08CA0) && --budget) goto L_57709b04abba9c47; goto out; }
+	if (L.pc == 0x08CBC) { if (s.can_chain(cw, 0x08CBC) && --budget) goto L_9477143469e61e33; goto out; }
+	goto out;
+L_9477143469e61e33:
+	s.instructions += 12;
+	L.pc = 0x08CBC; op_ori(L, 0x0400088Au);
+	L.pc = 0x08CC0; op_nop(L, 0x1200028Au);
+	L.pc = 0x08CC4; op_il(L, 0x40800183u);
+	L.pc = 0x08CC8; op_lqd(L, 0x34104089u);
+	L.pc = 0x08CCC; op_lqd(L, 0x34108085u);
+	L.pc = 0x08CD0; op_lqd(L, 0x3410C084u);
+	L.pc = 0x08CD4; op_ai(L, 0x1CFFC183u);
+	L.pc = 0x08CD8; op_ceqi(L, 0x7CFFC182u);
+	L.pc = 0x08CDC; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE4; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE8; op_brz(L, 0x207FFD82u);
+	if (L.pc == 0x08CD4) { if (s.can_chain(cw, 0x08CD4) && --budget) goto L_8e340d4a64e71ffb; goto out; }
+	if (L.pc == 0x08CEC) { if (s.can_chain(cw, 0x08CEC) && --budget) goto L_e2e8d6b142f20f17; goto out; }
+	goto out;
+L_8e340d4a64e71ffb:
+	s.instructions += 6;
+	L.pc = 0x08CD4; op_ai(L, 0x1CFFC183u);
+	L.pc = 0x08CD8; op_ceqi(L, 0x7CFFC182u);
+	L.pc = 0x08CDC; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE4; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08CE8; op_brz(L, 0x207FFD82u);
+	if (L.pc == 0x08CD4) { if (s.can_chain(cw, 0x08CD4) && --budget) goto L_8e340d4a64e71ffb; goto out; }
+	if (L.pc == 0x08CEC) { if (s.can_chain(cw, 0x08CEC) && --budget) goto L_e2e8d6b142f20f17; goto out; }
+	goto out;
+L_e2e8d6b142f20f17:
+	s.instructions += 14;
+	L.pc = 0x08CEC; op_il(L, 0x40800186u);
+	L.pc = 0x08CF0; op_nop(L, 0x1200048Cu);
+	L.pc = 0x08CF4; op_shufb(L, 0xB041048Du);
+	L.pc = 0x08CF8; op_shufb(L, 0xB062828Du);
+	L.pc = 0x08CFC; op_shufb(L, 0xB081048Cu);
+	L.pc = 0x08D00; op_shufb(L, 0xB0A2828Cu);
+	L.pc = 0x08D04; op_shufb(L, 0xB160C10Cu);
+	L.pc = 0x08D08; op_shufb(L, 0xB140C10Du);
+	L.pc = 0x08D0C; op_shufb(L, 0xB121420Du);
+	L.pc = 0x08D10; op_shufb(L, 0xB061420Cu);
+	L.pc = 0x08D14; op_ai(L, 0x1CFFC306u);
+	L.pc = 0x08D18; op_ceqi(L, 0x7CFFC302u);
+	L.pc = 0x08D1C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D20; op_brz(L, 0x207FFE82u);
+	if (L.pc == 0x08D24) { if (s.can_chain(cw, 0x08D24) && --budget) goto L_0e7ec72aa6ef6f5b; goto out; }
+	goto out;
+L_867a44d0d208b780:
+	s.instructions += 4;
+	L.pc = 0x08D14; op_ai(L, 0x1CFFC306u);
+	L.pc = 0x08D18; op_ceqi(L, 0x7CFFC302u);
+	L.pc = 0x08D1C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D20; op_brz(L, 0x207FFE82u);
+	if (L.pc == 0x08D24) { if (s.can_chain(cw, 0x08D24) && --budget) goto L_0e7ec72aa6ef6f5b; goto out; }
+	goto out;
+L_0e7ec72aa6ef6f5b:
+	s.instructions += 12;
+	L.pc = 0x08D24; op_ai(L, 0x1C00478Fu);
+	L.pc = 0x08D28; op_nop(L, 0x127FEC0Au);
+	L.pc = 0x08D2C; op_ai(L, 0x1C0C0408u);
+	L.pc = 0x08D30; op_stqd(L, 0x24000383u);
+	L.pc = 0x08D34; op_stqd(L, 0x24004389u);
+	L.pc = 0x08D38; op_stqd(L, 0x2400838Bu);
+	L.pc = 0x08D3C; op_stqd(L, 0x2400C38Au);
+	L.pc = 0x08D40; op_ai(L, 0x1C100387u);
+	L.pc = 0x08D44; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D48; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D4C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D50; op_br(L, 0x327FE700u);
+	if (L.pc == 0x08C88) { if (s.can_chain(cw, 0x08C88) && --budget) goto L_e991f39f2e0bf212; goto out; }
+	goto out;
+L_212233286d6735b5:
+	s.instructions += 5;
+	L.pc = 0x08D54; op_shli(L, 0x0F618B95u);
+	L.pc = 0x08D58; op_lqd(L, 0x34224093u);
+	L.pc = 0x08D5C; op_ori(L, 0x04003112u);
+	L.pc = 0x08D60; op_ori(L, 0x04000A94u);
+	L.pc = 0x08D64; op_brz(L, 0x20007114u);
+	if (L.pc == 0x090EC) { if (s.can_chain(cw, 0x090EC) && --budget) goto L_415e90bc46e8fed9; goto out; }
+	if (L.pc == 0x08D68) { if (s.can_chain(cw, 0x08D68) && --budget) goto L_3ba6730c6873c104; goto out; }
+	goto out;
+L_315e1519e67c7027:
+	s.instructions += 1;
+	L.pc = 0x08D64; op_brz(L, 0x20007114u);
+	if (L.pc == 0x090EC) { if (s.can_chain(cw, 0x090EC) && --budget) goto L_415e90bc46e8fed9; goto out; }
+	if (L.pc == 0x08D68) { if (s.can_chain(cw, 0x08D68) && --budget) goto L_3ba6730c6873c104; goto out; }
+	goto out;
+L_3ba6730c6873c104:
+	s.instructions += 3;
+	L.pc = 0x08D68; op_lqd(L, 0x3422C086u);
+	L.pc = 0x08D6C; op_clgt(L, 0x5804C302u);
+	L.pc = 0x08D70; op_brz(L, 0x20001B02u);
+	if (L.pc == 0x08E48) { if (s.can_chain(cw, 0x08E48) && --budget) goto L_82d88050a1796b9d; goto out; }
+	if (L.pc == 0x08D74) { if (s.can_chain(cw, 0x08D74) && --budget) goto L_ea2677d0ee27592e; goto out; }
+	goto out;
+L_ea2677d0ee27592e:
+	s.instructions += 14;
+	L.pc = 0x08D74; op_a(L, 0x18050982u);
+	L.pc = 0x08D78; op_lqd(L, 0x34228084u);
+	L.pc = 0x08D7C; op_nop(L, 0x12000817u);
+	L.pc = 0x08D80; op_clgt(L, 0x58008303u);
+	L.pc = 0x08D84; op_selb(L, 0x80408303u);
+	L.pc = 0x08D88; op_lqd(L, 0x34240083u);
+	L.pc = 0x08D8C; op_sf(L, 0x0804C204u);
+	L.pc = 0x08D90; op_sf(L, 0x0800898Fu);
+	L.pc = 0x08D94; op_a(L, 0x1801018Eu);
+	L.pc = 0x08D98; op_or_(L, 0x08248702u);
+	L.pc = 0x08D9C; op_or_(L, 0x08208782u);
+	L.pc = 0x08DA0; op_andi(L, 0x1403C102u);
+	L.pc = 0x08DA4; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08DA8; op_brnz(L, 0x21000882u);
+	if (L.pc == 0x08DAC) { if (s.can_chain(cw, 0x08DAC) && --budget) goto L_c50e783bbae2707f; goto out; }
+	goto out;
+L_c50e783bbae2707f:
+	s.instructions += 3;
+	L.pc = 0x08DAC; op_ori(L, 0x0400070Cu);
+	L.pc = 0x08DB0; op_shlqbyi(L, 0x3FE00904u);
+	L.pc = 0x08DB4; op_brz(L, 0x2000050Fu);
+	if (L.pc == 0x08DDC) { if (s.can_chain(cw, 0x08DDC) && --budget) goto L_c9ada4e9ae6e7351; goto out; }
+	if (L.pc == 0x08DB8) { if (s.can_chain(cw, 0x08DB8) && --budget) goto L_d9d7e5ac3e68aee1; goto out; }
+	goto out;
+L_d9d7e5ac3e68aee1:
+	s.instructions += 9;
+	L.pc = 0x08DB8; op_il(L, 0x40800005u);
+	L.pc = 0x08DBC; op_ai(L, 0x1C040285u);
+	L.pc = 0x08DC0; op_lqd(L, 0x34000202u);
+	L.pc = 0x08DC4; op_ai(L, 0x1C040204u);
+	L.pc = 0x08DC8; op_clgt(L, 0x58014783u);
+	L.pc = 0x08DCC; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08DD0; op_stqd(L, 0x24000602u);
+	L.pc = 0x08DD4; op_ai(L, 0x1C04060Cu);
+	L.pc = 0x08DD8; op_brnz(L, 0x217FFC83u);
+	if (L.pc == 0x08DBC) { if (s.can_chain(cw, 0x08DBC) && --budget) goto L_6f68afb673e36ac8; goto out; }
+	if (L.pc == 0x08DDC) { if (s.can_chain(cw, 0x08DDC) && --budget) goto L_c9ada4e9ae6e7351; goto out; }
+	goto out;
+L_6f68afb673e36ac8:
+	s.instructions += 8;
+	L.pc = 0x08DBC; op_ai(L, 0x1C040285u);
+	L.pc = 0x08DC0; op_lqd(L, 0x34000202u);
+	L.pc = 0x08DC4; op_ai(L, 0x1C040204u);
+	L.pc = 0x08DC8; op_clgt(L, 0x58014783u);
+	L.pc = 0x08DCC; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08DD0; op_stqd(L, 0x24000602u);
+	L.pc = 0x08DD4; op_ai(L, 0x1C04060Cu);
+	L.pc = 0x08DD8; op_brnz(L, 0x217FFC83u);
+	if (L.pc == 0x08DBC) { if (s.can_chain(cw, 0x08DBC) && --budget) goto L_6f68afb673e36ac8; goto out; }
+	if (L.pc == 0x08DDC) { if (s.can_chain(cw, 0x08DDC) && --budget) goto L_c9ada4e9ae6e7351; goto out; }
+	goto out;
+L_c9ada4e9ae6e7351:
+	s.instructions += 4;
+	L.pc = 0x08DDC; op_sf(L, 0x08050794u);
+	L.pc = 0x08DE0; op_a(L, 0x1803C993u);
+	L.pc = 0x08DE4; op_a(L, 0x1803C912u);
+	L.pc = 0x08DE8; op_br(L, 0x327FEF80u);
+	if (L.pc == 0x08D64) { if (s.can_chain(cw, 0x08D64) && --budget) goto L_315e1519e67c7027; goto out; }
+	goto out;
+L_82d88050a1796b9d:
+	s.instructions += 11;
+	L.pc = 0x08E48; op_lqd(L, 0x3423C082u);
+	L.pc = 0x08E4C; op_lqd(L, 0x34234085u);
+	L.pc = 0x08E50; op_lqd(L, 0x34230087u);
+	L.pc = 0x08E54; op_stqd(L, 0x24228086u);
+	L.pc = 0x08E58; op_a(L, 0x18008302u);
+	L.pc = 0x08E5C; op_clgt(L, 0x58014103u);
+	L.pc = 0x08E60; op_clgt(L, 0x5801C304u);
+	L.pc = 0x08E64; op_selb(L, 0x80414103u);
+	L.pc = 0x08E68; op_stqd(L, 0x2422C082u);
+	L.pc = 0x08E6C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08E70; op_brz(L, 0x20001504u);
+	if (L.pc == 0x08F18) { if (s.can_chain(cw, 0x08F18) && --budget) goto L_b67931e4cd77c549; goto out; }
+	if (L.pc == 0x08E74) { if (s.can_chain(cw, 0x08E74) && --budget) goto L_d557309add702acc; goto out; }
+	goto out;
+L_d557309add702acc:
+	s.instructions += 7;
+	L.pc = 0x08E74; op_il(L, 0x40800083u);
+	L.pc = 0x08E78; op_lqd(L, 0x34254082u);
+	L.pc = 0x08E7C; op_lqd(L, 0x34248084u);
+	L.pc = 0x08E80; op_shl(L, 0x0B608183u);
+	L.pc = 0x08E84; op_a(L, 0x18010384u);
+	L.pc = 0x08E88; op_stqd(L, 0x24238084u);
+	L.pc = 0x08E8C; op_brsl(L, 0x33000082u);
+	goto out;
+L_6f66a2dab576c00c:
+	s.instructions += 15;
+	L.pc = 0x08F10; op_lqd(L, 0x34228082u);
+	L.pc = 0x08F14; op_stqd(L, 0x24230082u);
+	L.pc = 0x08F18; op_lqd(L, 0x34250082u);
+	L.pc = 0x08F1C; op_nop(L, 0x00200000u);
+	L.pc = 0x08F20; op_lqd(L, 0x342440D3u);
+	L.pc = 0x08F24; op_xori(L, 0x44004102u);
+	L.pc = 0x08F28; op_nop(L, 0x00200000u);
+	L.pc = 0x08F2C; op_shli(L, 0x0F608103u);
+	L.pc = 0x08F30; op_stqd(L, 0x24250082u);
+	L.pc = 0x08F34; op_ai(L, 0x1C080082u);
+	L.pc = 0x08F38; op_a(L, 0x18008183u);
+	L.pc = 0x08F3C; op_lqd(L, 0x34250182u);
+	L.pc = 0x08F40; op_rotqby(L, 0x3B80C103u);
+	L.pc = 0x08F44; op_stqd(L, 0x24240083u);
+	L.pc = 0x08F48; op_brz(L, 0x207FC453u);
+	if (L.pc == 0x08D68) { if (s.can_chain(cw, 0x08D68) && --budget) goto L_3ba6730c6873c104; goto out; }
+	goto out;
+L_b67931e4cd77c549:
+	s.instructions += 13;
+	L.pc = 0x08F18; op_lqd(L, 0x34250082u);
+	L.pc = 0x08F1C; op_nop(L, 0x00200000u);
+	L.pc = 0x08F20; op_lqd(L, 0x342440D3u);
+	L.pc = 0x08F24; op_xori(L, 0x44004102u);
+	L.pc = 0x08F28; op_nop(L, 0x00200000u);
+	L.pc = 0x08F2C; op_shli(L, 0x0F608103u);
+	L.pc = 0x08F30; op_stqd(L, 0x24250082u);
+	L.pc = 0x08F34; op_ai(L, 0x1C080082u);
+	L.pc = 0x08F38; op_a(L, 0x18008183u);
+	L.pc = 0x08F3C; op_lqd(L, 0x34250182u);
+	L.pc = 0x08F40; op_rotqby(L, 0x3B80C103u);
+	L.pc = 0x08F44; op_stqd(L, 0x24240083u);
+	L.pc = 0x08F48; op_brz(L, 0x207FC453u);
+	if (L.pc == 0x08D68) { if (s.can_chain(cw, 0x08D68) && --budget) goto L_3ba6730c6873c104; goto out; }
+	goto out;
+L_415e90bc46e8fed9:
+	s.instructions += 12;
+	L.pc = 0x090EC; op_il(L, 0x408000D3u);
+	L.pc = 0x090F0; op_nop(L, 0x12786C8Au);
+	L.pc = 0x090F4; op_lqd(L, 0x34224082u);
+	L.pc = 0x090F8; op_lqd(L, 0x34224083u);
+	L.pc = 0x090FC; op_cwd(L, 0x3EC00084u);
+	L.pc = 0x09100; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09104; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09108; op_a(L, 0x18008A82u);
+	L.pc = 0x0910C; op_shufb(L, 0xB060C104u);
+	L.pc = 0x09110; op_stqd(L, 0x24224083u);
+	L.pc = 0x09114; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09118; op_br(L, 0x32786780u);
+	goto out;
+out:
+	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[83] = L.gpr[83];
+	s.pc = L.pc;
+}
+void spu_aotc_378(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08CDC: goto L_dee82cc53d28736b;
+		case 0x08CF0: goto L_fd739873ed6812b3;
+		case 0x08D08: goto L_9f34711be0918714;
+		case 0x09C90: goto L_f5a471d58b891a82;
+		case 0x09CE0: goto L_e617c31e7c8057a5;
+		case 0x09D20: goto L_b06f1d5bd5639cd1;
+		default: goto out;
+	}
+L_dee82cc53d28736b:
+	s.instructions += 5;
+	s.pc = 0x08CDC; op_lqd(s, 0x34086903u);
+	s.pc = 0x08CE0; op_il(s, 0x40810802u);
+	s.pc = 0x08CE4; op_a(s, 0x1800A956u);
+	s.pc = 0x08CE8; op_rotqby(s, 0x3B948183u);
+	s.pc = 0x08CEC; op_brnz(s, 0x21023B83u);
+	if (s.pc == 0x08CF0) { if (s.can_chain(cw, 0x08CF0) && --budget) goto L_fd739873ed6812b3; goto out; }
+	goto out;
+L_fd739873ed6812b3:
+	s.instructions += 6;
+	s.pc = 0x08CF0; op_il(s, 0x40823802u);
+	s.pc = 0x08CF4; op_lqd(s, 0x3411E903u);
+	s.pc = 0x08CF8; op_a(s, 0x1800A95Bu);
+	s.pc = 0x08CFC; op_rotqby(s, 0x3B948183u);
+	s.pc = 0x08D00; op_nop(s, 0x4020007Fu);
+	s.pc = 0x08D04; op_brnz(s, 0x21020383u);
+	if (s.pc == 0x09D20) { if (s.can_chain(cw, 0x09D20) && --budget) goto L_b06f1d5bd5639cd1; goto out; }
+	if (s.pc == 0x08D08) { if (s.can_chain(cw, 0x08D08) && --budget) goto L_9f34711be0918714; goto out; }
+	goto out;
+L_9f34711be0918714:
+	s.instructions += 3;
+	s.pc = 0x08D08; op_ori(s, 0x04002903u);
+	s.pc = 0x08D0C; op_fsmbi(s, 0x32800004u);
+	s.pc = 0x08D10; op_brsl(s, 0x3376F700u);
+	goto out;
+L_f5a471d58b891a82:
+	s.instructions += 20;
+	s.pc = 0x09C90; op_nop(s, 0x10134B1Eu);
+	s.pc = 0x09C94; op_il(s, 0x40800A04u);
+	s.pc = 0x09C98; op_ai(s, 0x1C036806u);
+	s.pc = 0x09C9C; op_nop(s, 0x00200000u);
+	s.pc = 0x09CA0; op_a(s, 0x18012802u);
+	s.pc = 0x09CA4; op_lqx(s, 0x38812805u);
+	s.pc = 0x09CA8; op_ceqbi(s, 0x7E000183u);
+	s.pc = 0x09CAC; op_fsmbi(s, 0x32800004u);
+	s.pc = 0x09CB0; op_ai(s, 0x1C034102u);
+	s.pc = 0x09CB4; op_xsbh(s, 0x56C00183u);
+	s.pc = 0x09CB8; op_ceqhi(s, 0x7D000183u);
+	s.pc = 0x09CBC; op_rotqby(s, 0x3B808282u);
+	s.pc = 0x09CC0; op_xshw(s, 0x55C00183u);
+	s.pc = 0x09CC4; op_ceqbi(s, 0x7E000102u);
+	s.pc = 0x09CC8; op_xsbh(s, 0x56C00102u);
+	s.pc = 0x09CCC; op_ceqhi(s, 0x7D000102u);
+	s.pc = 0x09CD0; op_nor(s, 0x09208102u);
+	s.pc = 0x09CD4; op_xshw(s, 0x55C00102u);
+	s.pc = 0x09CD8; op_andc(s, 0x5820C102u);
+	s.pc = 0x09CDC; op_brhnz(s, 0x23000882u);
+	if (s.pc == 0x09D20) { if (s.can_chain(cw, 0x09D20) && --budget) goto L_b06f1d5bd5639cd1; goto out; }
+	if (s.pc == 0x09CE0) { if (s.can_chain(cw, 0x09CE0) && --budget) goto L_e617c31e7c8057a5; goto out; }
+	goto out;
+L_e617c31e7c8057a5:
+	s.instructions += 12;
+	s.pc = 0x09CE0; op_ai(s, 0x1C202902u);
+	s.pc = 0x09CE4; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x09CE8; goto out; }
+	s.pc = 0x09CE8; op_ai(s, 0x1C202C83u);
+	s.pc = 0x09CEC; op_wrch(s, 0x21A00903u);
+	if (s.halted) { s.pc = 0x09CF0; goto out; }
+	s.pc = 0x09CF0; op_il(s, 0x40803002u);
+	s.pc = 0x09CF4; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x09CF8; goto out; }
+	s.pc = 0x09CF8; op_wrch(s, 0x21A00A04u);
+	if (s.halted) { s.pc = 0x09CFC; goto out; }
+	s.pc = 0x09CFC; op_il(s, 0x40802002u);
+	s.pc = 0x09D00; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x09D04; goto out; }
+	s.pc = 0x09D04; op_nop(s, 0x00200000u);
+	s.pc = 0x09D08; op_ila(s, 0x424E8802u);
+	s.pc = 0x09D0C; op_bi(s, 0x35040100u);
+	goto out;
+L_b06f1d5bd5639cd1:
+	s.instructions += 5;
+	s.pc = 0x09D20; op_ai(s, 0x1C0C0081u);
+	s.pc = 0x09D24; op_shlqbyi(s, 0x3FE00203u);
+	s.pc = 0x09D28; op_lqd(s, 0x34FFC0D0u);
+	s.pc = 0x09D2C; op_lqd(s, 0x34004080u);
+	s.pc = 0x09D30; op_bi(s, 0x35000000u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_379(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[16] = s.gpr[16]; L.gpr[20] = s.gpr[20]; L.gpr[32] = s.gpr[32]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[89] = s.gpr[89]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x08D14: goto L_29459a1eb6cc0508;
+		case 0x08D38: goto L_ffd658ba4afbb782;
+		case 0x09CC8: goto L_0a1e79bdd77503c4;
+		case 0x09D10: goto L_f3fea83949ae4311;
+		default: goto out;
+	}
+L_29459a1eb6cc0508:
+	s.instructions += 9;
+	L.pc = 0x08D14; op_lqd(L, 0x34092903u);
+	L.pc = 0x08D18; op_il(L, 0x40812002u);
+	L.pc = 0x08D1C; op_a(L, 0x1800A953u);
+	L.pc = 0x08D20; op_rotqby(L, 0x3B9481D1u);
+	L.pc = 0x08D24; op_ai(L, 0x1C062883u);
+	L.pc = 0x08D28; op_lqd(L, 0x34000182u);
+	L.pc = 0x08D2C; op_rotqby(L, 0x3B80C159u);
+	L.pc = 0x08D30; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D34; op_brnz(L, 0x2101F2D9u);
+	if (L.pc == 0x09CC8) { if (s.can_chain(cw, 0x09CC8) && --budget) goto L_0a1e79bdd77503c4; goto out; }
+	if (L.pc == 0x08D38) { if (s.can_chain(cw, 0x08D38) && --budget) goto L_ffd658ba4afbb782; goto out; }
+	goto out;
+L_ffd658ba4afbb782:
+	s.instructions += 18;
+	L.pc = 0x08D38; op_ai(L, 0x1C092888u);
+	L.pc = 0x08D3C; op_nop(L, 0x10098310u);
+	L.pc = 0x08D40; op_ai(L, 0x1C612902u);
+	L.pc = 0x08D44; op_lqd(L, 0x34062904u);
+	L.pc = 0x08D48; op_ori(L, 0x04002903u);
+	L.pc = 0x08D4C; op_lqd(L, 0x34000409u);
+	L.pc = 0x08D50; op_il(L, 0x40800805u);
+	L.pc = 0x08D54; op_lqd(L, 0x3400010Au);
+	L.pc = 0x08D58; op_il(L, 0x40800006u);
+	L.pc = 0x08D5C; op_fsmbi(L, 0x32800007u);
+	L.pc = 0x08D60; op_rotqby(L, 0x3B948204u);
+	L.pc = 0x08D64; op_rotqby(L, 0x3B8204D0u);
+	L.pc = 0x08D68; op_nop(L, 0x4020007Fu);
+	L.pc = 0x08D6C; op_rotqby(L, 0x3B808502u);
+	L.pc = 0x08D70; op_sf(L, 0x08010154u);
+	L.pc = 0x08D74; op_shlqbyi(L, 0x3FE02804u);
+	L.pc = 0x08D78; op_andi(L, 0x14FF2850u);
+	L.pc = 0x08D7C; op_brsl(L, 0x3377D380u);
+	goto out;
+L_0a1e79bdd77503c4:
+	s.instructions += 6;
+	L.pc = 0x09CC8; op_ai(L, 0x1C422902u);
+	L.pc = 0x09CCC; op_nop(L, 0x1011A714u);
+	L.pc = 0x09CD0; op_lqd(L, 0x34000103u);
+	L.pc = 0x09CD4; op_rotqby(L, 0x3B808184u);
+	L.pc = 0x09CD8; op_ila(L, 0x424E7002u);
+	L.pc = 0x09CDC; op_bi(L, 0x35080100u);
+	goto out;
+L_f3fea83949ae4311:
+	s.instructions += 4;
+	L.pc = 0x09D10; op_lqd(L, 0x34092902u);
+	L.pc = 0x09D14; op_rotqby(L, 0x3B948151u);
+	L.pc = 0x09D18; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09D1C; op_br(L, 0x327E0380u);
+	if (L.pc == 0x08D38) { if (s.can_chain(cw, 0x08D38) && --budget) goto L_ffd658ba4afbb782; goto out; }
+	goto out;
+out:
+	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[89] = L.gpr[89];
+	s.pc = L.pc;
+}
+void spu_aotc_380(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08D80: goto L_ca742cd3abe428a0;
+		case 0x08DD8: goto L_7facf7aff4f40ca8;
+		case 0x08DF8: goto L_af08254755eb4a0f;
+		case 0x08E08: goto L_feee626eb67f9e2f;
+		case 0x08E7C: goto L_9b99b87fac269987;
+		case 0x08E90: goto L_dbfe6ffa50e52aa8;
+		case 0x08EB0: goto L_d17579b06a6b6955;
+		case 0x08ED0: goto L_8ac417ae2ae40a93;
+		case 0x08EE0: goto L_15a7aca483718042;
+		case 0x08EF0: goto L_c1f294daf20f9c28;
+		case 0x08F00: goto L_6c1be29548e9f622;
+		case 0x08F08: goto L_0b49532cd576e27d;
+		case 0x09308: goto L_f92dcb542b18eb71;
+		case 0x09370: goto L_4ca90ebd8de9dce9;
+		default: goto out;
+	}
+L_ca742cd3abe428a0:
+	s.instructions += 6;
+	s.pc = 0x08D80; op_lqd(s, 0x34002B02u);
+	s.pc = 0x08D84; op_ori(s, 0x0400018Bu);
+	s.pc = 0x08D88; op_a(s, 0x181401D0u);
+	s.pc = 0x08D8C; op_rotqby(s, 0x3B958102u);
+	s.pc = 0x08D90; op_nop(s, 0x4020007Fu);
+	s.pc = 0x08D94; op_brz(s, 0x20000882u);
+	if (s.pc == 0x08DD8) { if (s.can_chain(cw, 0x08DD8) && --budget) goto L_7facf7aff4f40ca8; goto out; }
+	goto out;
+L_7facf7aff4f40ca8:
+	s.instructions += 8;
+	s.pc = 0x08DD8; op_il(s, 0x40819802u);
+	s.pc = 0x08DDC; op_fsmbi(s, 0x3280000Du);
+	s.pc = 0x08DE0; op_il(s, 0x4081B003u);
+	s.pc = 0x08DE4; op_a(s, 0x1800A910u);
+	s.pc = 0x08DE8; op_a(s, 0x1800E90Au);
+	s.pc = 0x08DEC; op_il(s, 0x40800111u);
+	s.pc = 0x08DF0; op_ila(s, 0x427FFF92u);
+	s.pc = 0x08DF4; op_br(s, 0x32000280u);
+	if (s.pc == 0x08E08) { if (s.can_chain(cw, 0x08E08) && --budget) goto L_feee626eb67f9e2f; goto out; }
+	goto out;
+L_af08254755eb4a0f:
+	s.instructions += 4;
+	s.pc = 0x08DF8; op_ai(s, 0x1C00868Du);
+	s.pc = 0x08DFC; op_ai(s, 0x1C01050Au);
+	s.pc = 0x08E00; op_ceqi(s, 0x7C040682u);
+	s.pc = 0x08E04; op_brnz(s, 0x21001F82u);
+	if (s.pc == 0x08F00) { if (s.can_chain(cw, 0x08F00) && --budget) goto L_6c1be29548e9f622; goto out; }
+	if (s.pc == 0x08E08) { if (s.can_chain(cw, 0x08E08) && --budget) goto L_feee626eb67f9e2f; goto out; }
+	goto out;
+L_feee626eb67f9e2f:
+	s.instructions += 29;
+	s.pc = 0x08E08; op_lqd(s, 0x34000802u);
+	s.pc = 0x08E0C; op_lqd(s, 0x34000503u);
+	s.pc = 0x08E10; op_nop(s, 0x1011BF1Au);
+	s.pc = 0x08E14; op_rotqby(s, 0x3B840104u);
+	s.pc = 0x08E18; op_rotqby(s, 0x3B82818Fu);
+	s.pc = 0x08E1C; op_a(s, 0x18010683u);
+	s.pc = 0x08E20; op_ceqi(s, 0x7C000785u);
+	s.pc = 0x08E24; op_nop(s, 0x00200000u);
+	s.pc = 0x08E28; op_a(s, 0x18044182u);
+	s.pc = 0x08E2C; op_lqx(s, 0x38844183u);
+	s.pc = 0x08E30; op_ori(s, 0x04000286u);
+	s.pc = 0x08E34; op_ai(s, 0x1C038102u);
+	s.pc = 0x08E38; op_rotqby(s, 0x3B808182u);
+	s.pc = 0x08E3C; op_and_(s, 0x18248102u);
+	s.pc = 0x08E40; op_a(s, 0x18010103u);
+	s.pc = 0x08E44; op_lqx(s, 0x38810105u);
+	s.pc = 0x08E48; op_ori(s, 0x04000182u);
+	s.pc = 0x08E4C; op_ai(s, 0x1C038183u);
+	s.pc = 0x08E50; op_ceqi(s, 0x7C000104u);
+	s.pc = 0x08E54; op_ai(s, 0x1C010107u);
+	s.pc = 0x08E58; op_rotqby(s, 0x3B80C282u);
+	s.pc = 0x08E5C; op_ceqhi(s, 0x7D000103u);
+	s.pc = 0x08E60; op_and_(s, 0x1824810Eu);
+	s.pc = 0x08E64; op_xshw(s, 0x55C00183u);
+	s.pc = 0x08E68; op_or_(s, 0x0820C303u);
+	s.pc = 0x08E6C; op_ceqi(s, 0x7C000183u);
+	s.pc = 0x08E70; op_nor(s, 0x0920C183u);
+	s.pc = 0x08E74; op_or_(s, 0x0820C202u);
+	s.pc = 0x08E78; op_brnz(s, 0x217FF002u);
+	if (s.pc == 0x08DF8) { if (s.can_chain(cw, 0x08DF8) && --budget) goto L_af08254755eb4a0f; goto out; }
+	if (s.pc == 0x08E7C) { if (s.can_chain(cw, 0x08E7C) && --budget) goto L_9b99b87fac269987; goto out; }
+	goto out;
+L_9b99b87fac269987:
+	s.instructions += 21;
+	s.pc = 0x08E7C; op_il(s, 0x4080000Cu);
+	s.pc = 0x08E80; op_il(s, 0x40800193u);
+	s.pc = 0x08E84; op_il(s, 0x408B4015u);
+	s.pc = 0x08E88; op_ilhu(s, 0x41000214u);
+	s.pc = 0x08E8C; op_nop(s, 0x00200000u);
+	s.pc = 0x08E90; op_ai(s, 0x1C034382u);
+	s.pc = 0x08E94; op_nop(s, 0x1011D612u);
+	s.pc = 0x08E98; op_il(s, 0x40800003u);
+	s.pc = 0x08E9C; op_lqd(s, 0x34000384u);
+	s.pc = 0x08EA0; op_il(s, 0x40800005u);
+	s.pc = 0x08EA4; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x08EA8; op_andi(s, 0x143FC106u);
+	s.pc = 0x08EAC; op_nop(s, 0x00200000u);
+	s.pc = 0x08EB0; op_a(s, 0x18016882u);
+	s.pc = 0x08EB4; op_lqx(s, 0x38816884u);
+	s.pc = 0x08EB8; op_ai(s, 0x1C004285u);
+	s.pc = 0x08EBC; op_ai(s, 0x1C034102u);
+	s.pc = 0x08EC0; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x08EC4; op_andi(s, 0x143FC102u);
+	s.pc = 0x08EC8; op_ceq(s, 0x78018102u);
+	s.pc = 0x08ECC; op_brnz(s, 0x21008782u);
+	if (s.pc == 0x09308) { if (s.can_chain(cw, 0x09308) && --budget) goto L_f92dcb542b18eb71; goto out; }
+	if (s.pc == 0x08ED0) { if (s.can_chain(cw, 0x08ED0) && --budget) goto L_8ac417ae2ae40a93; goto out; }
+	goto out;
+L_dbfe6ffa50e52aa8:
+	s.instructions += 16;
+	s.pc = 0x08E90; op_ai(s, 0x1C034382u);
+	s.pc = 0x08E94; op_nop(s, 0x1011D612u);
+	s.pc = 0x08E98; op_il(s, 0x40800003u);
+	s.pc = 0x08E9C; op_lqd(s, 0x34000384u);
+	s.pc = 0x08EA0; op_il(s, 0x40800005u);
+	s.pc = 0x08EA4; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x08EA8; op_andi(s, 0x143FC106u);
+	s.pc = 0x08EAC; op_nop(s, 0x00200000u);
+	s.pc = 0x08EB0; op_a(s, 0x18016882u);
+	s.pc = 0x08EB4; op_lqx(s, 0x38816884u);
+	s.pc = 0x08EB8; op_ai(s, 0x1C004285u);
+	s.pc = 0x08EBC; op_ai(s, 0x1C034102u);
+	s.pc = 0x08EC0; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x08EC4; op_andi(s, 0x143FC102u);
+	s.pc = 0x08EC8; op_ceq(s, 0x78018102u);
+	s.pc = 0x08ECC; op_brnz(s, 0x21008782u);
+	if (s.pc == 0x09308) { if (s.can_chain(cw, 0x09308) && --budget) goto L_f92dcb542b18eb71; goto out; }
+	if (s.pc == 0x08ED0) { if (s.can_chain(cw, 0x08ED0) && --budget) goto L_8ac417ae2ae40a93; goto out; }
+	goto out;
+L_d17579b06a6b6955:
+	s.instructions += 8;
+	s.pc = 0x08EB0; op_a(s, 0x18016882u);
+	s.pc = 0x08EB4; op_lqx(s, 0x38816884u);
+	s.pc = 0x08EB8; op_ai(s, 0x1C004285u);
+	s.pc = 0x08EBC; op_ai(s, 0x1C034102u);
+	s.pc = 0x08EC0; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x08EC4; op_andi(s, 0x143FC102u);
+	s.pc = 0x08EC8; op_ceq(s, 0x78018102u);
+	s.pc = 0x08ECC; op_brnz(s, 0x21008782u);
+	if (s.pc == 0x09308) { if (s.can_chain(cw, 0x09308) && --budget) goto L_f92dcb542b18eb71; goto out; }
+	if (s.pc == 0x08ED0) { if (s.can_chain(cw, 0x08ED0) && --budget) goto L_8ac417ae2ae40a93; goto out; }
+	goto out;
+L_8ac417ae2ae40a93:
+	s.instructions += 4;
+	s.pc = 0x08ED0; op_ahi(s, 0x1D004183u);
+	s.pc = 0x08ED4; op_ceqbi(s, 0x7E040182u);
+	s.pc = 0x08ED8; op_xsbh(s, 0x56C00102u);
+	s.pc = 0x08EDC; op_brhz(s, 0x227FFA82u);
+	if (s.pc == 0x08EE0) { if (s.can_chain(cw, 0x08EE0) && --budget) goto L_15a7aca483718042; goto out; }
+	goto out;
+L_15a7aca483718042:
+	s.instructions += 10;
+	s.pc = 0x08EE0; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x08EE4; goto out; }
+	s.pc = 0x08EE4; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x08EE8; goto out; }
+	s.pc = 0x08EE8; op_sf(s, 0x08018382u);
+	s.pc = 0x08EEC; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x08EF0; goto out; }
+	s.pc = 0x08EF0; op_lqd(s, 0x34254083u);
+	s.pc = 0x08EF4; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x08EF8; goto out; }
+	s.pc = 0x08EF8; op_il(s, 0x40801002u);
+	s.pc = 0x08EFC; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x08F00; goto out; }
+	s.pc = 0x08F00; op_nop(s, 0x00200000u);
+	s.pc = 0x08F04; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x08F08) { if (s.can_chain(cw, 0x08F08) && --budget) goto L_0b49532cd576e27d; goto out; }
+	goto out;
+L_c1f294daf20f9c28:
+	s.instructions += 4;
+	s.pc = 0x08EF0; op_ai(s, 0x1C00868Du);
+	s.pc = 0x08EF4; op_ai(s, 0x1C01050Au);
+	s.pc = 0x08EF8; op_ceqi(s, 0x7C040682u);
+	s.pc = 0x08EFC; op_brz(s, 0x207FE182u);
+	if (s.pc == 0x08E08) { if (s.can_chain(cw, 0x08E08) && --budget) goto L_feee626eb67f9e2f; goto out; }
+	if (s.pc == 0x08F00) { if (s.can_chain(cw, 0x08F00) && --budget) goto L_6c1be29548e9f622; goto out; }
+	goto out;
+L_6c1be29548e9f622:
+	s.instructions += 4;
+	s.pc = 0x08F00; op_lqd(s, 0x34122902u);
+	s.pc = 0x08F04; op_rotqby(s, 0x3B948102u);
+	s.pc = 0x08F08; op_nop(s, 0x4020007Fu);
+	s.pc = 0x08F0C; op_brnz(s, 0x2101B082u);
+	goto out;
+L_0b49532cd576e27d:
+	s.instructions += 2;
+	s.pc = 0x08F08; op_ai(s, 0x1C020102u);
+	s.pc = 0x08F0C; op_bi(s, 0x35040100u);
+	goto out;
+L_f92dcb542b18eb71:
+	s.instructions += 26;
+	s.pc = 0x09308; op_andi(s, 0x143FC183u);
+	s.pc = 0x0930C; op_lqx(s, 0x3884C382u);
+	s.pc = 0x09310; op_a(s, 0x1804C384u);
+	s.pc = 0x09314; op_lqd(s, 0x34000586u);
+	s.pc = 0x09318; op_shli(s, 0x0F608183u);
+	s.pc = 0x0931C; op_cwd(s, 0x3EC00588u);
+	s.pc = 0x09320; op_ai(s, 0x1C034204u);
+	s.pc = 0x09324; op_nop(s, 0x1011D212u);
+	s.pc = 0x09328; op_ai(s, 0x1C010585u);
+	s.pc = 0x0932C; op_ai(s, 0x1C00460Cu);
+	s.pc = 0x09330; op_a(s, 0x18054183u);
+	s.pc = 0x09334; op_rotqby(s, 0x3B810102u);
+	s.pc = 0x09338; op_ai(s, 0x1C010387u);
+	s.pc = 0x0933C; op_cwd(s, 0x3EC00289u);
+	s.pc = 0x09340; op_or_(s, 0x08250183u);
+	s.pc = 0x09344; op_nop(s, 0x00200000u);
+	s.pc = 0x09348; op_andi(s, 0x143FC102u);
+	s.pc = 0x0934C; op_shufb(s, 0xB0C18188u);
+	s.pc = 0x09350; op_a(s, 0x18008783u);
+	s.pc = 0x09354; op_stqd(s, 0x24000586u);
+	s.pc = 0x09358; op_ai(s, 0x1C02058Bu);
+	s.pc = 0x0935C; op_lqd(s, 0x34000282u);
+	s.pc = 0x09360; op_shufb(s, 0xB0408189u);
+	s.pc = 0x09364; op_stqd(s, 0x24000282u);
+	s.pc = 0x09368; op_clgt(s, 0x58030702u);
+	s.pc = 0x0936C; op_brnz(s, 0x217F6482u);
+	if (s.pc == 0x09370) { if (s.can_chain(cw, 0x09370) && --budget) goto L_4ca90ebd8de9dce9; goto out; }
+	goto out;
+L_4ca90ebd8de9dce9:
+	s.instructions += 2;
+	s.pc = 0x09370; op_nop(s, 0x4020007Fu);
+	s.pc = 0x09374; op_br(s, 0x327F6F80u);
+	if (s.pc == 0x08EF0) { if (s.can_chain(cw, 0x08EF0) && --budget) goto L_c1f294daf20f9c28; goto out; }
+	goto out;
+out:
+	return;
+}
+void spu_aotc_381(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x08EB8: goto L_edc07dceae1c1810;
+		case 0x08ED8: goto L_9ac0e03205a0bb4b;
+		default: goto out;
+	}
+L_edc07dceae1c1810:
+	s.instructions += 8;
+	s.pc = 0x08EB8; op_nop(s, 0x00200000u);
+	s.pc = 0x08EBC; op_ai(s, 0x1C08008Au);
+	s.pc = 0x08EC0; op_lqd(s, 0x34250082u);
+	s.pc = 0x08EC4; op_shli(s, 0x0F608102u);
+	s.pc = 0x08EC8; op_a(s, 0x18028102u);
+	s.pc = 0x08ECC; op_lqd(s, 0x34250103u);
+	s.pc = 0x08ED0; op_rotqby(s, 0x3B808182u);
+	s.pc = 0x08ED4; op_brsl(s, 0x33000083u);
+	if (s.pc == 0x08ED8) { if (s.can_chain(cw, 0x08ED8) && --budget) goto L_9ac0e03205a0bb4b; goto out; }
+	goto out;
+L_9ac0e03205a0bb4b:
+	s.instructions += 2;
+	s.pc = 0x08ED8; op_ai(s, 0x1C020183u);
+	s.pc = 0x08EDC; op_bi(s, 0x35080180u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_382(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[18] = s.gpr[18]; L.gpr[21] = s.gpr[21]; L.gpr[32] = s.gpr[32]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[89] = s.gpr[89]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[92] = s.gpr[92]; L.gpr[93] = s.gpr[93]; L.gpr[94] = s.gpr[94]; L.gpr[95] = s.gpr[95]; L.gpr[126] = s.gpr[126]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x08F88: goto L_8fe87e91990873ef;
+		case 0x08FD4: goto L_82428cfbb19b9ec9;
+		case 0x08FD8: goto L_076ddafadb893f88;
+		case 0x09008: goto L_1848f292aa444791;
+		case 0x091D8: goto L_608c3e879a6e2c69;
+		case 0x09210: goto L_f22a01c755f7e18e;
+		case 0x0921C: goto L_390c78e1ac4450a6;
+		case 0x092B8: goto L_74cfabb9906a6b24;
+		case 0x093B8: goto L_664dfe92f011be12;
+		case 0x093F8: goto L_bc0a447f156849df;
+		case 0x09404: goto L_e808f6f51354500f;
+		case 0x0943C: goto L_4b780730244a0c58;
+		case 0x09468: goto L_7f121bcae557f98b;
+		case 0x09478: goto L_21fa5cd9fae231cc;
+		case 0x09498: goto L_380ad379523d2517;
+		case 0x094A0: goto L_863e7cc0a040890c;
+		case 0x094CC: goto L_f08e38d7b549ace6;
+		case 0x094D0: goto L_545a56bb01730941;
+		case 0x09518: goto L_42fba9643a5886d7;
+		case 0x09524: goto L_7fc319a9beb92338;
+		case 0x09530: goto L_785a56a786ca55e2;
+		case 0x09568: goto L_54e7875eb796de3a;
+		case 0x095A0: goto L_f97c001453df5106;
+		default: goto out;
+	}
+L_8fe87e91990873ef:
+	s.instructions += 19;
+	L.pc = 0x08F88; op_lqd(L, 0x34002985u);
+	L.pc = 0x08F8C; op_il(L, 0x40823A02u);
+	L.pc = 0x08F90; op_a(L, 0x1800A904u);
+	L.pc = 0x08F94; op_lqx(L, 0x3880A903u);
+	L.pc = 0x08F98; op_ai(L, 0x1CF30102u);
+	L.pc = 0x08F9C; op_ori(L, 0x04000256u);
+	L.pc = 0x08FA0; op_a(L, 0x1800A951u);
+	L.pc = 0x08FA4; op_rotqby(L, 0x3B94C285u);
+	L.pc = 0x08FA8; op_ila(L, 0x42907002u);
+	L.pc = 0x08FAC; op_rotqby(L, 0x3B810183u);
+	L.pc = 0x08FB0; op_ai(L, 0x1C0B0284u);
+	L.pc = 0x08FB4; op_nop(L, 0x00200000u);
+	L.pc = 0x08FB8; op_ai(L, 0x1C034186u);
+	L.pc = 0x08FBC; op_lqx(L, 0x38808182u);
+	L.pc = 0x08FC0; op_lqd(L, 0x34000203u);
+	L.pc = 0x08FC4; op_rotqby(L, 0x3B818102u);
+	L.pc = 0x08FC8; op_rotqby(L, 0x3B8101D8u);
+	L.pc = 0x08FCC; op_andi(L, 0x143FC15Au);
+	L.pc = 0x08FD0; op_brnz(L, 0x2100A058u);
+	if (L.pc == 0x094D0) { if (s.can_chain(cw, 0x094D0) && --budget) goto L_545a56bb01730941; goto out; }
+	if (L.pc == 0x08FD4) { if (s.can_chain(cw, 0x08FD4) && --budget) goto L_82428cfbb19b9ec9; goto out; }
+	goto out;
+L_82428cfbb19b9ec9:
+	s.instructions += 1;
+	L.pc = 0x08FD4; op_brz(L, 0x200125D9u);
+	if (L.pc == 0x08FD8) { if (s.can_chain(cw, 0x08FD8) && --budget) goto L_076ddafadb893f88; goto out; }
+	goto out;
+L_076ddafadb893f88:
+	s.instructions += 12;
+	L.pc = 0x08FD8; op_lqd(L, 0x34002983u);
+	L.pc = 0x08FDC; op_lqa(L, 0x30A58002u);
+	L.pc = 0x08FE0; op_rotqby(L, 0x3B94C185u);
+	L.pc = 0x08FE4; op_lqd(L, 0x34000151u);
+	L.pc = 0x08FE8; op_lqd(L, 0x34004103u);
+	L.pc = 0x08FEC; op_ila(L, 0x427FFF82u);
+	L.pc = 0x08FF0; op_ai(L, 0x1C0A0284u);
+	L.pc = 0x08FF4; op_lqd(L, 0x34000206u);
+	L.pc = 0x08FF8; op_shli(L, 0x0F6128D6u);
+	L.pc = 0x08FFC; op_and_(L, 0x182081D0u);
+	L.pc = 0x09000; op_rotqby(L, 0x3B810355u);
+	L.pc = 0x09004; op_brnz(L, 0x210160D5u);
+	if (L.pc == 0x09008) { if (s.can_chain(cw, 0x09008) && --budget) goto L_1848f292aa444791; goto out; }
+	goto out;
+L_1848f292aa444791:
+	s.instructions += 12;
+	L.pc = 0x09008; op_ai(L, 0x1C060282u);
+	L.pc = 0x0900C; op_nop(L, 0x1009830Au);
+	L.pc = 0x09010; op_il(L, 0x40805004u);
+	L.pc = 0x09014; op_shlqbyi(L, 0x3FE02903u);
+	L.pc = 0x09018; op_il(L, 0x40804005u);
+	L.pc = 0x0901C; op_lqd(L, 0x34000108u);
+	L.pc = 0x09020; op_il(L, 0x40800006u);
+	L.pc = 0x09024; op_fsmbi(L, 0x32800007u);
+	L.pc = 0x09028; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0902C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09030; op_rotqby(L, 0x3B808451u);
+	L.pc = 0x09034; op_brsl(L, 0x33777C80u);
+	goto out;
+L_608c3e879a6e2c69:
+	s.instructions += 17;
+	L.pc = 0x091D8; op_il(L, 0x40800202u);
+	L.pc = 0x091DC; op_il(L, 0x40801003u);
+	L.pc = 0x091E0; op_nop(L, 0x00200000u);
+	L.pc = 0x091E4; op_a(L, 0x1800A884u);
+	L.pc = 0x091E8; op_lqx(L, 0x3880A885u);
+	L.pc = 0x091EC; op_ori(L, 0x0400018Bu);
+	L.pc = 0x091F0; op_il(L, 0x40800102u);
+	L.pc = 0x091F4; op_il(L, 0x4080008Du);
+	L.pc = 0x091F8; op_ori(L, 0x0400010Cu);
+	L.pc = 0x091FC; op_il(L, 0x40802002u);
+	L.pc = 0x09200; op_rotqby(L, 0x3B810283u);
+	L.pc = 0x09204; op_ori(L, 0x0400010Au);
+	L.pc = 0x09208; op_rotmi(L, 0x0F3F8182u);
+	L.pc = 0x0920C; op_ai(L, 0x1C008109u);
+	L.pc = 0x09210; op_lqd(L, 0x34260088u);
+	L.pc = 0x09214; op_clgt(L, 0x58024402u);
+	L.pc = 0x09218; op_brz(L, 0x20003D82u);
+	if (L.pc == 0x09404) { if (s.can_chain(cw, 0x09404) && --budget) goto L_e808f6f51354500f; goto out; }
+	if (L.pc == 0x0921C) { if (s.can_chain(cw, 0x0921C) && --budget) goto L_390c78e1ac4450a6; goto out; }
+	goto out;
+L_f22a01c755f7e18e:
+	s.instructions += 3;
+	L.pc = 0x09210; op_lqd(L, 0x34260088u);
+	L.pc = 0x09214; op_clgt(L, 0x58024402u);
+	L.pc = 0x09218; op_brz(L, 0x20003D82u);
+	if (L.pc == 0x09404) { if (s.can_chain(cw, 0x09404) && --budget) goto L_e808f6f51354500f; goto out; }
+	if (L.pc == 0x0921C) { if (s.can_chain(cw, 0x0921C) && --budget) goto L_390c78e1ac4450a6; goto out; }
+	goto out;
+L_390c78e1ac4450a6:
+	s.instructions += 27;
+	L.pc = 0x0921C; op_il(L, 0x40800102u);
+	L.pc = 0x09220; op_lqd(L, 0x3425C084u);
+	L.pc = 0x09224; op_il(L, 0x40801003u);
+	L.pc = 0x09228; op_lqd(L, 0x3427C086u);
+	L.pc = 0x0922C; op_ori(L, 0x0400010Cu);
+	L.pc = 0x09230; op_nop(L, 0x12783E95u);
+	L.pc = 0x09234; op_il(L, 0x40802002u);
+	L.pc = 0x09238; op_shlqbyi(L, 0x3FE0018Bu);
+	L.pc = 0x0923C; op_il(L, 0x40800208u);
+	L.pc = 0x09240; op_ori(L, 0x0400010Au);
+	L.pc = 0x09244; op_sf(L, 0x08024204u);
+	L.pc = 0x09248; op_a(L, 0x18022887u);
+	L.pc = 0x0924C; op_shli(L, 0x0F608202u);
+	L.pc = 0x09250; op_ilhu(L, 0x41000204u);
+	L.pc = 0x09254; op_il(L, 0x4080008Du);
+	L.pc = 0x09258; op_iohl(L, 0x608F4C04u);
+	L.pc = 0x0925C; op_lqx(L, 0x38818103u);
+	L.pc = 0x09260; op_cwx(L, 0x3AC18105u);
+	L.pc = 0x09264; op_shufb(L, 0xB060C205u);
+	L.pc = 0x09268; op_stqx(L, 0x28818103u);
+	L.pc = 0x0926C; op_lqx(L, 0x38822882u);
+	L.pc = 0x09270; op_rotqby(L, 0x3B81C102u);
+	L.pc = 0x09274; op_rotmi(L, 0x0F3F8103u);
+	L.pc = 0x09278; op_ai(L, 0x1C00C189u);
+	L.pc = 0x0927C; op_lqd(L, 0x34260088u);
+	L.pc = 0x09280; op_clgt(L, 0x58024402u);
+	L.pc = 0x09284; op_brnz(L, 0x21783402u);
+	goto out;
+L_74cfabb9906a6b24:
+	s.instructions += 64;
+	L.pc = 0x092B8; op_il(L, 0x40806C02u);
+	L.pc = 0x092BC; op_stqd(L, 0x24FF80D1u);
+	L.pc = 0x092C0; op_ori(L, 0x040001D1u);
+	L.pc = 0x092C4; op_stqd(L, 0x24FFC0D0u);
+	L.pc = 0x092C8; op_a(L, 0x18008187u);
+	L.pc = 0x092CC; op_lqx(L, 0x38808183u);
+	L.pc = 0x092D0; op_il(L, 0x40896E02u);
+	L.pc = 0x092D4; op_shlqbyi(L, 0x3FE002D0u);
+	L.pc = 0x092D8; op_il(L, 0x40803405u);
+	L.pc = 0x092DC; op_shlqbyi(L, 0x3FE0020Eu);
+	L.pc = 0x092E0; op_a(L, 0x1800A88Bu);
+	L.pc = 0x092E4; op_lqx(L, 0x3880A88Cu);
+	L.pc = 0x092E8; op_il(L, 0x40800C0Au);
+	L.pc = 0x092EC; op_stqd(L, 0x24FD80D9u);
+	L.pc = 0x092F0; op_il(L, 0x40800208u);
+	L.pc = 0x092F4; op_stqd(L, 0x24FD40DAu);
+	L.pc = 0x092F8; op_a(L, 0x1801680Du);
+	L.pc = 0x092FC; op_rotqby(L, 0x3B81C182u);
+	L.pc = 0x09300; op_il(L, 0x4080025Au);
+	L.pc = 0x09304; op_lqx(L, 0x38816803u);
+	L.pc = 0x09308; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0930C; op_stqd(L, 0x24FDC0D8u);
+	L.pc = 0x09310; op_ori(L, 0x04000358u);
+	L.pc = 0x09314; op_rotqby(L, 0x3B82C604u);
+	L.pc = 0x09318; op_a(L, 0x18028109u);
+	L.pc = 0x0931C; op_lqx(L, 0x38828107u);
+	L.pc = 0x09320; op_a(L, 0x1802010Au);
+	L.pc = 0x09324; op_lqx(L, 0x38820108u);
+	L.pc = 0x09328; op_il(L, 0x40801002u);
+	L.pc = 0x0932C; op_stqd(L, 0x24004080u);
+	L.pc = 0x09330; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09334; op_rotqby(L, 0x3B834185u);
+	L.pc = 0x09338; op_sfi(L, 0x0C000203u);
+	L.pc = 0x0933C; op_stqd(L, 0x24FF40D2u);
+	L.pc = 0x09340; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09344; op_stqd(L, 0x24FF00D3u);
+	L.pc = 0x09348; op_rotma(L, 0x0B40C103u);
+	L.pc = 0x0934C; op_rotqby(L, 0x3B824382u);
+	L.pc = 0x09350; op_ai(L, 0x1C0042D9u);
+	L.pc = 0x09354; op_rotqby(L, 0x3B828404u);
+	L.pc = 0x09358; op_stqd(L, 0x24FEC0D4u);
+	L.pc = 0x0935C; op_stqd(L, 0x24FE80D5u);
+	L.pc = 0x09360; op_ceqi(L, 0x7C008102u);
+	L.pc = 0x09364; op_stqd(L, 0x24FE40D6u);
+	L.pc = 0x09368; op_ceqi(L, 0x7C008204u);
+	L.pc = 0x0936C; op_stqd(L, 0x24FE00D7u);
+	L.pc = 0x09370; op_nor(L, 0x09208102u);
+	L.pc = 0x09374; op_stqd(L, 0x24FD00DBu);
+	L.pc = 0x09378; op_ori(L, 0x04000205u);
+	L.pc = 0x0937C; op_stqd(L, 0x24FCC0DCu);
+	L.pc = 0x09380; op_cgti(L, 0x4C000184u);
+	L.pc = 0x09384; op_stqd(L, 0x24FC80DDu);
+	L.pc = 0x09388; op_andc(L, 0x58208285u);
+	L.pc = 0x0938C; op_stqd(L, 0x24FC40DEu);
+	L.pc = 0x09390; op_cgt(L, 0x4800EC82u);
+	L.pc = 0x09394; op_stqd(L, 0x24FC00DFu);
+	L.pc = 0x09398; op_ceqi(L, 0x7C000285u);
+	L.pc = 0x0939C; op_nop(L, 0x00200000u);
+	L.pc = 0x093A0; op_selb(L, 0x8B20EC82u);
+	L.pc = 0x093A4; op_stqd(L, 0x24FB8081u);
+	L.pc = 0x093A8; op_il(L, 0x40800102u);
+	L.pc = 0x093AC; op_ai(L, 0x1CB80081u);
+	L.pc = 0x093B0; op_selb(L, 0x8B40AD05u);
+	L.pc = 0x093B4; op_brz(L, 0x20003D84u);
+	if (L.pc == 0x095A0) { if (s.can_chain(cw, 0x095A0) && --budget) goto L_f97c001453df5106; goto out; }
+	if (L.pc == 0x093B8) { if (s.can_chain(cw, 0x093B8) && --budget) goto L_664dfe92f011be12; goto out; }
+	goto out;
+L_664dfe92f011be12:
+	s.instructions += 48;
+	L.pc = 0x093B8; op_shli(L, 0x0F60C702u);
+	L.pc = 0x093BC; op_fsmbi(L, 0x32800054u);
+	L.pc = 0x093C0; op_il(L, 0x40800C5Bu);
+	L.pc = 0x093C4; op_il(L, 0x40800A5Cu);
+	L.pc = 0x093C8; op_ila(L, 0x42CE085Fu);
+	L.pc = 0x093CC; op_a(L, 0x18038102u);
+	L.pc = 0x093D0; op_il(L, 0x40896E5Du);
+	L.pc = 0x093D4; op_shli(L, 0x0F620102u);
+	L.pc = 0x093D8; op_il(L, 0x4080105Eu);
+	L.pc = 0x093DC; op_nop(L, 0x00200000u);
+	L.pc = 0x093E0; op_a(L, 0x18144103u);
+	L.pc = 0x093E4; op_shlqbyi(L, 0x3FE00152u);
+	L.pc = 0x093E8; op_ai(L, 0x1C010155u);
+	L.pc = 0x093EC; op_ai(L, 0x1C3701D6u);
+	L.pc = 0x093F0; op_ai(L, 0x1C3401D3u);
+	L.pc = 0x093F4; op_ori(L, 0x04002B57u);
+	L.pc = 0x093F8; op_a(L, 0x1816E803u);
+	L.pc = 0x093FC; op_lqx(L, 0x3896E805u);
+	L.pc = 0x09400; op_cgt(L, 0x48152D02u);
+	L.pc = 0x09404; op_lqd(L, 0x34006806u);
+	L.pc = 0x09408; op_a(L, 0x18172808u);
+	L.pc = 0x0940C; op_nop(L, 0x00200000u);
+	L.pc = 0x09410; op_nor(L, 0x09208102u);
+	L.pc = 0x09414; op_lqx(L, 0x38972809u);
+	L.pc = 0x09418; op_il(L, 0x4080000Bu);
+	L.pc = 0x0941C; op_fsmbi(L, 0x3280000Au);
+	L.pc = 0x09420; op_sfi(L, 0x0C000102u);
+	L.pc = 0x09424; op_nop(L, 0x00200000u);
+	L.pc = 0x09428; op_cgt(L, 0x48152C84u);
+	L.pc = 0x0942C; op_rotqby(L, 0x3B80C283u);
+	L.pc = 0x09430; op_a(L, 0x1814AC07u);
+	L.pc = 0x09434; op_rotqby(L, 0x3B940306u);
+	L.pc = 0x09438; op_ai(L, 0x1C032985u);
+	L.pc = 0x0943C; op_rotqby(L, 0x3B820488u);
+	L.pc = 0x09440; op_ceqi(L, 0x7C000183u);
+	L.pc = 0x09444; op_fsmbi(L, 0x32800009u);
+	L.pc = 0x09448; op_ceqi(L, 0x7C000306u);
+	L.pc = 0x0944C; op_sfi(L, 0x0C000183u);
+	L.pc = 0x09450; op_or_(L, 0x08208183u);
+	L.pc = 0x09454; op_ceqbi(L, 0x7E000183u);
+	L.pc = 0x09458; op_xsbh(L, 0x56C00183u);
+	L.pc = 0x0945C; op_ceqhi(L, 0x7D000183u);
+	L.pc = 0x09460; op_nor(L, 0x0920C183u);
+	L.pc = 0x09464; op_xshw(L, 0x55C00183u);
+	L.pc = 0x09468; op_andc(L, 0x58218183u);
+	L.pc = 0x0946C; op_ceqi(L, 0x7C000183u);
+	L.pc = 0x09470; op_selb(L, 0x81620583u);
+	L.pc = 0x09474; op_brz(L, 0x20000B84u);
+	if (L.pc == 0x094D0) { if (s.can_chain(cw, 0x094D0) && --budget) goto L_545a56bb01730941; goto out; }
+	if (L.pc == 0x09478) { if (s.can_chain(cw, 0x09478) && --budget) goto L_21fa5cd9fae231cc; goto out; }
+	goto out;
+L_bc0a447f156849df:
+	s.instructions += 32;
+	L.pc = 0x093F8; op_a(L, 0x1816E803u);
+	L.pc = 0x093FC; op_lqx(L, 0x3896E805u);
+	L.pc = 0x09400; op_cgt(L, 0x48152D02u);
+	L.pc = 0x09404; op_lqd(L, 0x34006806u);
+	L.pc = 0x09408; op_a(L, 0x18172808u);
+	L.pc = 0x0940C; op_nop(L, 0x00200000u);
+	L.pc = 0x09410; op_nor(L, 0x09208102u);
+	L.pc = 0x09414; op_lqx(L, 0x38972809u);
+	L.pc = 0x09418; op_il(L, 0x4080000Bu);
+	L.pc = 0x0941C; op_fsmbi(L, 0x3280000Au);
+	L.pc = 0x09420; op_sfi(L, 0x0C000102u);
+	L.pc = 0x09424; op_nop(L, 0x00200000u);
+	L.pc = 0x09428; op_cgt(L, 0x48152C84u);
+	L.pc = 0x0942C; op_rotqby(L, 0x3B80C283u);
+	L.pc = 0x09430; op_a(L, 0x1814AC07u);
+	L.pc = 0x09434; op_rotqby(L, 0x3B940306u);
+	L.pc = 0x09438; op_ai(L, 0x1C032985u);
+	L.pc = 0x0943C; op_rotqby(L, 0x3B820488u);
+	L.pc = 0x09440; op_ceqi(L, 0x7C000183u);
+	L.pc = 0x09444; op_fsmbi(L, 0x32800009u);
+	L.pc = 0x09448; op_ceqi(L, 0x7C000306u);
+	L.pc = 0x0944C; op_sfi(L, 0x0C000183u);
+	L.pc = 0x09450; op_or_(L, 0x08208183u);
+	L.pc = 0x09454; op_ceqbi(L, 0x7E000183u);
+	L.pc = 0x09458; op_xsbh(L, 0x56C00183u);
+	L.pc = 0x0945C; op_ceqhi(L, 0x7D000183u);
+	L.pc = 0x09460; op_nor(L, 0x0920C183u);
+	L.pc = 0x09464; op_xshw(L, 0x55C00183u);
+	L.pc = 0x09468; op_andc(L, 0x58218183u);
+	L.pc = 0x0946C; op_ceqi(L, 0x7C000183u);
+	L.pc = 0x09470; op_selb(L, 0x81620583u);
+	L.pc = 0x09474; op_brz(L, 0x20000B84u);
+	if (L.pc == 0x094D0) { if (s.can_chain(cw, 0x094D0) && --budget) goto L_545a56bb01730941; goto out; }
+	if (L.pc == 0x09478) { if (s.can_chain(cw, 0x09478) && --budget) goto L_21fa5cd9fae231cc; goto out; }
+	goto out;
+L_e808f6f51354500f:
+	s.instructions += 14;
+	L.pc = 0x09404; op_lqd(L, 0x34268087u);
+	L.pc = 0x09408; op_lqd(L, 0x3428C084u);
+	L.pc = 0x0940C; op_lqd(L, 0x34290082u);
+	L.pc = 0x09410; op_lqd(L, 0x34288083u);
+	L.pc = 0x09414; op_lqd(L, 0x34264086u);
+	L.pc = 0x09418; op_stqd(L, 0x2425C088u);
+	L.pc = 0x0941C; op_clgt(L, 0x5801C405u);
+	L.pc = 0x09420; op_stqd(L, 0x2427C084u);
+	L.pc = 0x09424; op_stqd(L, 0x2428C082u);
+	L.pc = 0x09428; op_stqd(L, 0x24290083u);
+	L.pc = 0x0942C; op_stqd(L, 0x24260086u);
+	L.pc = 0x09430; op_stqd(L, 0x24288084u);
+	L.pc = 0x09434; op_nop(L, 0x4020007Fu);
+	L.pc = 0x09438; op_brz(L, 0x20001305u);
+	if (L.pc == 0x094D0) { if (s.can_chain(cw, 0x094D0) && --budget) goto L_545a56bb01730941; goto out; }
+	if (L.pc == 0x0943C) { if (s.can_chain(cw, 0x0943C) && --budget) goto L_4b780730244a0c58; goto out; }
+	goto out;
+L_4b780730244a0c58:
+	s.instructions += 11;
+	L.pc = 0x0943C; op_sf(L, 0x08020383u);
+	L.pc = 0x09440; op_lqd(L, 0x34278085u);
+	L.pc = 0x09444; op_shli(L, 0x0F608387u);
+	L.pc = 0x09448; op_lqd(L, 0x34294082u);
+	L.pc = 0x0944C; op_lqd(L, 0x34284084u);
+	L.pc = 0x09450; op_clgt(L, 0x58014186u);
+	L.pc = 0x09454; op_shl(L, 0x0B608682u);
+	L.pc = 0x09458; op_a(L, 0x1801C204u);
+	L.pc = 0x0945C; op_selb(L, 0x80614186u);
+	L.pc = 0x09460; op_stqd(L, 0x24274084u);
+	L.pc = 0x09464; op_brsl(L, 0x33000085u);
+	if (L.pc == 0x09468) { if (s.can_chain(cw, 0x09468) && --budget) goto L_7f121bcae557f98b; goto out; }
+	goto out;
+L_7f121bcae557f98b:
+	s.instructions += 2;
+	L.pc = 0x09468; op_ai(L, 0x1C020285u);
+	L.pc = 0x0946C; op_bi(L, 0x35080280u);
+	goto out;
+L_21fa5cd9fae231cc:
+	s.instructions += 2;
+	L.pc = 0x09478; op_ceqi(L, 0x7C008582u);
+	L.pc = 0x0947C; op_brz(L, 0x20000482u);
+	if (L.pc == 0x094A0) { if (s.can_chain(cw, 0x094A0) && --budget) goto L_863e7cc0a040890c; goto out; }
+	goto out;
+L_380ad379523d2517:
+	s.instructions += 2;
+	L.pc = 0x09498; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0949C; op_br(L, 0x32000F80u);
+	if (L.pc == 0x09518) { if (s.can_chain(cw, 0x09518) && --budget) goto L_42fba9643a5886d7; goto out; }
+	goto out;
+L_863e7cc0a040890c:
+	s.instructions += 11;
+	L.pc = 0x094A0; op_shli(L, 0x0F60C586u);
+	L.pc = 0x094A4; op_nop(L, 0x1011B009u);
+	L.pc = 0x094A8; op_ori(L, 0x04002883u);
+	L.pc = 0x094AC; op_shlqbyi(L, 0x3FE02B04u);
+	L.pc = 0x094B0; op_a(L, 0x1814AC05u);
+	L.pc = 0x094B4; op_a(L, 0x1802C306u);
+	L.pc = 0x094B8; op_shli(L, 0x0F610306u);
+	L.pc = 0x094BC; op_nop(L, 0x4020007Fu);
+	L.pc = 0x094C0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x094C4; op_a(L, 0x1817C306u);
+	L.pc = 0x094C8; op_brsl(L, 0x337F1700u);
+	goto out;
+L_f08e38d7b549ace6:
+	s.instructions += 1;
+	L.pc = 0x094CC; op_br(L, 0x32000980u);
+	if (L.pc == 0x09518) { if (s.can_chain(cw, 0x09518) && --budget) goto L_42fba9643a5886d7; goto out; }
+	goto out;
+L_545a56bb01730941:
+	s.instructions += 18;
+	L.pc = 0x094D0; op_ai(L, 0x1C004489u);
+	L.pc = 0x094D4; op_lqd(L, 0x34000283u);
+	L.pc = 0x094D8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x094DC; op_lqd(L, 0x34000384u);
+	L.pc = 0x094E0; op_ceqi(L, 0x7C048482u);
+	L.pc = 0x094E4; op_cwd(L, 0x3EC00386u);
+	L.pc = 0x094E8; op_nop(L, 0x10129A0Bu);
+	L.pc = 0x094EC; op_cwd(L, 0x3EC00288u);
+	L.pc = 0x094F0; op_rotqby(L, 0x3B814183u);
+	L.pc = 0x094F4; op_shufb(L, 0xB0810186u);
+	L.pc = 0x094F8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x094FC; op_stqd(L, 0x24000384u);
+	L.pc = 0x09500; op_ai(L, 0x1C010387u);
+	L.pc = 0x09504; op_lqd(L, 0x34000283u);
+	L.pc = 0x09508; op_shufb(L, 0xB060C508u);
+	L.pc = 0x0950C; op_stqd(L, 0x24000283u);
+	L.pc = 0x09510; op_ai(L, 0x1C010285u);
+	L.pc = 0x09514; op_brz(L, 0x207FF782u);
+	if (L.pc == 0x094D0) { if (s.can_chain(cw, 0x094D0) && --budget) goto L_545a56bb01730941; goto out; }
+	if (L.pc == 0x09518) { if (s.can_chain(cw, 0x09518) && --budget) goto L_42fba9643a5886d7; goto out; }
+	goto out;
+L_42fba9643a5886d7:
+	s.instructions += 3;
+	L.pc = 0x09518; op_andi(L, 0x14006A02u);
+	L.pc = 0x0951C; op_nop(L, 0x1012A612u);
+	L.pc = 0x09520; op_brz(L, 0x20000902u);
+	if (L.pc == 0x09568) { if (s.can_chain(cw, 0x09568) && --budget) goto L_54e7875eb796de3a; goto out; }
+	if (L.pc == 0x09524) { if (s.can_chain(cw, 0x09524) && --budget) goto L_7fc319a9beb92338; goto out; }
+	goto out;
+L_7fc319a9beb92338:
+	s.instructions += 17;
+	L.pc = 0x09524; op_a(L, 0x18156C04u);
+	L.pc = 0x09528; op_il(L, 0x40800087u);
+	L.pc = 0x0952C; op_nop(L, 0x00200000u);
+	L.pc = 0x09530; op_ilhu(L, 0x41400008u);
+	L.pc = 0x09534; op_lqd(L, 0x34000202u);
+	L.pc = 0x09538; op_ai(L, 0x1C008387u);
+	L.pc = 0x0953C; op_cwd(L, 0x3EC00206u);
+	L.pc = 0x09540; op_ceqi(L, 0x7C04C383u);
+	L.pc = 0x09544; op_nop(L, 0x00200000u);
+	L.pc = 0x09548; op_ori(L, 0x04000105u);
+	L.pc = 0x0954C; op_rotqby(L, 0x3B810102u);
+	L.pc = 0x09550; op_xor_(L, 0x48220102u);
+	L.pc = 0x09554; op_shufb(L, 0xB0A14106u);
+	L.pc = 0x09558; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0955C; op_stqd(L, 0x24000205u);
+	L.pc = 0x09560; op_ai(L, 0x1C020204u);
+	L.pc = 0x09564; op_brz(L, 0x207FF983u);
+	if (L.pc == 0x09530) { if (s.can_chain(cw, 0x09530) && --budget) goto L_785a56a786ca55e2; goto out; }
+	if (L.pc == 0x09568) { if (s.can_chain(cw, 0x09568) && --budget) goto L_54e7875eb796de3a; goto out; }
+	goto out;
+L_785a56a786ca55e2:
+	s.instructions += 14;
+	L.pc = 0x09530; op_ilhu(L, 0x41400008u);
+	L.pc = 0x09534; op_lqd(L, 0x34000202u);
+	L.pc = 0x09538; op_ai(L, 0x1C008387u);
+	L.pc = 0x0953C; op_cwd(L, 0x3EC00206u);
+	L.pc = 0x09540; op_ceqi(L, 0x7C04C383u);
+	L.pc = 0x09544; op_nop(L, 0x00200000u);
+	L.pc = 0x09548; op_ori(L, 0x04000105u);
+	L.pc = 0x0954C; op_rotqby(L, 0x3B810102u);
+	L.pc = 0x09550; op_xor_(L, 0x48220102u);
+	L.pc = 0x09554; op_shufb(L, 0xB0A14106u);
+	L.pc = 0x09558; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0955C; op_stqd(L, 0x24000205u);
+	L.pc = 0x09560; op_ai(L, 0x1C020204u);
+	L.pc = 0x09564; op_brz(L, 0x207FF983u);
+	if (L.pc == 0x09530) { if (s.can_chain(cw, 0x09530) && --budget) goto L_785a56a786ca55e2; goto out; }
+	if (L.pc == 0x09568) { if (s.can_chain(cw, 0x09568) && --budget) goto L_54e7875eb796de3a; goto out; }
+	goto out;
+L_54e7875eb796de3a:
+	s.instructions += 14;
+	L.pc = 0x09568; op_a(L, 0x18176882u);
+	L.pc = 0x0956C; op_lqx(L, 0x38976883u);
+	L.pc = 0x09570; op_ai(L, 0x1C006A54u);
+	L.pc = 0x09574; op_nop(L, 0x10127F0Au);
+	L.pc = 0x09578; op_ai(L, 0x1C122BD7u);
+	L.pc = 0x0957C; op_ai(L, 0x1C122B56u);
+	L.pc = 0x09580; op_ai(L, 0x1C122952u);
+	L.pc = 0x09584; op_ai(L, 0x1C1229D3u);
+	L.pc = 0x09588; op_ai(L, 0x1C122AD5u);
+	L.pc = 0x0958C; op_rotqby(L, 0x3B808183u);
+	L.pc = 0x09590; op_sfi(L, 0x0C000182u);
+	L.pc = 0x09594; op_rotma(L, 0x0B40AF02u);
+	L.pc = 0x09598; op_cgt(L, 0x48150102u);
+	L.pc = 0x0959C; op_brnz(L, 0x217FCB82u);
+	if (L.pc == 0x093F8) { if (s.can_chain(cw, 0x093F8) && --budget) goto L_bc0a447f156849df; goto out; }
+	if (L.pc == 0x095A0) { if (s.can_chain(cw, 0x095A0) && --budget) goto L_f97c001453df5106; goto out; }
+	goto out;
+L_f97c001453df5106:
+	s.instructions += 20;
+	L.pc = 0x095A0; op_ai(L, 0x1C480081u);
+	L.pc = 0x095A4; op_lqd(L, 0x34FFC0D0u);
+	L.pc = 0x095A8; op_lqd(L, 0x34FF80D1u);
+	L.pc = 0x095AC; op_lqd(L, 0x34FF40D2u);
+	L.pc = 0x095B0; op_lqd(L, 0x34FF00D3u);
+	L.pc = 0x095B4; op_lqd(L, 0x34FEC0D4u);
+	L.pc = 0x095B8; op_lqd(L, 0x34FE80D5u);
+	L.pc = 0x095BC; op_lqd(L, 0x34FE40D6u);
+	L.pc = 0x095C0; op_lqd(L, 0x34FE00D7u);
+	L.pc = 0x095C4; op_lqd(L, 0x34FDC0D8u);
+	L.pc = 0x095C8; op_lqd(L, 0x34FD80D9u);
+	L.pc = 0x095CC; op_lqd(L, 0x34FD40DAu);
+	L.pc = 0x095D0; op_lqd(L, 0x34FD00DBu);
+	L.pc = 0x095D4; op_lqd(L, 0x34FCC0DCu);
+	L.pc = 0x095D8; op_lqd(L, 0x34FC80DDu);
+	L.pc = 0x095DC; op_lqd(L, 0x34FC40DEu);
+	L.pc = 0x095E0; op_lqd(L, 0x34FC00DFu);
+	L.pc = 0x095E4; op_nop(L, 0x00200000u);
+	L.pc = 0x095E8; op_lqd(L, 0x34004080u);
+	L.pc = 0x095EC; op_bi(L, 0x35000000u);
+	goto out;
+out:
+	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95];
+	s.pc = L.pc;
+}
+void spu_aotc_383(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -33,7 +1731,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4];
 	s.pc = L.pc;
 }
-void spu_aotc_359(SPUThread& __restrict s) {
+void spu_aotc_384(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -436,7 +2134,7 @@ L_61caae784f6e62be:
 out:
 	return;
 }
-void spu_aotc_360(SPUThread& __restrict s) {
+void spu_aotc_385(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -458,7 +2156,7 @@ L_ba5f6d5e681f3a68:
 out:
 	return;
 }
-void spu_aotc_361(SPUThread& __restrict s) {
+void spu_aotc_386(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -493,13 +2191,15 @@ L_7c2d2999c909a024:
 out:
 	return;
 }
-void spu_aotc_362(SPUThread& __restrict s) {
+void spu_aotc_387(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
 		case 0x094C8: goto L_83b6a497714e16b4;
 		case 0x094FC: goto L_6543075569d67b72;
 		case 0x09520: goto L_2f340154da6a337d;
+		case 0x095BC: goto L_35d229710c5d9db2;
+		case 0x095D0: goto L_9791bd7ea68362f6;
 		default: goto out;
 	}
 L_83b6a497714e16b4:
@@ -517,6 +2217,7 @@ L_83b6a497714e16b4:
 	s.pc = 0x094F0; op_stqd(s, 0x24264085u);
 	s.pc = 0x094F4; op_nop(s, 0x4020007Fu);
 	s.pc = 0x094F8; op_brz(s, 0x20001882u);
+	if (s.pc == 0x095BC) { if (s.can_chain(cw, 0x095BC) && --budget) goto L_35d229710c5d9db2; goto out; }
 	if (s.pc == 0x094FC) { if (s.can_chain(cw, 0x094FC) && --budget) goto L_6543075569d67b72; goto out; }
 	goto out;
 L_6543075569d67b72:
@@ -537,10 +2238,24 @@ L_2f340154da6a337d:
 	s.pc = 0x09520; op_ai(s, 0x1C020204u);
 	s.pc = 0x09524; op_bi(s, 0x35080200u);
 	goto out;
+L_35d229710c5d9db2:
+	s.instructions += 5;
+	s.pc = 0x095BC; op_nop(s, 0x127F8A8Du);
+	s.pc = 0x095C0; op_lqd(s, 0x34298082u);
+	s.pc = 0x095C4; op_shl(s, 0x0B608682u);
+	s.pc = 0x095C8; op_nop(s, 0x00200000u);
+	s.pc = 0x095CC; op_brsl(s, 0x33000083u);
+	if (s.pc == 0x095D0) { if (s.can_chain(cw, 0x095D0) && --budget) goto L_9791bd7ea68362f6; goto out; }
+	goto out;
+L_9791bd7ea68362f6:
+	s.instructions += 2;
+	s.pc = 0x095D0; op_ai(s, 0x1C020183u);
+	s.pc = 0x095D4; op_bi(s, 0x35080180u);
+	goto out;
 out:
 	return;
 }
-void spu_aotc_363(SPUThread& __restrict s) {
+void spu_aotc_388(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -567,7 +2282,7 @@ L_6111f1dd5c4a636f:
 out:
 	return;
 }
-void spu_aotc_364(SPUThread& __restrict s) {
+void spu_aotc_389(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -589,7 +2304,7 @@ L_3422f22e8df55b73:
 out:
 	return;
 }
-void spu_aotc_365(SPUThread& __restrict s) {
+void spu_aotc_390(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -624,7 +2339,34 @@ L_b1f2d9f40fd88faf:
 out:
 	return;
 }
-void spu_aotc_366(SPUThread& __restrict s) {
+void spu_aotc_391(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x095D8: goto L_7a28dc77d7914da4;
+		case 0x095E8: goto L_3aa8d60c807d80bf;
+		default: goto out;
+	}
+L_7a28dc77d7914da4:
+	s.instructions += 4;
+	s.pc = 0x095D8; op_wrch(s, 0x21A00B02u);
+	if (s.halted) { s.pc = 0x095DC; goto out; }
+	s.pc = 0x095DC; op_wrch(s, 0x21A00B8Cu);
+	if (s.halted) { s.pc = 0x095E0; goto out; }
+	s.pc = 0x095E0; op_rdch(s, 0x01A00C02u);
+	if (s.halted) { s.pc = 0x095E4; goto out; }
+	s.pc = 0x095E4; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x095E8) { if (s.can_chain(cw, 0x095E8) && --budget) goto L_3aa8d60c807d80bf; goto out; }
+	goto out;
+L_3aa8d60c807d80bf:
+	s.instructions += 2;
+	s.pc = 0x095E8; op_ai(s, 0x1C020102u);
+	s.pc = 0x095EC; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_392(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -735,23 +2477,32 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33];
 	s.pc = L.pc;
 }
-void spu_aotc_367(SPUThread& __restrict s) {
+void spu_aotc_393(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[13] = s.gpr[13]; L.gpr[20] = s.gpr[20]; L.gpr[25] = s.gpr[25]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[113] = s.gpr[113]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
+	switch (s.pc) {
 		case 0x097A8: goto L_a5b96e5dfc0c2e84;
 		case 0x097C4: goto L_8d63f142dc89b767;
 		case 0x09800: goto L_e340a7df09e08927;
+		case 0x09808: goto L_5cba8a58887abd4f;
+		case 0x09810: goto L_739d40ba6ed437b1;
 		case 0x09818: goto L_dec3691b4b6b0809;
+		case 0x0981C: goto L_bfeb933e2614f0ac;
+		case 0x09830: goto L_41cbe200671b015d;
+		case 0x09838: goto L_2dd4fbefeffd596e;
+		case 0x09860: goto L_32a4882bd633f0cb;
+		case 0x09880: goto L_bb7e58fe993940bb;
+		case 0x09890: goto L_7dfceff78cd6313d;
+		case 0x098BC: goto L_283d4ea1a8bde8f7;
+		case 0x098C8: goto L_792c61665e6b8986;
+		case 0x098F8: goto L_473df79e13f269c3;
 		case 0x0993C: goto L_b9361f22dd82184a;
 		case 0x09948: goto L_df5bf3bc7f2d28e2;
 		case 0x09958: goto L_845e372ad0fbc5eb;
 		case 0x09984: goto L_df3b5f35003a8b1c;
 		case 0x09990: goto L_f5f9c4f9846560b4;
 		case 0x099F0: goto L_0a10978c3a333899;
+		case 0x09FB0: goto L_558b80c0feb077e3;
 		case 0x0A158: goto L_f42c531b03966816;
 		case 0x0A168: goto L_af16d63c351ddfd1;
 		case 0x0A198: goto L_4beb9a34f4dd27d3;
@@ -759,219 +2510,59 @@ void spu_aotc_367(SPUThread& __restrict s) {
 	}
 L_a5b96e5dfc0c2e84:
 	s.instructions += 22;
-	L.pc = 0x097A8; op_ila(L, 0x427FFF82u);
-	L.pc = 0x097AC; op_nop(L, 0x1012F894u);
-	L.pc = 0x097B0; op_il(L, 0x40800409u);
-	L.pc = 0x097B4; op_lqd(L, 0x34000303u);
-	L.pc = 0x097B8; op_and_(L, 0x1820820Au);
-	L.pc = 0x097BC; op_and_(L, 0x18208285u);
-	L.pc = 0x097C0; op_rotqby(L, 0x3B818188u);
-	L.pc = 0x097C4; op_and_(L, 0x18220282u);
-	L.pc = 0x097C8; op_xsbh(L, 0x56C00384u);
-	L.pc = 0x097CC; op_ceqi(L, 0x7C000102u);
-	L.pc = 0x097D0; op_rothmi(L, 0x0FBC4203u);
-	L.pc = 0x097D4; op_nor(L, 0x09208102u);
-	L.pc = 0x097D8; op_a(L, 0x18020408u);
-	L.pc = 0x097DC; op_sfhi(L, 0x0D000102u);
-	L.pc = 0x097E0; op_xor_(L, 0x48228404u);
-	L.pc = 0x097E4; op_ceqh(L, 0x79008183u);
-	L.pc = 0x097E8; op_ai(L, 0x1CFFC489u);
-	L.pc = 0x097EC; op_fsm(L, 0x36800183u);
-	L.pc = 0x097F0; op_ah(L, 0x1901C387u);
-	L.pc = 0x097F4; op_nop(L, 0x00200000u);
-	L.pc = 0x097F8; op_selb(L, 0x81020203u);
-	L.pc = 0x097FC; op_brnz(L, 0x217FF909u);
-	if (L.pc == 0x097C4) { if (s.can_chain(cw, 0x097C4) && --budget) goto L_8d63f142dc89b767; goto out; }
-	if (L.pc == 0x09800) { if (s.can_chain(cw, 0x09800) && --budget) goto L_e340a7df09e08927; goto out; }
+	s.pc = 0x097A8; op_ila(s, 0x427FFF82u);
+	s.pc = 0x097AC; op_nop(s, 0x1012F894u);
+	s.pc = 0x097B0; op_il(s, 0x40800409u);
+	s.pc = 0x097B4; op_lqd(s, 0x34000303u);
+	s.pc = 0x097B8; op_and_(s, 0x1820820Au);
+	s.pc = 0x097BC; op_and_(s, 0x18208285u);
+	s.pc = 0x097C0; op_rotqby(s, 0x3B818188u);
+	s.pc = 0x097C4; op_and_(s, 0x18220282u);
+	s.pc = 0x097C8; op_xsbh(s, 0x56C00384u);
+	s.pc = 0x097CC; op_ceqi(s, 0x7C000102u);
+	s.pc = 0x097D0; op_rothmi(s, 0x0FBC4203u);
+	s.pc = 0x097D4; op_nor(s, 0x09208102u);
+	s.pc = 0x097D8; op_a(s, 0x18020408u);
+	s.pc = 0x097DC; op_sfhi(s, 0x0D000102u);
+	s.pc = 0x097E0; op_xor_(s, 0x48228404u);
+	s.pc = 0x097E4; op_ceqh(s, 0x79008183u);
+	s.pc = 0x097E8; op_ai(s, 0x1CFFC489u);
+	s.pc = 0x097EC; op_fsm(s, 0x36800183u);
+	s.pc = 0x097F0; op_ah(s, 0x1901C387u);
+	s.pc = 0x097F4; op_nop(s, 0x00200000u);
+	s.pc = 0x097F8; op_selb(s, 0x81020203u);
+	s.pc = 0x097FC; op_brnz(s, 0x217FF909u);
+	if (s.pc == 0x097C4) { if (s.can_chain(cw, 0x097C4) && --budget) goto L_8d63f142dc89b767; goto out; }
+	if (s.pc == 0x09800) { if (s.can_chain(cw, 0x09800) && --budget) goto L_e340a7df09e08927; goto out; }
 	goto out;
 L_8d63f142dc89b767:
 	s.instructions += 15;
-	L.pc = 0x097C4; op_and_(L, 0x18220282u);
-	L.pc = 0x097C8; op_xsbh(L, 0x56C00384u);
-	L.pc = 0x097CC; op_ceqi(L, 0x7C000102u);
-	L.pc = 0x097D0; op_rothmi(L, 0x0FBC4203u);
-	L.pc = 0x097D4; op_nor(L, 0x09208102u);
-	L.pc = 0x097D8; op_a(L, 0x18020408u);
-	L.pc = 0x097DC; op_sfhi(L, 0x0D000102u);
-	L.pc = 0x097E0; op_xor_(L, 0x48228404u);
-	L.pc = 0x097E4; op_ceqh(L, 0x79008183u);
-	L.pc = 0x097E8; op_ai(L, 0x1CFFC489u);
-	L.pc = 0x097EC; op_fsm(L, 0x36800183u);
-	L.pc = 0x097F0; op_ah(L, 0x1901C387u);
-	L.pc = 0x097F4; op_nop(L, 0x00200000u);
-	L.pc = 0x097F8; op_selb(L, 0x81020203u);
-	L.pc = 0x097FC; op_brnz(L, 0x217FF909u);
-	if (L.pc == 0x097C4) { if (s.can_chain(cw, 0x097C4) && --budget) goto L_8d63f142dc89b767; goto out; }
-	if (L.pc == 0x09800) { if (s.can_chain(cw, 0x09800) && --budget) goto L_e340a7df09e08927; goto out; }
+	s.pc = 0x097C4; op_and_(s, 0x18220282u);
+	s.pc = 0x097C8; op_xsbh(s, 0x56C00384u);
+	s.pc = 0x097CC; op_ceqi(s, 0x7C000102u);
+	s.pc = 0x097D0; op_rothmi(s, 0x0FBC4203u);
+	s.pc = 0x097D4; op_nor(s, 0x09208102u);
+	s.pc = 0x097D8; op_a(s, 0x18020408u);
+	s.pc = 0x097DC; op_sfhi(s, 0x0D000102u);
+	s.pc = 0x097E0; op_xor_(s, 0x48228404u);
+	s.pc = 0x097E4; op_ceqh(s, 0x79008183u);
+	s.pc = 0x097E8; op_ai(s, 0x1CFFC489u);
+	s.pc = 0x097EC; op_fsm(s, 0x36800183u);
+	s.pc = 0x097F0; op_ah(s, 0x1901C387u);
+	s.pc = 0x097F4; op_nop(s, 0x00200000u);
+	s.pc = 0x097F8; op_selb(s, 0x81020203u);
+	s.pc = 0x097FC; op_brnz(s, 0x217FF909u);
+	if (s.pc == 0x097C4) { if (s.can_chain(cw, 0x097C4) && --budget) goto L_8d63f142dc89b767; goto out; }
+	if (s.pc == 0x09800) { if (s.can_chain(cw, 0x09800) && --budget) goto L_e340a7df09e08927; goto out; }
 	goto out;
 L_e340a7df09e08927:
 	s.instructions += 5;
-	L.pc = 0x09800; op_lqd(L, 0x34000302u);
-	L.pc = 0x09804; op_cwd(L, 0x3EC00303u);
-	L.pc = 0x09808; op_shufb(L, 0xB0408403u);
-	L.pc = 0x0980C; op_stqd(L, 0x24000302u);
-	L.pc = 0x09810; op_bi(L, 0x35000000u);
+	s.pc = 0x09800; op_lqd(s, 0x34000302u);
+	s.pc = 0x09804; op_cwd(s, 0x3EC00303u);
+	s.pc = 0x09808; op_shufb(s, 0xB0408403u);
+	s.pc = 0x0980C; op_stqd(s, 0x24000302u);
+	s.pc = 0x09810; op_bi(s, 0x35000000u);
 	goto out;
-L_dec3691b4b6b0809:
-	s.instructions += 26;
-	L.pc = 0x09818; op_nop(L, 0x10132799u);
-	L.pc = 0x0981C; op_stqd(L, 0x24FF80D1u);
-	L.pc = 0x09820; op_ori(L, 0x040001D1u);
-	L.pc = 0x09824; op_stqd(L, 0x24004080u);
-	L.pc = 0x09828; op_il(L, 0x40800203u);
-	L.pc = 0x0982C; op_stqd(L, 0x24FFC0D0u);
-	L.pc = 0x09830; op_nop(L, 0x4020007Fu);
-	L.pc = 0x09834; op_stqd(L, 0x24FF40D2u);
-	L.pc = 0x09838; op_a(L, 0x1800E882u);
-	L.pc = 0x0983C; op_stqd(L, 0x24FF00D3u);
-	L.pc = 0x09840; op_nop(L, 0x4020007Fu);
-	L.pc = 0x09844; op_stqd(L, 0x24FE4081u);
-	L.pc = 0x09848; op_ai(L, 0x1CE40081u);
-	L.pc = 0x0984C; op_lqx(L, 0x3880E885u);
-	L.pc = 0x09850; op_ai(L, 0x1C034102u);
-	L.pc = 0x09854; op_nop(L, 0x00200000u);
-	L.pc = 0x09858; op_il(L, 0x40807F83u);
-	L.pc = 0x0985C; op_lqd(L, 0x34008084u);
-	L.pc = 0x09860; op_cwd(L, 0x3EC00086u);
-	L.pc = 0x09864; op_shufb(L, 0xB0810186u);
-	L.pc = 0x09868; op_rotqby(L, 0x3B808283u);
-	L.pc = 0x0986C; op_stqd(L, 0x24008084u);
-	L.pc = 0x09870; op_ceqbi(L, 0x7EEC0182u);
-	L.pc = 0x09874; op_xsbh(L, 0x56C00102u);
-	L.pc = 0x09878; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0987C; op_brhz(L, 0x22001802u);
-	if (L.pc == 0x0993C) { if (s.can_chain(cw, 0x0993C) && --budget) goto L_b9361f22dd82184a; goto out; }
-	goto out;
-L_b9361f22dd82184a:
-	s.instructions += 3;
-	L.pc = 0x0993C; op_ceqbi(L, 0x7EED0182u);
-	L.pc = 0x09940; op_xsbh(L, 0x56C00102u);
-	L.pc = 0x09944; op_brhz(L, 0x22001582u);
-	if (L.pc == 0x099F0) { if (s.can_chain(cw, 0x099F0) && --budget) goto L_0a10978c3a333899; goto out; }
-	if (L.pc == 0x09948) { if (s.can_chain(cw, 0x09948) && --budget) goto L_df5bf3bc7f2d28e2; goto out; }
-	goto out;
-L_df5bf3bc7f2d28e2:
-	s.instructions += 15;
-	L.pc = 0x09948; op_ori(L, 0x040028D0u);
-	L.pc = 0x0994C; op_nop(L, 0x1012F50Du);
-	L.pc = 0x09950; op_ai(L, 0x1C0268D3u);
-	L.pc = 0x09954; op_il(L, 0x40800252u);
-	L.pc = 0x09958; op_a(L, 0x1814A802u);
-	L.pc = 0x0995C; op_lqx(L, 0x3894A807u);
-	L.pc = 0x09960; op_ori(L, 0x04002883u);
-	L.pc = 0x09964; op_ai(L, 0x1C034102u);
-	L.pc = 0x09968; op_ai(L, 0x1C006850u);
-	L.pc = 0x0996C; op_il(L, 0x40802284u);
-	L.pc = 0x09970; op_il(L, 0x40804005u);
-	L.pc = 0x09974; op_nop(L, 0x00200000u);
-	L.pc = 0x09978; op_ai(L, 0x1C080086u);
-	L.pc = 0x0997C; op_rotqby(L, 0x3B808387u);
-	L.pc = 0x09980; op_brsl(L, 0x337FC500u);
-	if (L.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
-	goto out;
-L_845e372ad0fbc5eb:
-	s.instructions += 11;
-	L.pc = 0x09958; op_a(L, 0x1814A802u);
-	L.pc = 0x0995C; op_lqx(L, 0x3894A807u);
-	L.pc = 0x09960; op_ori(L, 0x04002883u);
-	L.pc = 0x09964; op_ai(L, 0x1C034102u);
-	L.pc = 0x09968; op_ai(L, 0x1C006850u);
-	L.pc = 0x0996C; op_il(L, 0x40802284u);
-	L.pc = 0x09970; op_il(L, 0x40804005u);
-	L.pc = 0x09974; op_nop(L, 0x00200000u);
-	L.pc = 0x09978; op_ai(L, 0x1C080086u);
-	L.pc = 0x0997C; op_rotqby(L, 0x3B808387u);
-	L.pc = 0x09980; op_brsl(L, 0x337FC500u);
-	if (L.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
-	goto out;
-L_df3b5f35003a8b1c:
-	s.instructions += 3;
-	L.pc = 0x09984; op_ceq(L, 0x78142982u);
-	L.pc = 0x09988; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0998C; op_brz(L, 0x207FF982u);
-	if (L.pc == 0x09958) { if (s.can_chain(cw, 0x09958) && --budget) goto L_845e372ad0fbc5eb; goto out; }
-	goto out;
-L_f5f9c4f9846560b4:
-	s.instructions += 12;
-	L.pc = 0x09990; op_il(L, 0x40800683u);
-	L.pc = 0x09994; op_nop(L, 0x00200000u);
-	L.pc = 0x09998; op_a(L, 0x1800E882u);
-	L.pc = 0x0999C; op_lqx(L, 0x3880E884u);
-	L.pc = 0x099A0; op_lqd(L, 0x34008083u);
-	L.pc = 0x099A4; op_ai(L, 0x1C034102u);
-	L.pc = 0x099A8; op_rotqby(L, 0x3B808202u);
-	L.pc = 0x099AC; op_andi(L, 0x143FC183u);
-	L.pc = 0x099B0; op_andi(L, 0x143FC102u);
-	L.pc = 0x099B4; op_ceq(L, 0x7800C102u);
-	L.pc = 0x099B8; op_nop(L, 0x4020007Fu);
-	L.pc = 0x099BC; op_brz(L, 0x20000682u);
-	if (L.pc == 0x099F0) { if (s.can_chain(cw, 0x099F0) && --budget) goto L_0a10978c3a333899; goto out; }
-	goto out;
-L_0a10978c3a333899:
-	s.instructions += 14;
-	L.pc = 0x099F0; op_il(L, 0x40800706u);
-	L.pc = 0x099F4; op_fsmbi(L, 0x32800004u);
-	L.pc = 0x099F8; op_il(L, 0x40800003u);
-	L.pc = 0x099FC; op_lqx(L, 0x3881A882u);
-	L.pc = 0x09A00; op_cbx(L, 0x3A81A885u);
-	L.pc = 0x09A04; op_shufb(L, 0xB0408205u);
-	L.pc = 0x09A08; op_stqx(L, 0x2881A882u);
-	L.pc = 0x09A0C; op_ai(L, 0x1C1C0081u);
-	L.pc = 0x09A10; op_lqd(L, 0x34FFC0D0u);
-	L.pc = 0x09A14; op_lqd(L, 0x34FF80D1u);
-	L.pc = 0x09A18; op_lqd(L, 0x34FF40D2u);
-	L.pc = 0x09A1C; op_lqd(L, 0x34FF00D3u);
-	L.pc = 0x09A20; op_lqd(L, 0x34004080u);
-	L.pc = 0x09A24; op_bi(L, 0x35000000u);
-	goto out;
-L_f42c531b03966816:
-	s.instructions += 4;
-	L.pc = 0x0A158; op_il(L, 0x40800404u);
-	L.pc = 0x0A15C; op_shlqbyi(L, 0x3FE02983u);
-	L.pc = 0x0A160; op_ai(L, 0x1C006952u);
-	L.pc = 0x0A164; op_brsl(L, 0x3376EF80u);
-	goto out;
-L_af16d63c351ddfd1:
-	s.instructions += 12;
-	L.pc = 0x0A168; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0A16C; op_nop(L, 0x10142B0Au);
-	L.pc = 0x0A170; op_ceqi(L, 0x7C02A902u);
-	L.pc = 0x0A174; op_lqx(L, 0x38946804u);
-	L.pc = 0x0A178; op_cbx(L, 0x3A946805u);
-	L.pc = 0x0A17C; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0A180; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0A184; op_shufb(L, 0xB0810185u);
-	L.pc = 0x0A188; op_stqx(L, 0x28946804u);
-	L.pc = 0x0A18C; op_ai(L, 0x1C006850u);
-	L.pc = 0x0A190; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0A194; op_brz(L, 0x207FF882u);
-	if (L.pc == 0x0A158) { if (s.can_chain(cw, 0x0A158) && --budget) goto L_f42c531b03966816; goto out; }
-	if (L.pc == 0x0A198) { if (s.can_chain(cw, 0x0A198) && --budget) goto L_4beb9a34f4dd27d3; goto out; }
-	goto out;
-L_4beb9a34f4dd27d3:
-	s.instructions += 2;
-	L.pc = 0x0A198; op_ori(L, 0x04002A03u);
-	L.pc = 0x0A19C; op_brsl(L, 0x337ECF80u);
-	if (L.pc == 0x09818) { if (s.can_chain(cw, 0x09818) && --budget) goto L_dec3691b4b6b0809; goto out; }
-	goto out;
-out:
-	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83];
-	s.pc = L.pc;
-}
-void spu_aotc_368(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x09808: goto L_5cba8a58887abd4f;
-		case 0x09810: goto L_739d40ba6ed437b1;
-		case 0x0981C: goto L_bfeb933e2614f0ac;
-		case 0x09830: goto L_41cbe200671b015d;
-		case 0x09838: goto L_2dd4fbefeffd596e;
-		case 0x09860: goto L_32a4882bd633f0cb;
-		case 0x098F8: goto L_473df79e13f269c3;
-		case 0x09FB0: goto L_558b80c0feb077e3;
-		default: goto out;
-	}
 L_5cba8a58887abd4f:
 	s.instructions += 2;
 	s.pc = 0x09808; op_xsbh(s, 0x56C00402u);
@@ -985,6 +2576,37 @@ L_739d40ba6ed437b1:
 	s.pc = 0x09814; op_xsbh(s, 0x56C00102u);
 	s.pc = 0x09818; op_brhz(s, 0x2200F302u);
 	if (s.pc == 0x0981C) { if (s.can_chain(cw, 0x0981C) && --budget) goto L_bfeb933e2614f0ac; goto out; }
+	goto out;
+L_dec3691b4b6b0809:
+	s.instructions += 26;
+	s.pc = 0x09818; op_nop(s, 0x10132799u);
+	s.pc = 0x0981C; op_stqd(s, 0x24FF80D1u);
+	s.pc = 0x09820; op_ori(s, 0x040001D1u);
+	s.pc = 0x09824; op_stqd(s, 0x24004080u);
+	s.pc = 0x09828; op_il(s, 0x40800203u);
+	s.pc = 0x0982C; op_stqd(s, 0x24FFC0D0u);
+	s.pc = 0x09830; op_nop(s, 0x4020007Fu);
+	s.pc = 0x09834; op_stqd(s, 0x24FF40D2u);
+	s.pc = 0x09838; op_a(s, 0x1800E882u);
+	s.pc = 0x0983C; op_stqd(s, 0x24FF00D3u);
+	s.pc = 0x09840; op_nop(s, 0x4020007Fu);
+	s.pc = 0x09844; op_stqd(s, 0x24FE4081u);
+	s.pc = 0x09848; op_ai(s, 0x1CE40081u);
+	s.pc = 0x0984C; op_lqx(s, 0x3880E885u);
+	s.pc = 0x09850; op_ai(s, 0x1C034102u);
+	s.pc = 0x09854; op_nop(s, 0x00200000u);
+	s.pc = 0x09858; op_il(s, 0x40807F83u);
+	s.pc = 0x0985C; op_lqd(s, 0x34008084u);
+	s.pc = 0x09860; op_cwd(s, 0x3EC00086u);
+	s.pc = 0x09864; op_shufb(s, 0xB0810186u);
+	s.pc = 0x09868; op_rotqby(s, 0x3B808283u);
+	s.pc = 0x0986C; op_stqd(s, 0x24008084u);
+	s.pc = 0x09870; op_ceqbi(s, 0x7EEC0182u);
+	s.pc = 0x09874; op_xsbh(s, 0x56C00102u);
+	s.pc = 0x09878; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0987C; op_brhz(s, 0x22001802u);
+	if (s.pc == 0x0993C) { if (s.can_chain(cw, 0x0993C) && --budget) goto L_b9361f22dd82184a; goto out; }
+	if (s.pc == 0x09880) { if (s.can_chain(cw, 0x09880) && --budget) goto L_bb7e58fe993940bb; goto out; }
 	goto out;
 L_bfeb933e2614f0ac:
 	s.instructions += 17;
@@ -1061,6 +2683,64 @@ L_32a4882bd633f0cb:
 	s.pc = 0x098A0; op_ila(s, 0x424C5402u);
 	s.pc = 0x098A4; op_bi(s, 0x35080100u);
 	goto out;
+L_bb7e58fe993940bb:
+	s.instructions += 15;
+	s.pc = 0x09880; op_ori(s, 0x040028D0u);
+	s.pc = 0x09884; op_nop(s, 0x1012F50Du);
+	s.pc = 0x09888; op_ai(s, 0x1C01E8D3u);
+	s.pc = 0x0988C; op_il(s, 0x40800252u);
+	s.pc = 0x09890; op_a(s, 0x1814A802u);
+	s.pc = 0x09894; op_lqx(s, 0x3894A807u);
+	s.pc = 0x09898; op_ori(s, 0x04002883u);
+	s.pc = 0x0989C; op_ai(s, 0x1C034102u);
+	s.pc = 0x098A0; op_ai(s, 0x1C006850u);
+	s.pc = 0x098A4; op_il(s, 0x40802284u);
+	s.pc = 0x098A8; op_il(s, 0x40804005u);
+	s.pc = 0x098AC; op_nop(s, 0x00200000u);
+	s.pc = 0x098B0; op_ai(s, 0x1C080086u);
+	s.pc = 0x098B4; op_rotqby(s, 0x3B808387u);
+	s.pc = 0x098B8; op_brsl(s, 0x337FDE00u);
+	if (s.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
+	goto out;
+L_7dfceff78cd6313d:
+	s.instructions += 11;
+	s.pc = 0x09890; op_a(s, 0x1814A802u);
+	s.pc = 0x09894; op_lqx(s, 0x3894A807u);
+	s.pc = 0x09898; op_ori(s, 0x04002883u);
+	s.pc = 0x0989C; op_ai(s, 0x1C034102u);
+	s.pc = 0x098A0; op_ai(s, 0x1C006850u);
+	s.pc = 0x098A4; op_il(s, 0x40802284u);
+	s.pc = 0x098A8; op_il(s, 0x40804005u);
+	s.pc = 0x098AC; op_nop(s, 0x00200000u);
+	s.pc = 0x098B0; op_ai(s, 0x1C080086u);
+	s.pc = 0x098B4; op_rotqby(s, 0x3B808387u);
+	s.pc = 0x098B8; op_brsl(s, 0x337FDE00u);
+	if (s.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
+	goto out;
+L_283d4ea1a8bde8f7:
+	s.instructions += 3;
+	s.pc = 0x098BC; op_ceq(s, 0x78142982u);
+	s.pc = 0x098C0; op_nop(s, 0x4020007Fu);
+	s.pc = 0x098C4; op_brz(s, 0x207FF982u);
+	if (s.pc == 0x098C8) { if (s.can_chain(cw, 0x098C8) && --budget) goto L_792c61665e6b8986; goto out; }
+	goto out;
+L_792c61665e6b8986:
+	s.instructions += 12;
+	s.pc = 0x098C8; op_il(s, 0x40800583u);
+	s.pc = 0x098CC; op_nop(s, 0x10133E0Au);
+	s.pc = 0x098D0; op_a(s, 0x1800E882u);
+	s.pc = 0x098D4; op_lqx(s, 0x3880E884u);
+	s.pc = 0x098D8; op_lqd(s, 0x34008083u);
+	s.pc = 0x098DC; op_ai(s, 0x1C034102u);
+	s.pc = 0x098E0; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x098E4; op_andi(s, 0x143FC183u);
+	s.pc = 0x098E8; op_andi(s, 0x143FC102u);
+	s.pc = 0x098EC; op_ceq(s, 0x7800C102u);
+	s.pc = 0x098F0; op_nop(s, 0x4020007Fu);
+	s.pc = 0x098F4; op_brz(s, 0x20001F82u);
+	if (s.pc == 0x099F0) { if (s.can_chain(cw, 0x099F0) && --budget) goto L_0a10978c3a333899; goto out; }
+	if (s.pc == 0x098F8) { if (s.can_chain(cw, 0x098F8) && --budget) goto L_473df79e13f269c3; goto out; }
+	goto out;
 L_473df79e13f269c3:
 	s.instructions += 18;
 	s.pc = 0x098F8; op_il(s, 0x40806002u);
@@ -1083,6 +2763,88 @@ L_473df79e13f269c3:
 	s.pc = 0x09938; op_nop(s, 0x4020007Fu);
 	s.pc = 0x0993C; op_bi(s, 0x35000000u);
 	goto out;
+L_b9361f22dd82184a:
+	s.instructions += 3;
+	s.pc = 0x0993C; op_ceqbi(s, 0x7EED0182u);
+	s.pc = 0x09940; op_xsbh(s, 0x56C00102u);
+	s.pc = 0x09944; op_brhz(s, 0x22001582u);
+	if (s.pc == 0x099F0) { if (s.can_chain(cw, 0x099F0) && --budget) goto L_0a10978c3a333899; goto out; }
+	if (s.pc == 0x09948) { if (s.can_chain(cw, 0x09948) && --budget) goto L_df5bf3bc7f2d28e2; goto out; }
+	goto out;
+L_df5bf3bc7f2d28e2:
+	s.instructions += 15;
+	s.pc = 0x09948; op_ori(s, 0x040028D0u);
+	s.pc = 0x0994C; op_nop(s, 0x1012F50Du);
+	s.pc = 0x09950; op_ai(s, 0x1C0268D3u);
+	s.pc = 0x09954; op_il(s, 0x40800252u);
+	s.pc = 0x09958; op_a(s, 0x1814A802u);
+	s.pc = 0x0995C; op_lqx(s, 0x3894A807u);
+	s.pc = 0x09960; op_ori(s, 0x04002883u);
+	s.pc = 0x09964; op_ai(s, 0x1C034102u);
+	s.pc = 0x09968; op_ai(s, 0x1C006850u);
+	s.pc = 0x0996C; op_il(s, 0x40802284u);
+	s.pc = 0x09970; op_il(s, 0x40804005u);
+	s.pc = 0x09974; op_nop(s, 0x00200000u);
+	s.pc = 0x09978; op_ai(s, 0x1C080086u);
+	s.pc = 0x0997C; op_rotqby(s, 0x3B808387u);
+	s.pc = 0x09980; op_brsl(s, 0x337FC500u);
+	if (s.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
+	goto out;
+L_845e372ad0fbc5eb:
+	s.instructions += 11;
+	s.pc = 0x09958; op_a(s, 0x1814A802u);
+	s.pc = 0x0995C; op_lqx(s, 0x3894A807u);
+	s.pc = 0x09960; op_ori(s, 0x04002883u);
+	s.pc = 0x09964; op_ai(s, 0x1C034102u);
+	s.pc = 0x09968; op_ai(s, 0x1C006850u);
+	s.pc = 0x0996C; op_il(s, 0x40802284u);
+	s.pc = 0x09970; op_il(s, 0x40804005u);
+	s.pc = 0x09974; op_nop(s, 0x00200000u);
+	s.pc = 0x09978; op_ai(s, 0x1C080086u);
+	s.pc = 0x0997C; op_rotqby(s, 0x3B808387u);
+	s.pc = 0x09980; op_brsl(s, 0x337FC500u);
+	if (s.pc == 0x097A8) { if (s.can_chain(cw, 0x097A8) && --budget) goto L_a5b96e5dfc0c2e84; goto out; }
+	goto out;
+L_df3b5f35003a8b1c:
+	s.instructions += 3;
+	s.pc = 0x09984; op_ceq(s, 0x78142982u);
+	s.pc = 0x09988; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0998C; op_brz(s, 0x207FF982u);
+	if (s.pc == 0x09958) { if (s.can_chain(cw, 0x09958) && --budget) goto L_845e372ad0fbc5eb; goto out; }
+	goto out;
+L_f5f9c4f9846560b4:
+	s.instructions += 12;
+	s.pc = 0x09990; op_il(s, 0x40800683u);
+	s.pc = 0x09994; op_nop(s, 0x00200000u);
+	s.pc = 0x09998; op_a(s, 0x1800E882u);
+	s.pc = 0x0999C; op_lqx(s, 0x3880E884u);
+	s.pc = 0x099A0; op_lqd(s, 0x34008083u);
+	s.pc = 0x099A4; op_ai(s, 0x1C034102u);
+	s.pc = 0x099A8; op_rotqby(s, 0x3B808202u);
+	s.pc = 0x099AC; op_andi(s, 0x143FC183u);
+	s.pc = 0x099B0; op_andi(s, 0x143FC102u);
+	s.pc = 0x099B4; op_ceq(s, 0x7800C102u);
+	s.pc = 0x099B8; op_nop(s, 0x4020007Fu);
+	s.pc = 0x099BC; op_brz(s, 0x20000682u);
+	if (s.pc == 0x099F0) { if (s.can_chain(cw, 0x099F0) && --budget) goto L_0a10978c3a333899; goto out; }
+	goto out;
+L_0a10978c3a333899:
+	s.instructions += 14;
+	s.pc = 0x099F0; op_il(s, 0x40800706u);
+	s.pc = 0x099F4; op_fsmbi(s, 0x32800004u);
+	s.pc = 0x099F8; op_il(s, 0x40800003u);
+	s.pc = 0x099FC; op_lqx(s, 0x3881A882u);
+	s.pc = 0x09A00; op_cbx(s, 0x3A81A885u);
+	s.pc = 0x09A04; op_shufb(s, 0xB0408205u);
+	s.pc = 0x09A08; op_stqx(s, 0x2881A882u);
+	s.pc = 0x09A0C; op_ai(s, 0x1C1C0081u);
+	s.pc = 0x09A10; op_lqd(s, 0x34FFC0D0u);
+	s.pc = 0x09A14; op_lqd(s, 0x34FF80D1u);
+	s.pc = 0x09A18; op_lqd(s, 0x34FF40D2u);
+	s.pc = 0x09A1C; op_lqd(s, 0x34FF00D3u);
+	s.pc = 0x09A20; op_lqd(s, 0x34004080u);
+	s.pc = 0x09A24; op_bi(s, 0x35000000u);
+	goto out;
 L_558b80c0feb077e3:
 	s.instructions += 4;
 	s.pc = 0x09FB0; op_ai(s, 0x1C0D2902u);
@@ -1091,117 +2853,40 @@ L_558b80c0feb077e3:
 	s.pc = 0x09FBC; op_br(s, 0x327F0E80u);
 	if (s.pc == 0x09830) { if (s.can_chain(cw, 0x09830) && --budget) goto L_41cbe200671b015d; goto out; }
 	goto out;
+L_f42c531b03966816:
+	s.instructions += 4;
+	s.pc = 0x0A158; op_il(s, 0x40800404u);
+	s.pc = 0x0A15C; op_shlqbyi(s, 0x3FE02983u);
+	s.pc = 0x0A160; op_ai(s, 0x1C006952u);
+	s.pc = 0x0A164; op_brsl(s, 0x3376EF80u);
+	goto out;
+L_af16d63c351ddfd1:
+	s.instructions += 12;
+	s.pc = 0x0A168; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0A16C; op_nop(s, 0x10142B0Au);
+	s.pc = 0x0A170; op_ceqi(s, 0x7C02A902u);
+	s.pc = 0x0A174; op_lqx(s, 0x38946804u);
+	s.pc = 0x0A178; op_cbx(s, 0x3A946805u);
+	s.pc = 0x0A17C; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0A180; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0A184; op_shufb(s, 0xB0810185u);
+	s.pc = 0x0A188; op_stqx(s, 0x28946804u);
+	s.pc = 0x0A18C; op_ai(s, 0x1C006850u);
+	s.pc = 0x0A190; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0A194; op_brz(s, 0x207FF882u);
+	if (s.pc == 0x0A158) { if (s.can_chain(cw, 0x0A158) && --budget) goto L_f42c531b03966816; goto out; }
+	if (s.pc == 0x0A198) { if (s.can_chain(cw, 0x0A198) && --budget) goto L_4beb9a34f4dd27d3; goto out; }
+	goto out;
+L_4beb9a34f4dd27d3:
+	s.instructions += 2;
+	s.pc = 0x0A198; op_ori(s, 0x04002A03u);
+	s.pc = 0x0A19C; op_brsl(s, 0x337ECF80u);
+	if (s.pc == 0x09818) { if (s.can_chain(cw, 0x09818) && --budget) goto L_dec3691b4b6b0809; goto out; }
+	goto out;
 out:
 	return;
 }
-void spu_aotc_369(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[125] = s.gpr[125]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
-		case 0x09890: goto L_33d5ee88f33d5443;
-		case 0x09F10: goto L_7b0d18488f998ed4;
-		case 0x09F38: goto L_d285842f4f0131da;
-		default: goto out;
-	}
-L_33d5ee88f33d5443:
-	s.instructions += 64;
-	L.pc = 0x09890; op_il(L, 0x40804A0Fu);
-	L.pc = 0x09894; op_lqd(L, 0x3400018Eu);
-	L.pc = 0x09898; op_il(L, 0x40800E08u);
-	L.pc = 0x0989C; op_lqd(L, 0x341F4182u);
-	L.pc = 0x098A0; op_il(L, 0x4080040Au);
-	L.pc = 0x098A4; op_stqd(L, 0x24FE00D7u);
-	L.pc = 0x098A8; op_ori(L, 0x04000257u);
-	L.pc = 0x098AC; op_stqd(L, 0x24FF80D1u);
-	L.pc = 0x098B0; op_ori(L, 0x0400030Cu);
-	L.pc = 0x098B4; op_stqd(L, 0x24FF40D2u);
-	L.pc = 0x098B8; op_ori(L, 0x040001D1u);
-	L.pc = 0x098BC; op_shlqbyi(L, 0x3FE002D2u);
-	L.pc = 0x098C0; op_il(L, 0x40800210u);
-	L.pc = 0x098C4; op_lqx(L, 0x3883C70Bu);
-	L.pc = 0x098C8; op_a(L, 0x18020103u);
-	L.pc = 0x098CC; op_lqx(L, 0x38820104u);
-	L.pc = 0x098D0; op_a(L, 0x18028109u);
-	L.pc = 0x098D4; op_lqd(L, 0x34000105u);
-	L.pc = 0x098D8; op_ai(L, 0x1C038183u);
-	L.pc = 0x098DC; op_lqx(L, 0x38828106u);
-	L.pc = 0x098E0; op_ori(L, 0x0400038Du);
-	L.pc = 0x098E4; op_stqd(L, 0x24FF00D3u);
-	L.pc = 0x098E8; op_stqd(L, 0x24FE40D6u);
-	L.pc = 0x098EC; op_rotqby(L, 0x3B83C582u);
-	L.pc = 0x098F0; op_nop(L, 0x4020007Fu);
-	L.pc = 0x098F4; op_rotqby(L, 0x3B80C204u);
-	L.pc = 0x098F8; op_ori(L, 0x04000288u);
-	L.pc = 0x098FC; op_stqd(L, 0x24004080u);
-	L.pc = 0x09900; op_nop(L, 0x4020007Fu);
-	L.pc = 0x09904; op_rotqby(L, 0x3B824306u);
-	L.pc = 0x09908; op_a(L, 0x18040103u);
-	L.pc = 0x0990C; op_lqx(L, 0x38840102u);
-	L.pc = 0x09910; op_stqd(L, 0x24FFC0D0u);
-	L.pc = 0x09914; op_stqd(L, 0x24FEC0D4u);
-	L.pc = 0x09918; op_stqd(L, 0x24FE80D5u);
-	L.pc = 0x0991C; op_stqd(L, 0x24FD0081u);
-	L.pc = 0x09920; op_ai(L, 0x1CD00081u);
-	L.pc = 0x09924; op_rotqby(L, 0x3B80C102u);
-	L.pc = 0x09928; op_il(L, 0x4081FF83u);
-	L.pc = 0x0992C; op_sfh(L, 0x09008202u);
-	L.pc = 0x09930; op_cgth(L, 0x4900C103u);
-	L.pc = 0x09934; op_sfh(L, 0x09008285u);
-	L.pc = 0x09938; op_ceqhi(L, 0x7D000183u);
-	L.pc = 0x0993C; op_cgthi(L, 0x4DFFC104u);
-	L.pc = 0x09940; op_selb(L, 0x80A08283u);
-	L.pc = 0x09944; op_ah(L, 0x19020103u);
-	L.pc = 0x09948; op_ceqhi(L, 0x7D000202u);
-	L.pc = 0x0994C; op_selb(L, 0x8040C282u);
-	L.pc = 0x09950; op_xshw(L, 0x55C00102u);
-	L.pc = 0x09954; op_a(L, 0x18008103u);
-	L.pc = 0x09958; op_a(L, 0x18008183u);
-	L.pc = 0x0995C; op_shli(L, 0x0F610183u);
-	L.pc = 0x09960; op_lqx(L, 0x38818182u);
-	L.pc = 0x09964; op_rotqbyi(L, 0x3F828102u);
-	L.pc = 0x09968; op_andi(L, 0x143FC153u);
-	L.pc = 0x0996C; op_ila(L, 0x427FFF82u);
-	L.pc = 0x09970; op_and_(L, 0x1820A9D6u);
-	L.pc = 0x09974; op_ceqhi(L, 0x7D002982u);
-	L.pc = 0x09978; op_cgti(L, 0x4C082B03u);
-	L.pc = 0x0997C; op_xshw(L, 0x55C00102u);
-	L.pc = 0x09980; op_ori(L, 0x04000184u);
-	L.pc = 0x09984; op_ori(L, 0x04000103u);
-	L.pc = 0x09988; op_or_(L, 0x08210182u);
-	L.pc = 0x0998C; op_brhz(L, 0x2200B082u);
-	if (L.pc == 0x09F10) { if (s.can_chain(cw, 0x09F10) && --budget) goto L_7b0d18488f998ed4; goto out; }
-	goto out;
-L_7b0d18488f998ed4:
-	s.instructions += 10;
-	L.pc = 0x09F10; op_ai(L, 0x1CFFEB02u);
-	L.pc = 0x09F14; op_nop(L, 0x1013320Eu);
-	L.pc = 0x09F18; op_ilhu(L, 0x411F598Fu);
-	L.pc = 0x09F1C; op_rotmai(L, 0x0F5F4103u);
-	L.pc = 0x09F20; op_ilhu(L, 0x411FA60Au);
-	L.pc = 0x09F24; op_iohl(L, 0x6099998Fu);
-	L.pc = 0x09F28; op_iohl(L, 0x60E6660Au);
-	L.pc = 0x09F2C; op_ai(L, 0x1C004183u);
-	L.pc = 0x09F30; op_ceqi(L, 0x7C00C182u);
-	L.pc = 0x09F34; op_brnz(L, 0x217F4D82u);
-	if (L.pc == 0x09F38) { if (s.can_chain(cw, 0x09F38) && --budget) goto L_d285842f4f0131da; goto out; }
-	goto out;
-L_d285842f4f0131da:
-	s.instructions += 6;
-	L.pc = 0x09F38; op_ilhu(L, 0x411F260Fu);
-	L.pc = 0x09F3C; op_ilhu(L, 0x411FB30Au);
-	L.pc = 0x09F40; op_ceqi(L, 0x7C010182u);
-	L.pc = 0x09F44; op_iohl(L, 0x60E6660Fu);
-	L.pc = 0x09F48; op_iohl(L, 0x60B3330Au);
-	L.pc = 0x09F4C; op_brz(L, 0x207F4882u);
-	goto out;
-out:
-	s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
-	s.pc = L.pc;
-}
-void spu_aotc_370(SPUThread& __restrict s) {
+void spu_aotc_394(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -1230,7 +2915,7 @@ L_911505a2c90f99a8:
 out:
 	return;
 }
-void spu_aotc_371(SPUThread& __restrict s) {
+void spu_aotc_395(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -1265,16 +2950,21 @@ L_fa0538c59ecc05c3:
 out:
 	return;
 }
-void spu_aotc_372(SPUThread& __restrict s) {
+void spu_aotc_396(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[84] = s.gpr[84]; L.gpr[87] = s.gpr[87]; L.gpr[127] = s.gpr[127];
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[84] = s.gpr[84]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[125] = s.gpr[125]; L.gpr[127] = s.gpr[127];
 	L.pc = s.pc;
 	switch (L.pc) {
 		case 0x09990: goto L_43f98cf8da444957;
+		case 0x099A0: goto L_2d31f0fa18254fcd;
 		case 0x09A48: goto L_86d095a24a41955e;
 		case 0x09A60: goto L_39c4f9048c120a9c;
+		case 0x09C54: goto L_d31de7be92bf50c6;
+		case 0x09F10: goto L_7b0d18488f998ed4;
+		case 0x09F38: goto L_d285842f4f0131da;
+		case 0x09F50: goto L_5a83df2e3a6e9719;
 		default: goto out;
 	}
 L_43f98cf8da444957:
@@ -1325,6 +3015,54 @@ L_43f98cf8da444957:
 	L.pc = 0x09A3C; op_nop(L, 0x00200000u);
 	L.pc = 0x09A40; op_selb(L, 0x8142C503u);
 	L.pc = 0x09A44; op_brnz(L, 0x21004206u);
+	if (L.pc == 0x09C54) { if (s.can_chain(cw, 0x09C54) && --budget) goto L_d31de7be92bf50c6; goto out; }
+	if (L.pc == 0x09A48) { if (s.can_chain(cw, 0x09A48) && --budget) goto L_86d095a24a41955e; goto out; }
+	goto out;
+L_2d31f0fa18254fcd:
+	s.instructions += 42;
+	L.pc = 0x099A0; op_il(L, 0x40801203u);
+	L.pc = 0x099A4; op_lqd(L, 0x34008702u);
+	L.pc = 0x099A8; op_il(L, 0x40804207u);
+	L.pc = 0x099AC; op_nop(L, 0x00200000u);
+	L.pc = 0x099B0; op_ai(L, 0x1C038186u);
+	L.pc = 0x099B4; op_lqx(L, 0x3880C705u);
+	L.pc = 0x099B8; op_a(L, 0x1814A903u);
+	L.pc = 0x099BC; op_lqx(L, 0x3881C708u);
+	L.pc = 0x099C0; op_a(L, 0x18148183u);
+	L.pc = 0x099C4; op_rotqbyi(L, 0x3F834109u);
+	L.pc = 0x099C8; op_ilhu(L, 0x411FC002u);
+	L.pc = 0x099CC; op_nop(L, 0x00200000u);
+	L.pc = 0x099D0; op_shli(L, 0x0F608183u);
+	L.pc = 0x099D4; op_rotqby(L, 0x3B818285u);
+	L.pc = 0x099D8; op_fa(L, 0x5880850Bu);
+	L.pc = 0x099DC; op_rotqby(L, 0x3B81C407u);
+	L.pc = 0x099E0; op_ila(L, 0x427FFF82u);
+	L.pc = 0x099E4; op_ceqbi(L, 0x7E00C484u);
+	L.pc = 0x099E8; op_and_(L, 0x18208285u);
+	L.pc = 0x099EC; op_a(L, 0x18148183u);
+	L.pc = 0x099F0; op_a(L, 0x18014282u);
+	L.pc = 0x099F4; op_shli(L, 0x0F6101D4u);
+	L.pc = 0x099F8; op_a(L, 0x18014102u);
+	L.pc = 0x099FC; op_xsbh(L, 0x56C00204u);
+	L.pc = 0x09A00; op_shli(L, 0x0F608102u);
+	L.pc = 0x09A04; op_a(L, 0x18150383u);
+	L.pc = 0x09A08; op_ceqhi(L, 0x7D000204u);
+	L.pc = 0x09A0C; op_lqd(L, 0x34018186u);
+	L.pc = 0x09A10; op_a(L, 0x18014102u);
+	L.pc = 0x09A14; op_ilhu(L, 0x411EE603u);
+	L.pc = 0x09A18; op_shli(L, 0x0F610102u);
+	L.pc = 0x09A1C; op_iohl(L, 0x60E66603u);
+	L.pc = 0x09A20; op_fsm(L, 0x36800204u);
+	L.pc = 0x09A24; op_ceqi(L, 0x7C01C306u);
+	L.pc = 0x09A28; op_a(L, 0x1801C102u);
+	L.pc = 0x09A2C; op_selb(L, 0x81E3C184u);
+	L.pc = 0x09A30; op_lqd(L, 0x34018103u);
+	L.pc = 0x09A34; op_cgti(L, 0x4C00C183u);
+	L.pc = 0x09A38; op_ceqi(L, 0x7C000183u);
+	L.pc = 0x09A3C; op_nop(L, 0x00200000u);
+	L.pc = 0x09A40; op_selb(L, 0x8142C503u);
+	L.pc = 0x09A44; op_brnz(L, 0x21004206u);
+	if (L.pc == 0x09C54) { if (s.can_chain(cw, 0x09C54) && --budget) goto L_d31de7be92bf50c6; goto out; }
 	if (L.pc == 0x09A48) { if (s.can_chain(cw, 0x09A48) && --budget) goto L_86d095a24a41955e; goto out; }
 	goto out;
 L_86d095a24a41955e:
@@ -1335,6 +3073,7 @@ L_86d095a24a41955e:
 	L.pc = 0x09A54; op_iohl(L, 0x60E6660Bu);
 	L.pc = 0x09A58; op_nop(L, 0x4020007Fu);
 	L.pc = 0x09A5C; op_brhz(L, 0x22003F02u);
+	if (L.pc == 0x09C54) { if (s.can_chain(cw, 0x09C54) && --budget) goto L_d31de7be92bf50c6; goto out; }
 	if (L.pc == 0x09A60) { if (s.can_chain(cw, 0x09A60) && --budget) goto L_39c4f9048c120a9c; goto out; }
 	goto out;
 L_39c4f9048c120a9c:
@@ -1352,11 +3091,47 @@ L_39c4f9048c120a9c:
 	L.pc = 0x09A88; op_rotqby(L, 0x3B80C103u);
 	L.pc = 0x09A8C; op_brsl(L, 0x33783B80u);
 	goto out;
+L_d31de7be92bf50c6:
+	s.instructions += 2;
+	L.pc = 0x09C54; op_ilhu(L, 0x411FC00Bu);
+	L.pc = 0x09C58; op_br(L, 0x327FC100u);
+	if (L.pc == 0x09A60) { if (s.can_chain(cw, 0x09A60) && --budget) goto L_39c4f9048c120a9c; goto out; }
+	goto out;
+L_7b0d18488f998ed4:
+	s.instructions += 10;
+	L.pc = 0x09F10; op_ai(L, 0x1CFFEB02u);
+	L.pc = 0x09F14; op_nop(L, 0x1013320Eu);
+	L.pc = 0x09F18; op_ilhu(L, 0x411F598Fu);
+	L.pc = 0x09F1C; op_rotmai(L, 0x0F5F4103u);
+	L.pc = 0x09F20; op_ilhu(L, 0x411FA60Au);
+	L.pc = 0x09F24; op_iohl(L, 0x6099998Fu);
+	L.pc = 0x09F28; op_iohl(L, 0x60E6660Au);
+	L.pc = 0x09F2C; op_ai(L, 0x1C004183u);
+	L.pc = 0x09F30; op_ceqi(L, 0x7C00C182u);
+	L.pc = 0x09F34; op_brnz(L, 0x217F4D82u);
+	if (L.pc == 0x099A0) { if (s.can_chain(cw, 0x099A0) && --budget) goto L_2d31f0fa18254fcd; goto out; }
+	if (L.pc == 0x09F38) { if (s.can_chain(cw, 0x09F38) && --budget) goto L_d285842f4f0131da; goto out; }
+	goto out;
+L_d285842f4f0131da:
+	s.instructions += 6;
+	L.pc = 0x09F38; op_ilhu(L, 0x411F260Fu);
+	L.pc = 0x09F3C; op_ilhu(L, 0x411FB30Au);
+	L.pc = 0x09F40; op_ceqi(L, 0x7C010182u);
+	L.pc = 0x09F44; op_iohl(L, 0x60E6660Fu);
+	L.pc = 0x09F48; op_iohl(L, 0x60B3330Au);
+	L.pc = 0x09F4C; op_brz(L, 0x207F4882u);
+	if (L.pc == 0x09F50) { if (s.can_chain(cw, 0x09F50) && --budget) goto L_5a83df2e3a6e9719; goto out; }
+	goto out;
+L_5a83df2e3a6e9719:
+	s.instructions += 1;
+	L.pc = 0x09F50; op_br(L, 0x327F4A00u);
+	if (L.pc == 0x099A0) { if (s.can_chain(cw, 0x099A0) && --budget) goto L_2d31f0fa18254fcd; goto out; }
+	goto out;
 out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[15] = L.gpr[15]; s.gpr[84] = L.gpr[84];
 	s.pc = L.pc;
 }
-void spu_aotc_373(SPUThread& __restrict s) {
+void spu_aotc_397(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -1577,7 +3352,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
 	s.pc = L.pc;
 }
-void spu_aotc_374(SPUThread& __restrict s) {
+void spu_aotc_398(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -1628,7 +3403,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85];
 	s.pc = L.pc;
 }
-void spu_aotc_375(SPUThread& __restrict s) {
+void spu_aotc_399(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -1677,7 +3452,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[80] = L.gpr[80]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86];
 	s.pc = L.pc;
 }
-void spu_aotc_376(SPUThread& __restrict s) {
+void spu_aotc_400(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -1727,7 +3502,7 @@ L_0581843fcba822e3:
 out:
 	return;
 }
-void spu_aotc_377(SPUThread& __restrict s) {
+void spu_aotc_401(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -1754,7 +3529,7 @@ L_b3321d53fa80c0ff:
 out:
 	return;
 }
-void spu_aotc_378(SPUThread& __restrict s) {
+void spu_aotc_402(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -1789,7 +3564,7 @@ L_bd74fd8bd850f83f:
 out:
 	return;
 }
-void spu_aotc_379(SPUThread& __restrict s) {
+void spu_aotc_403(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -1811,9 +3586,13 @@ void spu_aotc_379(SPUThread& __restrict s) {
 		case 0x0A888: goto L_1af5a90ec01eaae5;
 		case 0x0A8B0: goto L_41ce5f65b3ada792;
 		case 0x0A8D0: goto L_0b84550ea14d03a2;
+		case 0x0A928: goto L_c535d1bc5d30a091;
 		case 0x0A978: goto L_307821f744d1e687;
+		case 0x0A9F0: goto L_308753876d8c2e70;
+		case 0x0AA18: goto L_9ba470172145850f;
 		case 0x0AA28: goto L_4c4fa34df85e69b9;
 		case 0x0AA30: goto L_d0bd75c5bd6a7ae4;
+		case 0x0AA68: goto L_661c3c112b5da7a7;
 		case 0x0AA90: goto L_bd1b0e49d8a8eace;
 		case 0x0AA9C: goto L_5cd5daa2ad24a2cf;
 		case 0x0AAA0: goto L_2beb870aa18d9116;
@@ -2076,12 +3855,75 @@ L_0b84550ea14d03a2:
 	L.pc = 0x0A920; op_xsbh(L, 0x56C00183u);
 	L.pc = 0x0A924; op_brhz(L, 0x22000A82u);
 	if (L.pc == 0x0A978) { if (s.can_chain(cw, 0x0A978) && --budget) goto L_307821f744d1e687; goto out; }
+	if (L.pc == 0x0A928) { if (s.can_chain(cw, 0x0A928) && --budget) goto L_c535d1bc5d30a091; goto out; }
+	goto out;
+L_c535d1bc5d30a091:
+	s.instructions += 20;
+	L.pc = 0x0A928; op_lqx(L, 0x3882C382u);
+	L.pc = 0x0A92C; op_lqx(L, 0x38828383u);
+	L.pc = 0x0A930; op_nop(L, 0x10153E11u);
+	L.pc = 0x0A934; op_lqx(L, 0x38820388u);
+	L.pc = 0x0A938; op_rotqby(L, 0x3B814102u);
+	L.pc = 0x0A93C; op_rotqby(L, 0x3B818183u);
+	L.pc = 0x0A940; op_rotqby(L, 0x3B810404u);
+	L.pc = 0x0A944; op_ceqbi(L, 0x7E148102u);
+	L.pc = 0x0A948; op_ceqbi(L, 0x7E124183u);
+	L.pc = 0x0A94C; op_xsbh(L, 0x56C00102u);
+	L.pc = 0x0A950; op_xsbh(L, 0x56C00183u);
+	L.pc = 0x0A954; op_ceqhi(L, 0x7D000102u);
+	L.pc = 0x0A958; op_ceqhi(L, 0x7D000183u);
+	L.pc = 0x0A95C; op_xshw(L, 0x55C00102u);
+	L.pc = 0x0A960; op_xshw(L, 0x55C00183u);
+	L.pc = 0x0A964; op_ori(L, 0x04000105u);
+	L.pc = 0x0A968; op_ceqbi(L, 0x7E108204u);
+	L.pc = 0x0A96C; op_shlqbyi(L, 0x3FE00182u);
+	L.pc = 0x0A970; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0A974; op_br(L, 0x32000F80u);
 	goto out;
 L_307821f744d1e687:
 	s.instructions += 2;
 	L.pc = 0x0A978; op_il(L, 0x40800102u);
 	L.pc = 0x0A97C; op_brhz(L, 0x22001583u);
 	if (L.pc == 0x0AA28) { if (s.can_chain(cw, 0x0AA28) && --budget) goto L_4c4fa34df85e69b9; goto out; }
+	goto out;
+L_308753876d8c2e70:
+	s.instructions += 10;
+	L.pc = 0x0A9F0; op_or_(L, 0x08208282u);
+	L.pc = 0x0A9F4; op_xsbh(L, 0x56C00204u);
+	L.pc = 0x0A9F8; op_ceqhi(L, 0x7D000102u);
+	L.pc = 0x0A9FC; op_ceqhi(L, 0x7D000204u);
+	L.pc = 0x0AA00; op_nor(L, 0x09208102u);
+	L.pc = 0x0AA04; op_xshw(L, 0x55C00204u);
+	L.pc = 0x0AA08; op_xshw(L, 0x55C00102u);
+	L.pc = 0x0AA0C; op_or_(L, 0x08208202u);
+	L.pc = 0x0AA10; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0AA14; op_brhnz(L, 0x23000282u);
+	if (L.pc == 0x0AA28) { if (s.can_chain(cw, 0x0AA28) && --budget) goto L_4c4fa34df85e69b9; goto out; }
+	if (L.pc == 0x0AA18) { if (s.can_chain(cw, 0x0AA18) && --budget) goto L_9ba470172145850f; goto out; }
+	goto out;
+L_9ba470172145850f:
+	s.instructions += 20;
+	L.pc = 0x0AA18; op_ori(L, 0x04000189u);
+	L.pc = 0x0AA1C; op_lqd(L, 0x34004187u);
+	L.pc = 0x0AA20; op_ai(L, 0x1C2C018Au);
+	L.pc = 0x0AA24; op_lqd(L, 0x3400C188u);
+	L.pc = 0x0AA28; op_lqd(L, 0x3402C484u);
+	L.pc = 0x0AA2C; op_lqd(L, 0x34004502u);
+	L.pc = 0x0AA30; op_lqd(L, 0x34008503u);
+	L.pc = 0x0AA34; op_stqd(L, 0x24FF4081u);
+	L.pc = 0x0AA38; op_ori(L, 0x04000386u);
+	L.pc = 0x0AA3C; op_lqd(L, 0x34008487u);
+	L.pc = 0x0AA40; op_ai(L, 0x1CF40081u);
+	L.pc = 0x0AA44; op_nop(L, 0x00200000u);
+	L.pc = 0x0AA48; op_clgt(L, 0x58020305u);
+	L.pc = 0x0AA4C; op_stqd(L, 0x24008504u);
+	L.pc = 0x0AA50; op_stqd(L, 0x24020482u);
+	L.pc = 0x0AA54; op_stqd(L, 0x24004503u);
+	L.pc = 0x0AA58; op_stqd(L, 0x2402C482u);
+	L.pc = 0x0AA5C; op_stqd(L, 0x24000486u);
+	L.pc = 0x0AA60; op_stqd(L, 0x24004487u);
+	L.pc = 0x0AA64; op_brz(L, 0x20001585u);
+	if (L.pc == 0x0AA68) { if (s.can_chain(cw, 0x0AA68) && --budget) goto L_661c3c112b5da7a7; goto out; }
 	goto out;
 L_4c4fa34df85e69b9:
 	s.instructions += 2;
@@ -2118,6 +3960,22 @@ L_d0bd75c5bd6a7ae4:
 	L.pc = 0x0AA8C; op_brhnz(L, 0x23000282u);
 	if (L.pc == 0x0AAA0) { if (s.can_chain(cw, 0x0AAA0) && --budget) goto L_2beb870aa18d9116; goto out; }
 	if (L.pc == 0x0AA90) { if (s.can_chain(cw, 0x0AA90) && --budget) goto L_bd1b0e49d8a8eace; goto out; }
+	goto out;
+L_661c3c112b5da7a7:
+	s.instructions += 13;
+	L.pc = 0x0AA68; op_sf(L, 0x08018404u);
+	L.pc = 0x0AA6C; op_lqd(L, 0x3401C482u);
+	L.pc = 0x0AA70; op_shli(L, 0x0F608408u);
+	L.pc = 0x0AA74; op_lqd(L, 0x34038487u);
+	L.pc = 0x0AA78; op_il(L, 0x40800083u);
+	L.pc = 0x0AA7C; op_lqd(L, 0x34028486u);
+	L.pc = 0x0AA80; op_clgt(L, 0x58008205u);
+	L.pc = 0x0AA84; op_shl(L, 0x0B61C183u);
+	L.pc = 0x0AA88; op_a(L, 0x18020306u);
+	L.pc = 0x0AA8C; op_selb(L, 0x80808205u);
+	L.pc = 0x0AA90; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0AA94; op_stqd(L, 0x24018486u);
+	L.pc = 0x0AA98; op_brsl(L, 0x33000082u);
 	goto out;
 L_bd1b0e49d8a8eace:
 	s.instructions += 3;
@@ -2286,13 +4144,15 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88];
 	s.pc = L.pc;
 }
-void spu_aotc_380(SPUThread& __restrict s) {
+void spu_aotc_404(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
 		case 0x09D48: goto L_ccaa67d76352f56f;
 		case 0x09D7C: goto L_f41ec2b2304d89ad;
 		case 0x09DA0: goto L_8bc12c2f6906b605;
+		case 0x0A328: goto L_6aec6ed307360ace;
+		case 0x0A338: goto L_429964ce16e8c120;
 		default: goto out;
 	}
 L_ccaa67d76352f56f:
@@ -2310,6 +4170,7 @@ L_ccaa67d76352f56f:
 	s.pc = 0x09D70; op_stqd(s, 0x24264085u);
 	s.pc = 0x09D74; op_nop(s, 0x4020007Fu);
 	s.pc = 0x09D78; op_brz(s, 0x2000B604u);
+	if (s.pc == 0x0A328) { if (s.can_chain(cw, 0x0A328) && --budget) goto L_6aec6ed307360ace; goto out; }
 	if (s.pc == 0x09D7C) { if (s.can_chain(cw, 0x09D7C) && --budget) goto L_f41ec2b2304d89ad; goto out; }
 	goto out;
 L_f41ec2b2304d89ad:
@@ -2330,10 +4191,23 @@ L_8bc12c2f6906b605:
 	s.pc = 0x09DA0; op_ai(s, 0x1C020204u);
 	s.pc = 0x09DA4; op_bi(s, 0x35080200u);
 	goto out;
+L_6aec6ed307360ace:
+	s.instructions += 4;
+	s.pc = 0x0A328; op_nop(s, 0x1276108Cu);
+	s.pc = 0x0A32C; op_lqd(s, 0x34298082u);
+	s.pc = 0x0A330; op_shl(s, 0x0B608682u);
+	s.pc = 0x0A334; op_brsl(s, 0x33000083u);
+	if (s.pc == 0x0A338) { if (s.can_chain(cw, 0x0A338) && --budget) goto L_429964ce16e8c120; goto out; }
+	goto out;
+L_429964ce16e8c120:
+	s.instructions += 2;
+	s.pc = 0x0A338; op_ai(s, 0x1C020183u);
+	s.pc = 0x0A33C; op_bi(s, 0x35080180u);
+	goto out;
 out:
 	return;
 }
-void spu_aotc_381(SPUThread& __restrict s) {
+void spu_aotc_405(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2360,7 +4234,7 @@ L_5f47e189a7a64f37:
 out:
 	return;
 }
-void spu_aotc_382(SPUThread& __restrict s) {
+void spu_aotc_406(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2382,7 +4256,7 @@ L_0669973b8548458b:
 out:
 	return;
 }
-void spu_aotc_383(SPUThread& __restrict s) {
+void spu_aotc_407(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2417,7 +4291,7 @@ L_b028c9a05b347b77:
 out:
 	return;
 }
-void spu_aotc_384(SPUThread& __restrict s) {
+void spu_aotc_408(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2455,7 +4329,7 @@ L_ffe024722f669336:
 out:
 	return;
 }
-void spu_aotc_385(SPUThread& __restrict s) {
+void spu_aotc_409(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2464,7 +4338,10 @@ void spu_aotc_385(SPUThread& __restrict s) {
 		case 0x09E90: goto L_83049b5f9c929e8f;
 		case 0x09EA0: goto L_99010d12392b5284;
 		case 0x09EF4: goto L_6522e53b194a73fd;
+		case 0x09F00: goto L_6b3293efb358d006;
+		case 0x09F10: goto L_d0772560b1d6a23e;
 		case 0x09F68: goto L_b6dec15a70e6e170;
+		case 0x0A0D0: goto L_d5bdf1f1dfebd318;
 		case 0x0A140: goto L_77ef788216e2a666;
 		case 0x0A148: goto L_c056603753e1c57a;
 		case 0x0A1A0: goto L_84ddf801a2dc7c7e;
@@ -2556,6 +4433,21 @@ L_6522e53b194a73fd:
 	s.pc = 0x09EF8; op_xsbh(s, 0x56C00150u);
 	s.pc = 0x09EFC; op_brhz(s, 0x22000DD0u);
 	if (s.pc == 0x09F68) { if (s.can_chain(cw, 0x09F68) && --budget) goto L_b6dec15a70e6e170; goto out; }
+	if (s.pc == 0x09F00) { if (s.can_chain(cw, 0x09F00) && --budget) goto L_6b3293efb358d006; goto out; }
+	goto out;
+L_6b3293efb358d006:
+	s.instructions += 4;
+	s.pc = 0x09F00; op_ori(s, 0x04002983u);
+	s.pc = 0x09F04; op_nop(s, 0x00200000u);
+	s.pc = 0x09F08; op_il(s, 0x40800404u);
+	s.pc = 0x09F0C; op_brsl(s, 0x33773A80u);
+	goto out;
+L_d0772560b1d6a23e:
+	s.instructions += 3;
+	s.pc = 0x09F10; op_ceqbi(s, 0x7E108183u);
+	s.pc = 0x09F14; op_xsbh(s, 0x56C00183u);
+	s.pc = 0x09F18; op_brhz(s, 0x22003703u);
+	if (s.pc == 0x0A0D0) { if (s.can_chain(cw, 0x0A0D0) && --budget) goto L_d5bdf1f1dfebd318; goto out; }
 	goto out;
 L_b6dec15a70e6e170:
 	s.instructions += 3;
@@ -2563,6 +4455,41 @@ L_b6dec15a70e6e170:
 	s.pc = 0x09F6C; op_xsbh(s, 0x56C00102u);
 	s.pc = 0x09F70; op_brhz(s, 0x22003A02u);
 	if (s.pc == 0x0A140) { if (s.can_chain(cw, 0x0A140) && --budget) goto L_77ef788216e2a666; goto out; }
+	goto out;
+L_d5bdf1f1dfebd318:
+	s.instructions += 30;
+	s.pc = 0x0A0D0; op_a(s, 0x18156982u);
+	s.pc = 0x0A0D4; op_lqx(s, 0x38956985u);
+	s.pc = 0x0A0D8; op_a(s, 0x1815A987u);
+	s.pc = 0x0A0DC; op_cwx(s, 0x3AD56984u);
+	s.pc = 0x0A0E0; op_a(s, 0x18162988u);
+	s.pc = 0x0A0E4; op_cwd(s, 0x3EC42986u);
+	s.pc = 0x0A0E8; op_cwx(s, 0x3AD5A989u);
+	s.pc = 0x0A0EC; op_rotqby(s, 0x3B808282u);
+	s.pc = 0x0A0F0; op_ai(s, 0x1CFE0102u);
+	s.pc = 0x0A0F4; op_shufb(s, 0xB0614104u);
+	s.pc = 0x0A0F8; op_stqx(s, 0x28956983u);
+	s.pc = 0x0A0FC; op_lqd(s, 0x34006982u);
+	s.pc = 0x0A100; op_ori(s, 0x04000103u);
+	s.pc = 0x0A104; op_rotqby(s, 0x3B94C102u);
+	s.pc = 0x0A108; op_ai(s, 0x1C020102u);
+	s.pc = 0x0A10C; op_shufb(s, 0xB060C106u);
+	s.pc = 0x0A110; op_stqd(s, 0x24006983u);
+	s.pc = 0x0A114; op_lqx(s, 0x3895A982u);
+	s.pc = 0x0A118; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0A11C; op_lqx(s, 0x38962985u);
+	s.pc = 0x0A120; op_ori(s, 0x04000104u);
+	s.pc = 0x0A124; op_rotqby(s, 0x3B81C103u);
+	s.pc = 0x0A128; op_rotqby(s, 0x3B820282u);
+	s.pc = 0x0A12C; op_ai(s, 0x1CFE0183u);
+	s.pc = 0x0A130; op_ai(s, 0x1CFFC102u);
+	s.pc = 0x0A134; op_and_(s, 0x18208183u);
+	s.pc = 0x0A138; op_shufb(s, 0xB0810189u);
+	s.pc = 0x0A13C; op_stqx(s, 0x2895A984u);
+	s.pc = 0x0A140; op_cgt(s, 0x4815EC82u);
+	s.pc = 0x0A144; op_brnz(s, 0x217FA982u);
+	if (s.pc == 0x09E90) { if (s.can_chain(cw, 0x09E90) && --budget) goto L_83049b5f9c929e8f; goto out; }
+	if (s.pc == 0x0A148) { if (s.can_chain(cw, 0x0A148) && --budget) goto L_c056603753e1c57a; goto out; }
 	goto out;
 L_77ef788216e2a666:
 	s.instructions += 2;
@@ -2738,7 +4665,7 @@ L_9e4bd35d8970b7bc:
 out:
 	return;
 }
-void spu_aotc_386(SPUThread& __restrict s) {
+void spu_aotc_410(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2769,7 +4696,7 @@ L_904c0ef1a67430aa:
 out:
 	return;
 }
-void spu_aotc_387(SPUThread& __restrict s) {
+void spu_aotc_411(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2795,7 +4722,7 @@ L_ae8d1ac35c38d02e:
 out:
 	return;
 }
-void spu_aotc_388(SPUThread& __restrict s) {
+void spu_aotc_412(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2821,7 +4748,7 @@ L_3aa24cd6411bfa30:
 out:
 	return;
 }
-void spu_aotc_389(SPUThread& __restrict s) {
+void spu_aotc_413(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2858,7 +4785,7 @@ L_17574c65f26940a2:
 out:
 	return;
 }
-void spu_aotc_390(SPUThread& __restrict s) {
+void spu_aotc_414(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -2885,7 +4812,7 @@ out:
 	s.gpr[84] = L.gpr[84]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
 	s.pc = L.pc;
 }
-void spu_aotc_391(SPUThread& __restrict s) {
+void spu_aotc_415(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2917,7 +4844,7 @@ L_27d326185e6636fd:
 out:
 	return;
 }
-void spu_aotc_392(SPUThread& __restrict s) {
+void spu_aotc_416(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2959,7 +4886,7 @@ L_140015c4c21d0f17:
 out:
 	return;
 }
-void spu_aotc_393(SPUThread& __restrict s) {
+void spu_aotc_417(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -2994,7 +4921,7 @@ L_fcb4ae1dfb9a6308:
 out:
 	return;
 }
-void spu_aotc_394(SPUThread& __restrict s) {
+void spu_aotc_418(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -3062,7 +4989,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9];
 	s.pc = L.pc;
 }
-void spu_aotc_395(SPUThread& __restrict s) {
+void spu_aotc_419(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3087,7 +5014,7 @@ L_b37fb0bf78f83b0f:
 out:
 	return;
 }
-void spu_aotc_396(SPUThread& __restrict s) {
+void spu_aotc_420(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3114,7 +5041,7 @@ L_18fcdc4bd5c8a396:
 out:
 	return;
 }
-void spu_aotc_397(SPUThread& __restrict s) {
+void spu_aotc_421(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3169,7 +5096,34 @@ L_b226695754d4c7bc:
 out:
 	return;
 }
-void spu_aotc_398(SPUThread& __restrict s) {
+void spu_aotc_422(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0A340: goto L_f4b13ff152a9df1e;
+		case 0x0A350: goto L_16988e2b60d3d779;
+		default: goto out;
+	}
+L_f4b13ff152a9df1e:
+	s.instructions += 4;
+	s.pc = 0x0A340; op_wrch(s, 0x21A00B02u);
+	if (s.halted) { s.pc = 0x0A344; goto out; }
+	s.pc = 0x0A344; op_wrch(s, 0x21A00B8Cu);
+	if (s.halted) { s.pc = 0x0A348; goto out; }
+	s.pc = 0x0A348; op_rdch(s, 0x01A00C02u);
+	if (s.halted) { s.pc = 0x0A34C; goto out; }
+	s.pc = 0x0A34C; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0A350) { if (s.can_chain(cw, 0x0A350) && --budget) goto L_16988e2b60d3d779; goto out; }
+	goto out;
+L_16988e2b60d3d779:
+	s.instructions += 2;
+	s.pc = 0x0A350; op_ai(s, 0x1C020102u);
+	s.pc = 0x0A354; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_423(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3191,121 +5145,7 @@ L_acb27a46d83e3098:
 out:
 	return;
 }
-void spu_aotc_399(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[36] = s.gpr[36]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[89] = s.gpr[89]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
-		case 0x0A930: goto L_7a2ebc7d1135cfd3;
-		case 0x0A9F0: goto L_c23386855030af2f;
-		default: goto out;
-	}
-L_7a2ebc7d1135cfd3:
-	s.instructions += 46;
-	L.pc = 0x0A930; op_a(L, 0x18010202u);
-	L.pc = 0x0A934; op_stqd(L, 0x24FF80D1u);
-	L.pc = 0x0A938; op_il(L, 0x40804205u);
-	L.pc = 0x0A93C; op_lqd(L, 0x340001D1u);
-	L.pc = 0x0A940; op_a(L, 0x18010102u);
-	L.pc = 0x0A944; op_stqd(L, 0x24FFC0D0u);
-	L.pc = 0x0A948; op_ori(L, 0x040001D0u);
-	L.pc = 0x0A94C; op_stqd(L, 0x24FE40D6u);
-	L.pc = 0x0A950; op_shli(L, 0x0F608102u);
-	L.pc = 0x0A954; op_shlqbyi(L, 0x3FE00256u);
-	L.pc = 0x0A958; op_il(L, 0x4080620Au);
-	L.pc = 0x0A95C; op_stqd(L, 0x24FEC0D4u);
-	L.pc = 0x0A960; op_il(L, 0x40804408u);
-	L.pc = 0x0A964; op_nop(L, 0x00200000u);
-	L.pc = 0x0A968; op_il(L, 0x40806309u);
-	L.pc = 0x0A96C; op_lqx(L, 0x38816883u);
-	L.pc = 0x0A970; op_a(L, 0x18158102u);
-	L.pc = 0x0A974; op_lqx(L, 0x38822884u);
-	L.pc = 0x0A978; op_ai(L, 0x1C038507u);
-	L.pc = 0x0A97C; op_stqd(L, 0x24FDC0D8u);
-	L.pc = 0x0A980; op_shli(L, 0x0F610102u);
-	L.pc = 0x0A984; op_stqd(L, 0x24FF00D3u);
-	L.pc = 0x0A988; op_ai(L, 0x1C038486u);
-	L.pc = 0x0A98C; op_stqd(L, 0x24FE80D5u);
-	L.pc = 0x0A990; op_shli(L, 0x0F612B58u);
-	L.pc = 0x0A994; op_stqd(L, 0x24004080u);
-	L.pc = 0x0A998; op_il(L, 0x40800053u);
-	L.pc = 0x0A99C; op_rotqby(L, 0x3B814183u);
-	L.pc = 0x0A9A0; op_il(L, 0x40800005u);
-	L.pc = 0x0A9A4; op_rotqby(L, 0x3B820204u);
-	L.pc = 0x0A9A8; op_stqd(L, 0x24FF40D2u);
-	L.pc = 0x0A9AC; op_stqd(L, 0x24FE00D7u);
-	L.pc = 0x0A9B0; op_a(L, 0x180081D4u);
-	L.pc = 0x0A9B4; op_stqd(L, 0x24FD80D9u);
-	L.pc = 0x0A9B8; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0A9BC; op_stqd(L, 0x24FC0081u);
-	L.pc = 0x0A9C0; op_ai(L, 0x1CC00081u);
-	L.pc = 0x0A9C4; op_lqx(L, 0x3882AA02u);
-	L.pc = 0x0A9C8; op_lqx(L, 0x38826A03u);
-	L.pc = 0x0A9CC; op_rotqby(L, 0x3B81C102u);
-	L.pc = 0x0A9D0; op_rotqby(L, 0x3B818183u);
-	L.pc = 0x0A9D4; op_xshw(L, 0x55C00102u);
-	L.pc = 0x0A9D8; op_shli(L, 0x0F610102u);
-	L.pc = 0x0A9DC; op_nop(L, 0x00200000u);
-	L.pc = 0x0A9E0; op_a(L, 0x18008255u);
-	L.pc = 0x0A9E4; op_brhnz(L, 0x23000183u);
-	if (L.pc == 0x0A9F0) { if (s.can_chain(cw, 0x0A9F0) && --budget) goto L_c23386855030af2f; goto out; }
-	goto out;
-L_c23386855030af2f:
-	s.instructions += 46;
-	L.pc = 0x0A9F0; op_il(L, 0x4083CE08u);
-	L.pc = 0x0A9F4; op_lqd(L, 0x34026882u);
-	L.pc = 0x0A9F8; op_shli(L, 0x0F610283u);
-	L.pc = 0x0A9FC; op_cwd(L, 0x3EC00089u);
-	L.pc = 0x0AA00; op_il(L, 0x40800E0Au);
-	L.pc = 0x0AA04; op_lqx(L, 0x38822807u);
-	L.pc = 0x0AA08; op_ilhu(L, 0x411E51D2u);
-	L.pc = 0x0AA0C; op_cwx(L, 0x3AC20084u);
-	L.pc = 0x0AA10; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0AA14; op_nop(L, 0x100D5924u);
-	L.pc = 0x0AA18; op_a(L, 0x1800EAD7u);
-	L.pc = 0x0AA1C; op_lqx(L, 0x3880EA85u);
-	L.pc = 0x0AA20; op_a(L, 0x18160102u);
-	L.pc = 0x0AA24; op_fsmbi(L, 0x32800003u);
-	L.pc = 0x0AA28; op_iohl(L, 0x60EB8552u);
-	L.pc = 0x0AA2C; op_nop(L, 0x00200000u);
-	L.pc = 0x0AA30; op_ai(L, 0x1C020151u);
-	L.pc = 0x0AA34; op_fsmbi(L, 0x32800002u);
-	L.pc = 0x0AA38; op_ori(L, 0x04002906u);
-	L.pc = 0x0AA3C; op_shufb(L, 0xB0E1C104u);
-	L.pc = 0x0AA40; op_stqx(L, 0x28822807u);
-	L.pc = 0x0AA44; op_lqd(L, 0x341E6802u);
-	L.pc = 0x0AA48; op_shufb(L, 0xB0408189u);
-	L.pc = 0x0AA4C; op_stqd(L, 0x241E6802u);
-	L.pc = 0x0AA50; op_lqd(L, 0x341F6804u);
-	L.pc = 0x0AA54; op_lqd(L, 0x34002887u);
-	L.pc = 0x0AA58; op_a(L, 0x18028202u);
-	L.pc = 0x0AA5C; op_lqx(L, 0x3882820Au);
-	L.pc = 0x0AA60; op_ori(L, 0x04000203u);
-	L.pc = 0x0AA64; op_rotqby(L, 0x3B944387u);
-	L.pc = 0x0AA68; op_ai(L, 0x1C038102u);
-	L.pc = 0x0AA6C; op_lqd(L, 0x34000208u);
-	L.pc = 0x0AA70; op_il(L, 0x4081FF84u);
-	L.pc = 0x0AA74; op_rotqby(L, 0x3B808502u);
-	L.pc = 0x0AA78; op_ori(L, 0x04000409u);
-	L.pc = 0x0AA7C; op_sfh(L, 0x0901C107u);
-	L.pc = 0x0AA80; op_cgth(L, 0x49010382u);
-	L.pc = 0x0AA84; op_sfh(L, 0x0901C408u);
-	L.pc = 0x0AA88; op_cgthi(L, 0x4DFFC384u);
-	L.pc = 0x0AA8C; op_ceqhi(L, 0x7D000102u);
-	L.pc = 0x0AA90; op_ceqhi(L, 0x7D000204u);
-	L.pc = 0x0AA94; op_selb(L, 0x8041C402u);
-	L.pc = 0x0AA98; op_ah(L, 0x19024387u);
-	L.pc = 0x0AA9C; op_selb(L, 0x80E1C104u);
-	L.pc = 0x0AAA0; op_ori(L, 0x04000384u);
-	L.pc = 0x0AAA4; op_brsl(L, 0x33780480u);
-	goto out;
-out:
-	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88];
-	s.pc = L.pc;
-}
-void spu_aotc_400(SPUThread& __restrict s) {
+void spu_aotc_424(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -3402,58 +5242,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89];
 	s.pc = L.pc;
 }
-void spu_aotc_401(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0AA18: goto L_9ba470172145850f;
-		case 0x0AA68: goto L_661c3c112b5da7a7;
-		default: goto out;
-	}
-L_9ba470172145850f:
-	s.instructions += 20;
-	s.pc = 0x0AA18; op_ori(s, 0x04000189u);
-	s.pc = 0x0AA1C; op_lqd(s, 0x34004187u);
-	s.pc = 0x0AA20; op_ai(s, 0x1C2C018Au);
-	s.pc = 0x0AA24; op_lqd(s, 0x3400C188u);
-	s.pc = 0x0AA28; op_lqd(s, 0x3402C484u);
-	s.pc = 0x0AA2C; op_lqd(s, 0x34004502u);
-	s.pc = 0x0AA30; op_lqd(s, 0x34008503u);
-	s.pc = 0x0AA34; op_stqd(s, 0x24FF4081u);
-	s.pc = 0x0AA38; op_ori(s, 0x04000386u);
-	s.pc = 0x0AA3C; op_lqd(s, 0x34008487u);
-	s.pc = 0x0AA40; op_ai(s, 0x1CF40081u);
-	s.pc = 0x0AA44; op_nop(s, 0x00200000u);
-	s.pc = 0x0AA48; op_clgt(s, 0x58020305u);
-	s.pc = 0x0AA4C; op_stqd(s, 0x24008504u);
-	s.pc = 0x0AA50; op_stqd(s, 0x24020482u);
-	s.pc = 0x0AA54; op_stqd(s, 0x24004503u);
-	s.pc = 0x0AA58; op_stqd(s, 0x2402C482u);
-	s.pc = 0x0AA5C; op_stqd(s, 0x24000486u);
-	s.pc = 0x0AA60; op_stqd(s, 0x24004487u);
-	s.pc = 0x0AA64; op_brz(s, 0x20001585u);
-	if (s.pc == 0x0AA68) { if (s.can_chain(cw, 0x0AA68) && --budget) goto L_661c3c112b5da7a7; goto out; }
-	goto out;
-L_661c3c112b5da7a7:
-	s.instructions += 13;
-	s.pc = 0x0AA68; op_sf(s, 0x08018404u);
-	s.pc = 0x0AA6C; op_lqd(s, 0x3401C482u);
-	s.pc = 0x0AA70; op_shli(s, 0x0F608408u);
-	s.pc = 0x0AA74; op_lqd(s, 0x34038487u);
-	s.pc = 0x0AA78; op_il(s, 0x40800083u);
-	s.pc = 0x0AA7C; op_lqd(s, 0x34028486u);
-	s.pc = 0x0AA80; op_clgt(s, 0x58008205u);
-	s.pc = 0x0AA84; op_shl(s, 0x0B61C183u);
-	s.pc = 0x0AA88; op_a(s, 0x18020306u);
-	s.pc = 0x0AA8C; op_selb(s, 0x80808205u);
-	s.pc = 0x0AA90; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0AA94; op_stqd(s, 0x24018486u);
-	s.pc = 0x0AA98; op_brsl(s, 0x33000082u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_402(SPUThread& __restrict s) {
+void spu_aotc_425(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3482,13 +5271,18 @@ L_8a4a8afe57dd442a:
 out:
 	return;
 }
-void spu_aotc_403(SPUThread& __restrict s) {
+void spu_aotc_426(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
 		case 0x0AAA8: goto L_1029a82f7eaa4579;
 		case 0x0AB80: goto L_ac987e1f6adad51d;
 		case 0x0ABA8: goto L_d3ce5d7b64686d2e;
+		case 0x0AC34: goto L_16a2e3159bc48a7f;
+		case 0x0AC40: goto L_173a6d3aa9c77e4a;
+		case 0x0AC50: goto L_1038dec6d91f3def;
+		case 0x0AC70: goto L_4ef103755e9e7ed9;
+		case 0x0ACC4: goto L_556049980ad2e486;
 		default: goto out;
 	}
 L_1029a82f7eaa4579:
@@ -3589,11 +5383,58 @@ L_d3ce5d7b64686d2e:
 	s.pc = 0x0ABCC; op_shufb(s, 0xB0C18107u);
 	s.pc = 0x0ABD0; op_stqx(s, 0x28830206u);
 	s.pc = 0x0ABD4; op_brnz(s, 0x21000C05u);
+	if (s.pc == 0x0AC34) { if (s.can_chain(cw, 0x0AC34) && --budget) goto L_16a2e3159bc48a7f; goto out; }
+	goto out;
+L_16a2e3159bc48a7f:
+	s.instructions += 3;
+	s.pc = 0x0AC34; op_il(s, 0x40800002u);
+	s.pc = 0x0AC38; op_fcgt(s, 0x58408502u);
+	s.pc = 0x0AC3C; op_brz(s, 0x20003782u);
+	if (s.pc == 0x0AC40) { if (s.can_chain(cw, 0x0AC40) && --budget) goto L_173a6d3aa9c77e4a; goto out; }
+	goto out;
+L_173a6d3aa9c77e4a:
+	s.instructions += 4;
+	s.pc = 0x0AC40; op_fcgt(s, 0x5842A902u);
+	s.pc = 0x0AC44; op_nop(s, 0x10131210u);
+	s.pc = 0x0AC48; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0AC4C; op_brnz(s, 0x21000F02u);
+	if (s.pc == 0x0ACC4) { if (s.can_chain(cw, 0x0ACC4) && --budget) goto L_556049980ad2e486; goto out; }
+	if (s.pc == 0x0AC50) { if (s.can_chain(cw, 0x0AC50) && --budget) goto L_1038dec6d91f3def; goto out; }
+	goto out;
+L_1038dec6d91f3def:
+	s.instructions += 8;
+	s.pc = 0x0AC50; op_ilhu(s, 0x41400059u);
+	s.pc = 0x0AC54; op_lqd(s, 0x341E6806u);
+	s.pc = 0x0AC58; op_ilhu(s, 0x41200003u);
+	s.pc = 0x0AC5C; op_ori(s, 0x04000302u);
+	s.pc = 0x0AC60; op_andc(s, 0x58364102u);
+	s.pc = 0x0AC64; op_ori(s, 0x04000152u);
+	s.pc = 0x0AC68; op_fcgt(s, 0x5840E903u);
+	s.pc = 0x0AC6C; op_brnz(s, 0x21000D83u);
+	if (s.pc == 0x0AC70) { if (s.can_chain(cw, 0x0AC70) && --budget) goto L_4ef103755e9e7ed9; goto out; }
+	goto out;
+L_4ef103755e9e7ed9:
+	s.instructions += 6;
+	s.pc = 0x0AC70; op_ori(s, 0x04002803u);
+	s.pc = 0x0AC74; op_lqd(s, 0x34002B84u);
+	s.pc = 0x0AC78; op_ori(s, 0x04002B05u);
+	s.pc = 0x0AC7C; op_fsmbi(s, 0x32800006u);
+	s.pc = 0x0AC80; op_il(s, 0x40800087u);
+	s.pc = 0x0AC84; op_brsl(s, 0x337D8180u);
+	goto out;
+L_556049980ad2e486:
+	s.instructions += 5;
+	s.pc = 0x0ACC4; op_lqd(s, 0x341E6802u);
+	s.pc = 0x0ACC8; op_cwd(s, 0x3EC00083u);
+	s.pc = 0x0ACCC; op_shufb(s, 0xB040A903u);
+	s.pc = 0x0ACD0; op_stqd(s, 0x241E6802u);
+	s.pc = 0x0ACD4; op_br(s, 0x327FEF80u);
+	if (s.pc == 0x0AC50) { if (s.can_chain(cw, 0x0AC50) && --budget) goto L_1038dec6d91f3def; goto out; }
 	goto out;
 out:
 	return;
 }
-void spu_aotc_404(SPUThread& __restrict s) {
+void spu_aotc_427(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3626,7 +5467,7 @@ L_21c97af3e129656a:
 out:
 	return;
 }
-void spu_aotc_405(SPUThread& __restrict s) {
+void spu_aotc_428(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3673,7 +5514,7 @@ L_473ecd3a393978f1:
 out:
 	return;
 }
-void spu_aotc_406(SPUThread& __restrict s) {
+void spu_aotc_429(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3702,7 +5543,7 @@ L_d75c676f07c80a85:
 out:
 	return;
 }
-void spu_aotc_407(SPUThread& __restrict s) {
+void spu_aotc_430(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3726,7 +5567,7 @@ L_c296364f7614b26d:
 out:
 	return;
 }
-void spu_aotc_408(SPUThread& __restrict s) {
+void spu_aotc_431(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3761,7 +5602,7 @@ L_e7c322de8c6a01ad:
 out:
 	return;
 }
-void spu_aotc_409(SPUThread& __restrict s) {
+void spu_aotc_432(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -3787,7 +5628,7 @@ out:
 	s.gpr[1] = L.gpr[1];
 	s.pc = L.pc;
 }
-void spu_aotc_410(SPUThread& __restrict s) {
+void spu_aotc_433(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3812,7 +5653,7 @@ L_9231afcb1fa48501:
 out:
 	return;
 }
-void spu_aotc_411(SPUThread& __restrict s) {
+void spu_aotc_434(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -3841,7 +5682,40 @@ L_cfb02cdcae962248:
 out:
 	return;
 }
-void spu_aotc_412(SPUThread& __restrict s) {
+void spu_aotc_435(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0AC88: goto L_2af9507fcb2f6bf9;
+		case 0x0ACA4: goto L_8ec2d3fad69f59da;
+		default: goto out;
+	}
+L_2af9507fcb2f6bf9:
+	s.instructions += 7;
+	s.pc = 0x0AC88; op_il(s, 0x4083CC04u);
+	s.pc = 0x0AC8C; op_nop(s, 0x10157B0Du);
+	s.pc = 0x0AC90; op_lqx(s, 0x38812802u);
+	s.pc = 0x0AC94; op_rotqby(s, 0x3B810102u);
+	s.pc = 0x0AC98; op_andc(s, 0x58364102u);
+	s.pc = 0x0AC9C; op_fcgt(s, 0x5840A902u);
+	s.pc = 0x0ACA0; op_brz(s, 0x207FE702u);
+	if (s.pc == 0x0ACA4) { if (s.can_chain(cw, 0x0ACA4) && --budget) goto L_8ec2d3fad69f59da; goto out; }
+	goto out;
+L_8ec2d3fad69f59da:
+	s.instructions += 8;
+	s.pc = 0x0ACA4; op_lqx(s, 0x38812803u);
+	s.pc = 0x0ACA8; op_lqd(s, 0x341E6806u);
+	s.pc = 0x0ACAC; op_cwx(s, 0x3AC10085u);
+	s.pc = 0x0ACB0; op_lqd(s, 0x341DA802u);
+	s.pc = 0x0ACB4; op_shufb(s, 0xB060C305u);
+	s.pc = 0x0ACB8; op_stqd(s, 0x241E2802u);
+	s.pc = 0x0ACBC; op_stqx(s, 0x28812803u);
+	s.pc = 0x0ACC0; op_br(s, 0x327FE300u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_436(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -3928,7 +5802,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86];
 	s.pc = L.pc;
 }
-void spu_aotc_413(SPUThread& __restrict s) {
+void spu_aotc_437(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4076,7 +5950,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91];
 	s.pc = L.pc;
 }
-void spu_aotc_414(SPUThread& __restrict s) {
+void spu_aotc_438(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -4126,11 +6000,11 @@ L_9b0b7f391819c44d:
 out:
 	return;
 }
-void spu_aotc_415(SPUThread& __restrict s) {
+void spu_aotc_439(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[15] = s.gpr[15]; L.gpr[21] = s.gpr[21]; L.gpr[25] = s.gpr[25]; L.gpr[36] = s.gpr[36]; L.gpr[64] = s.gpr[64]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[127] = s.gpr[127];
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[21] = s.gpr[21]; L.gpr[25] = s.gpr[25]; L.gpr[36] = s.gpr[36]; L.gpr[64] = s.gpr[64]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[127] = s.gpr[127];
 	L.pc = s.pc;
 	switch (L.pc) {
 		case 0x0AF58: goto L_48aa767a22d503bc;
@@ -4140,6 +6014,11 @@ void spu_aotc_415(SPUThread& __restrict s) {
 		case 0x0B158: goto L_6ee3d8826eced105;
 		case 0x0B2B0: goto L_ff8195cc129ce331;
 		case 0x0B2FC: goto L_0c01bea11555d178;
+		case 0x0B314: goto L_d3b7f192739978a0;
+		case 0x0B320: goto L_31d518545732f515;
+		case 0x0B368: goto L_e5d852477e062214;
+		case 0x0B384: goto L_a666d1b5e2006af7;
+		case 0x0B3A4: goto L_c10861471cbf1a85;
 		default: goto out;
 	}
 L_48aa767a22d503bc:
@@ -4213,6 +6092,7 @@ L_fc63a65c3d76afb8:
 	s.instructions += 2;
 	L.pc = 0x0B148; op_ceqi(L, 0x7C004402u);
 	L.pc = 0x0B14C; op_brnz(L, 0x21003902u);
+	if (L.pc == 0x0B314) { if (s.can_chain(cw, 0x0B314) && --budget) goto L_d3b7f192739978a0; goto out; }
 	if (L.pc == 0x0B150) { if (s.can_chain(cw, 0x0B150) && --budget) goto L_9c828505e72976eb; goto out; }
 	goto out;
 L_9c828505e72976eb:
@@ -4279,11 +6159,58 @@ L_0c01bea11555d178:
 	L.pc = 0x0B310; op_br(L, 0x327FC900u);
 	if (L.pc == 0x0B158) { if (s.can_chain(cw, 0x0B158) && --budget) goto L_6ee3d8826eced105; goto out; }
 	goto out;
+L_d3b7f192739978a0:
+	s.instructions += 3;
+	L.pc = 0x0B314; op_il(L, 0x40800002u);
+	L.pc = 0x0B318; op_fcgt(L, 0x58408502u);
+	L.pc = 0x0B31C; op_brz(L, 0x20004182u);
+	if (L.pc == 0x0B320) { if (s.can_chain(cw, 0x0B320) && --budget) goto L_31d518545732f515; goto out; }
+	goto out;
+L_31d518545732f515:
+	s.instructions += 4;
+	L.pc = 0x0B320; op_fcgt(L, 0x5842AB82u);
+	L.pc = 0x0B324; op_nop(L, 0x10131210u);
+	L.pc = 0x0B328; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B32C; op_brnz(L, 0x21000F02u);
+	if (L.pc == 0x0B3A4) { if (s.can_chain(cw, 0x0B3A4) && --budget) goto L_c10861471cbf1a85; goto out; }
+	goto out;
+L_e5d852477e062214:
+	s.instructions += 7;
+	L.pc = 0x0B368; op_il(L, 0x4083CC04u);
+	L.pc = 0x0B36C; op_nop(L, 0x10162B0Du);
+	L.pc = 0x0B370; op_lqx(L, 0x38812802u);
+	L.pc = 0x0B374; op_rotqby(L, 0x3B810102u);
+	L.pc = 0x0B378; op_andc(L, 0x5835C102u);
+	L.pc = 0x0B37C; op_fcgt(L, 0x5840A902u);
+	L.pc = 0x0B380; op_brz(L, 0x207FBB02u);
+	if (L.pc == 0x0B158) { if (s.can_chain(cw, 0x0B158) && --budget) goto L_6ee3d8826eced105; goto out; }
+	if (L.pc == 0x0B384) { if (s.can_chain(cw, 0x0B384) && --budget) goto L_a666d1b5e2006af7; goto out; }
+	goto out;
+L_a666d1b5e2006af7:
+	s.instructions += 8;
+	L.pc = 0x0B384; op_lqx(L, 0x38812803u);
+	L.pc = 0x0B388; op_lqd(L, 0x341E6806u);
+	L.pc = 0x0B38C; op_cwx(L, 0x3AC10085u);
+	L.pc = 0x0B390; op_lqd(L, 0x341DA802u);
+	L.pc = 0x0B394; op_shufb(L, 0xB060C305u);
+	L.pc = 0x0B398; op_stqd(L, 0x241E2802u);
+	L.pc = 0x0B39C; op_stqx(L, 0x28812803u);
+	L.pc = 0x0B3A0; op_br(L, 0x327FB700u);
+	if (L.pc == 0x0B158) { if (s.can_chain(cw, 0x0B158) && --budget) goto L_6ee3d8826eced105; goto out; }
+	goto out;
+L_c10861471cbf1a85:
+	s.instructions += 5;
+	L.pc = 0x0B3A4; op_lqd(L, 0x341E6802u);
+	L.pc = 0x0B3A8; op_cwd(L, 0x3EC00083u);
+	L.pc = 0x0B3AC; op_shufb(L, 0xB040AB83u);
+	L.pc = 0x0B3B0; op_stqd(L, 0x241E6802u);
+	L.pc = 0x0B3B4; op_br(L, 0x327FEF80u);
+	goto out;
 out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[87] = L.gpr[87]; s.gpr[90] = L.gpr[90];
 	s.pc = L.pc;
 }
-void spu_aotc_416(SPUThread& __restrict s) {
+void spu_aotc_440(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4374,7 +6301,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11];
 	s.pc = L.pc;
 }
-void spu_aotc_417(SPUThread& __restrict s) {
+void spu_aotc_441(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -4467,7 +6394,7 @@ L_69ef950bb3cc93d5:
 out:
 	return;
 }
-void spu_aotc_418(SPUThread& __restrict s) {
+void spu_aotc_442(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4598,7 +6525,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13];
 	s.pc = L.pc;
 }
-void spu_aotc_419(SPUThread& __restrict s) {
+void spu_aotc_443(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4733,7 +6660,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81];
 	s.pc = L.pc;
 }
-void spu_aotc_420(SPUThread& __restrict s) {
+void spu_aotc_444(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4796,7 +6723,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85];
 	s.pc = L.pc;
 }
-void spu_aotc_421(SPUThread& __restrict s) {
+void spu_aotc_445(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -4919,7 +6846,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91];
 	s.pc = L.pc;
 }
-void spu_aotc_422(SPUThread& __restrict s) {
+void spu_aotc_446(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -5101,25 +7028,19 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88];
 	s.pc = L.pc;
 }
-void spu_aotc_423(SPUThread& __restrict s) {
+void spu_aotc_447(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[26] = s.gpr[26]; L.gpr[32] = s.gpr[32]; L.gpr[34] = s.gpr[34]; L.gpr[79] = s.gpr[79]; L.gpr[127] = s.gpr[127];
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[32] = s.gpr[32]; L.gpr[34] = s.gpr[34]; L.gpr[79] = s.gpr[79]; L.gpr[127] = s.gpr[127];
 	L.pc = s.pc;
 	switch (L.pc) {
 		case 0x0B280: goto L_e2de9d2e01192972;
 		case 0x0B288: goto L_c7601c8f293cdb31;
 		case 0x0B2A8: goto L_488c27ce9e5c539e;
-		case 0x0B2B8: goto L_42ee65f389e7674c;
-		case 0x0B300: goto L_cb915cc33c10db95;
-		case 0x0B30C: goto L_9f5d45e1f3264602;
-		case 0x0B310: goto L_34a39beb5f8a0828;
 		case 0x0B330: goto L_25f0c11545def890;
 		case 0x0B33C: goto L_6df4c69a5b23bdf2;
 		case 0x0B340: goto L_8905a910eb5986b8;
-		case 0x0B348: goto L_4ee7754ddd213ef8;
-		case 0x0B350: goto L_f272e2bcca98e021;
 		case 0x0B368: goto L_caffe2d42a9c2ba4;
 		case 0x0B370: goto L_62510061b976cca5;
 		case 0x0B390: goto L_48c815ffc0e0a052;
@@ -5130,12 +7051,6 @@ void spu_aotc_423(SPUThread& __restrict s) {
 		case 0x0B4D0: goto L_b82375937230fe62;
 		case 0x0B4F4: goto L_6eedb8e4a2211e04;
 		case 0x0B564: goto L_b60bd041fa9ff325;
-		case 0x0B568: goto L_c03e9e769c0864e4;
-		case 0x0B5D8: goto L_c803a3cdba429a40;
-		case 0x0B600: goto L_fa8f625e7a294e1f;
-		case 0x0B608: goto L_b923095957794a80;
-		case 0x0B638: goto L_b7502d7243a68007;
-		case 0x0B668: goto L_e7f438e200f3dfe1;
 		case 0x0B670: goto L_c7eeb96adc6ac4fa;
 		case 0x0B684: goto L_99d42d27ddbe2902;
 		case 0x0B6AC: goto L_b3758e1b28bb5c81;
@@ -5169,63 +7084,6 @@ L_488c27ce9e5c539e:
 	L.pc = 0x0B2B4; op_brz(L, 0x20002282u);
 	if (L.pc == 0x0B3C8) { if (s.can_chain(cw, 0x0B3C8) && --budget) goto L_8e70ef576e59accc; goto out; }
 	goto out;
-L_42ee65f389e7674c:
-	s.instructions += 18;
-	L.pc = 0x0B2B8; op_a(L, 0x1804C903u);
-	L.pc = 0x0B2BC; op_lqd(L, 0x34000804u);
-	L.pc = 0x0B2C0; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B2C4; op_nop(L, 0x1200099Au);
-	L.pc = 0x0B2C8; op_clgt(L, 0x5800C382u);
-	L.pc = 0x0B2CC; op_lqd(L, 0x34020805u);
-	L.pc = 0x0B2D0; op_selb(L, 0x8060C382u);
-	L.pc = 0x0B2D4; op_sf(L, 0x08048204u);
-	L.pc = 0x0B2D8; op_sf(L, 0x0800C90Fu);
-	L.pc = 0x0B2DC; op_shli(L, 0x0F608204u);
-	L.pc = 0x0B2E0; op_shli(L, 0x0F60878Du);
-	L.pc = 0x0B2E4; op_a(L, 0x1801028Eu);
-	L.pc = 0x0B2E8; op_ori(L, 0x04000685u);
-	L.pc = 0x0B2EC; op_or_(L, 0x08244702u);
-	L.pc = 0x0B2F0; op_or_(L, 0x08208682u);
-	L.pc = 0x0B2F4; op_andi(L, 0x1403C102u);
-	L.pc = 0x0B2F8; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B2FC; op_brnz(L, 0x21000982u);
-	if (L.pc == 0x0B348) { if (s.can_chain(cw, 0x0B348) && --budget) goto L_4ee7754ddd213ef8; goto out; }
-	goto out;
-L_cb915cc33c10db95:
-	s.instructions += 3;
-	L.pc = 0x0B300; op_ori(L, 0x04000705u);
-	L.pc = 0x0B304; op_shlqbyi(L, 0x3FE00884u);
-	L.pc = 0x0B308; op_brz(L, 0x2000050Du);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	if (L.pc == 0x0B30C) { if (s.can_chain(cw, 0x0B30C) && --budget) goto L_9f5d45e1f3264602; goto out; }
-	goto out;
-L_9f5d45e1f3264602:
-	s.instructions += 9;
-	L.pc = 0x0B30C; op_il(L, 0x40800006u);
-	L.pc = 0x0B310; op_ai(L, 0x1C040306u);
-	L.pc = 0x0B314; op_lqd(L, 0x34000202u);
-	L.pc = 0x0B318; op_ai(L, 0x1C040204u);
-	L.pc = 0x0B31C; op_clgt(L, 0x58018683u);
-	L.pc = 0x0B320; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B324; op_stqd(L, 0x24000282u);
-	L.pc = 0x0B328; op_ai(L, 0x1C040285u);
-	L.pc = 0x0B32C; op_brnz(L, 0x217FFC83u);
-	if (L.pc == 0x0B310) { if (s.can_chain(cw, 0x0B310) && --budget) goto L_34a39beb5f8a0828; goto out; }
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	goto out;
-L_34a39beb5f8a0828:
-	s.instructions += 8;
-	L.pc = 0x0B310; op_ai(L, 0x1C040306u);
-	L.pc = 0x0B314; op_lqd(L, 0x34000202u);
-	L.pc = 0x0B318; op_ai(L, 0x1C040204u);
-	L.pc = 0x0B31C; op_clgt(L, 0x58018683u);
-	L.pc = 0x0B320; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B324; op_stqd(L, 0x24000282u);
-	L.pc = 0x0B328; op_ai(L, 0x1C040285u);
-	L.pc = 0x0B32C; op_brnz(L, 0x217FFC83u);
-	if (L.pc == 0x0B310) { if (s.can_chain(cw, 0x0B310) && --budget) goto L_34a39beb5f8a0828; goto out; }
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	goto out;
 L_25f0c11545def890:
 	s.instructions += 4;
 	L.pc = 0x0B330; op_a(L, 0x18034891u);
@@ -5245,24 +7103,6 @@ L_8905a910eb5986b8:
 	s.instructions += 2;
 	L.pc = 0x0B340; op_ai(L, 0x1C0C0081u);
 	L.pc = 0x0B344; op_bi(L, 0x35000000u);
-	goto out;
-L_4ee7754ddd213ef8:
-	s.instructions += 2;
-	L.pc = 0x0B348; op_nop(L, 0x12000511u);
-	L.pc = 0x0B34C; op_brz(L, 0x207FFC8Du);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	if (L.pc == 0x0B350) { if (s.can_chain(cw, 0x0B350) && --budget) goto L_f272e2bcca98e021; goto out; }
-	goto out;
-L_f272e2bcca98e021:
-	s.instructions += 6;
-	L.pc = 0x0B350; op_andi(L, 0x1403C883u);
-	L.pc = 0x0B354; op_shlqbyi(L, 0x3FE00706u);
-	L.pc = 0x0B358; op_andi(L, 0x1403C708u);
-	L.pc = 0x0B35C; op_shlqbyi(L, 0x3FE00884u);
-	L.pc = 0x0B360; op_or_(L, 0x08220182u);
-	L.pc = 0x0B364; op_brnz(L, 0x21004082u);
-	if (L.pc == 0x0B568) { if (s.can_chain(cw, 0x0B568) && --budget) goto L_c03e9e769c0864e4; goto out; }
-	if (L.pc == 0x0B368) { if (s.can_chain(cw, 0x0B368) && --budget) goto L_caffe2d42a9c2ba4; goto out; }
 	goto out;
 L_caffe2d42a9c2ba4:
 	s.instructions += 2;
@@ -5288,7 +7128,6 @@ L_48c815ffc0e0a052:
 	s.instructions += 2;
 	L.pc = 0x0B390; op_nop(L, 0x4020007Fu);
 	L.pc = 0x0B394; op_brz(L, 0x207FF385u);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
 	if (L.pc == 0x0B398) { if (s.can_chain(cw, 0x0B398) && --budget) goto L_22ab5e97b952166f; goto out; }
 	goto out;
 L_22ab5e97b952166f:
@@ -5381,100 +7220,6 @@ L_b60bd041fa9ff325:
 	L.pc = 0x0B564; op_br(L, 0x327FA880u);
 	if (L.pc == 0x0B2A8) { if (s.can_chain(cw, 0x0B2A8) && --budget) goto L_488c27ce9e5c539e; goto out; }
 	goto out;
-L_c03e9e769c0864e4:
-	s.instructions += 28;
-	L.pc = 0x0B568; op_sf(L, 0x0800C405u);
-	L.pc = 0x0B56C; op_lqd(L, 0x34000889u);
-	L.pc = 0x0B570; op_ila(L, 0x424F4002u);
-	L.pc = 0x0B574; op_lqd(L, 0x3400488Au);
-	L.pc = 0x0B578; op_shli(L, 0x0F610287u);
-	L.pc = 0x0B57C; op_fsmbi(L, 0x32FFFF83u);
-	L.pc = 0x0B580; op_a(L, 0x18020686u);
-	L.pc = 0x0B584; op_lqd(L, 0x3400070Cu);
-	L.pc = 0x0B588; op_a(L, 0x1813C102u);
-	L.pc = 0x0B58C; op_sfi(L, 0x0C000304u);
-	L.pc = 0x0B590; op_sfi(L, 0x0C040414u);
-	L.pc = 0x0B594; op_lqx(L, 0x38808388u);
-	L.pc = 0x0B598; op_clgti(L, 0x5C03C306u);
-	L.pc = 0x0B59C; op_rotqmby(L, 0x3BA10184u);
-	L.pc = 0x0B5A0; op_cgti(L, 0x4C000295u);
-	L.pc = 0x0B5A4; op_shlqby(L, 0x3BE50183u);
-	L.pc = 0x0B5A8; op_ceqi(L, 0x7C000307u);
-	L.pc = 0x0B5AC; op_rotqmby(L, 0x3BA14496u);
-	L.pc = 0x0B5B0; op_ceqi(L, 0x7C000A85u);
-	L.pc = 0x0B5B4; op_fsm(L, 0x3680038Bu);
-	L.pc = 0x0B5B8; op_or_(L, 0x08210187u);
-	L.pc = 0x0B5BC; op_shufb(L, 0xB0828488u);
-	L.pc = 0x0B5C0; op_fsm(L, 0x36800282u);
-	L.pc = 0x0B5C4; op_selb(L, 0x8061C18Bu);
-	L.pc = 0x0B5C8; op_selb(L, 0x80458202u);
-	L.pc = 0x0B5CC; op_selb(L, 0x80430103u);
-	L.pc = 0x0B5D0; op_stqd(L, 0x24000702u);
-	L.pc = 0x0B5D4; op_brz(L, 0x207FAB86u);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	if (L.pc == 0x0B5D8) { if (s.can_chain(cw, 0x0B5D8) && --budget) goto L_c803a3cdba429a40; goto out; }
-	goto out;
-L_c803a3cdba429a40:
-	s.instructions += 10;
-	L.pc = 0x0B5D8; op_a(L, 0x18050886u);
-	L.pc = 0x0B5DC; op_ila(L, 0x424F4003u);
-	L.pc = 0x0B5E0; op_andi(L, 0x1403C302u);
-	L.pc = 0x0B5E4; op_a(L, 0x1813C183u);
-	L.pc = 0x0B5E8; op_shli(L, 0x0F610102u);
-	L.pc = 0x0B5EC; op_sf(L, 0x08034A05u);
-	L.pc = 0x0B5F0; op_a(L, 0x1805070Cu);
-	L.pc = 0x0B5F4; op_clgti(L, 0x5C03C284u);
-	L.pc = 0x0B5F8; op_lqx(L, 0x3880C107u);
-	L.pc = 0x0B5FC; op_brnz(L, 0x21000784u);
-	if (L.pc == 0x0B638) { if (s.can_chain(cw, 0x0B638) && --budget) goto L_b7502d7243a68007; goto out; }
-	if (L.pc == 0x0B600) { if (s.can_chain(cw, 0x0B600) && --budget) goto L_fa8f625e7a294e1f; goto out; }
-	goto out;
-L_fa8f625e7a294e1f:
-	s.instructions += 2;
-	L.pc = 0x0B600; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B604; op_brz(L, 0x207FA585u);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	if (L.pc == 0x0B608) { if (s.can_chain(cw, 0x0B608) && --budget) goto L_b923095957794a80; goto out; }
-	goto out;
-L_b923095957794a80:
-	s.instructions += 12;
-	L.pc = 0x0B608; op_sfi(L, 0x0C000284u);
-	L.pc = 0x0B60C; op_nop(L, 0x127FA48Au);
-	L.pc = 0x0B610; op_il(L, 0x40FFFF82u);
-	L.pc = 0x0B614; op_lqd(L, 0x34000303u);
-	L.pc = 0x0B618; op_lqd(L, 0x34004305u);
-	L.pc = 0x0B61C; op_lqd(L, 0x34000606u);
-	L.pc = 0x0B620; op_rotqmby(L, 0x3BA10102u);
-	L.pc = 0x0B624; op_shufb(L, 0xB0614187u);
-	L.pc = 0x0B628; op_selb(L, 0x80618182u);
-	L.pc = 0x0B62C; op_stqd(L, 0x24000603u);
-	L.pc = 0x0B630; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B634; op_br(L, 0x327F9F80u);
-	if (L.pc == 0x0B330) { if (s.can_chain(cw, 0x0B330) && --budget) goto L_25f0c11545def890; goto out; }
-	goto out;
-L_b7502d7243a68007:
-	s.instructions += 12;
-	L.pc = 0x0B638; op_ai(L, 0x1CFC0285u);
-	L.pc = 0x0B63C; op_nop(L, 0x127FFF8Au);
-	L.pc = 0x0B640; op_lqd(L, 0x34000302u);
-	L.pc = 0x0B644; op_ai(L, 0x1C040306u);
-	L.pc = 0x0B648; op_clgti(L, 0x5C03C284u);
-	L.pc = 0x0B64C; op_lqd(L, 0x34000303u);
-	L.pc = 0x0B650; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B654; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B658; op_shufb(L, 0xB040C107u);
-	L.pc = 0x0B65C; op_stqd(L, 0x24000602u);
-	L.pc = 0x0B660; op_ai(L, 0x1C04060Cu);
-	L.pc = 0x0B664; op_brnz(L, 0x217FFA84u);
-	if (L.pc == 0x0B638) { if (s.can_chain(cw, 0x0B638) && --budget) goto L_b7502d7243a68007; goto out; }
-	if (L.pc == 0x0B668) { if (s.can_chain(cw, 0x0B668) && --budget) goto L_e7f438e200f3dfe1; goto out; }
-	goto out;
-L_e7f438e200f3dfe1:
-	s.instructions += 2;
-	L.pc = 0x0B668; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0B66C; op_br(L, 0x327FF280u);
-	if (L.pc == 0x0B600) { if (s.can_chain(cw, 0x0B600) && --budget) goto L_fa8f625e7a294e1f; goto out; }
-	goto out;
 L_c7eeb96adc6ac4fa:
 	s.instructions += 5;
 	L.pc = 0x0B670; op_il(L, 0x40800083u);
@@ -5501,10 +7246,48 @@ L_6a560a2f696c3722:
 	if (L.pc == 0x0B4A8) { if (s.can_chain(cw, 0x0B4A8) && --budget) goto L_6093b91ccd1a9490; goto out; }
 	goto out;
 out:
-	s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[79] = L.gpr[79];
+	s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[79] = L.gpr[79];
 	s.pc = L.pc;
 }
-void spu_aotc_424(SPUThread& __restrict s) {
+void spu_aotc_448(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0B2B8: goto L_42ee65f389e7674c;
+		case 0x0B348: goto L_4ee7754ddd213ef8;
+		default: goto out;
+	}
+L_42ee65f389e7674c:
+	s.instructions += 18;
+	s.pc = 0x0B2B8; op_a(s, 0x1804C903u);
+	s.pc = 0x0B2BC; op_lqd(s, 0x34000804u);
+	s.pc = 0x0B2C0; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0B2C4; op_nop(s, 0x1200099Au);
+	s.pc = 0x0B2C8; op_clgt(s, 0x5800C382u);
+	s.pc = 0x0B2CC; op_lqd(s, 0x34020805u);
+	s.pc = 0x0B2D0; op_selb(s, 0x8060C382u);
+	s.pc = 0x0B2D4; op_sf(s, 0x08048204u);
+	s.pc = 0x0B2D8; op_sf(s, 0x0800C90Fu);
+	s.pc = 0x0B2DC; op_shli(s, 0x0F608204u);
+	s.pc = 0x0B2E0; op_shli(s, 0x0F60878Du);
+	s.pc = 0x0B2E4; op_a(s, 0x1801028Eu);
+	s.pc = 0x0B2E8; op_ori(s, 0x04000685u);
+	s.pc = 0x0B2EC; op_or_(s, 0x08244702u);
+	s.pc = 0x0B2F0; op_or_(s, 0x08208682u);
+	s.pc = 0x0B2F4; op_andi(s, 0x1403C102u);
+	s.pc = 0x0B2F8; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0B2FC; op_brnz(s, 0x21000982u);
+	if (s.pc == 0x0B348) { if (s.can_chain(cw, 0x0B348) && --budget) goto L_4ee7754ddd213ef8; goto out; }
+	goto out;
+L_4ee7754ddd213ef8:
+	s.instructions += 2;
+	s.pc = 0x0B348; op_nop(s, 0x12000511u);
+	s.pc = 0x0B34C; op_brz(s, 0x207FFC8Du);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_449(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -5586,7 +7369,176 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[54] = L.gpr[54]; s.gpr[55] = L.gpr[55]; s.gpr[56] = L.gpr[56]; s.gpr[57] = L.gpr[57]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89];
 	s.pc = L.pc;
 }
-void spu_aotc_425(SPUThread& __restrict s) {
+void spu_aotc_450(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[17] = s.gpr[17]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x0B300: goto L_cb915cc33c10db95;
+		case 0x0B30C: goto L_9f5d45e1f3264602;
+		case 0x0B310: goto L_34a39beb5f8a0828;
+		default: goto out;
+	}
+L_cb915cc33c10db95:
+	s.instructions += 3;
+	L.pc = 0x0B300; op_ori(L, 0x04000705u);
+	L.pc = 0x0B304; op_shlqbyi(L, 0x3FE00884u);
+	L.pc = 0x0B308; op_brz(L, 0x2000050Du);
+	if (L.pc == 0x0B30C) { if (s.can_chain(cw, 0x0B30C) && --budget) goto L_9f5d45e1f3264602; goto out; }
+	goto out;
+L_9f5d45e1f3264602:
+	s.instructions += 9;
+	L.pc = 0x0B30C; op_il(L, 0x40800006u);
+	L.pc = 0x0B310; op_ai(L, 0x1C040306u);
+	L.pc = 0x0B314; op_lqd(L, 0x34000202u);
+	L.pc = 0x0B318; op_ai(L, 0x1C040204u);
+	L.pc = 0x0B31C; op_clgt(L, 0x58018683u);
+	L.pc = 0x0B320; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B324; op_stqd(L, 0x24000282u);
+	L.pc = 0x0B328; op_ai(L, 0x1C040285u);
+	L.pc = 0x0B32C; op_brnz(L, 0x217FFC83u);
+	if (L.pc == 0x0B310) { if (s.can_chain(cw, 0x0B310) && --budget) goto L_34a39beb5f8a0828; goto out; }
+	goto out;
+L_34a39beb5f8a0828:
+	s.instructions += 8;
+	L.pc = 0x0B310; op_ai(L, 0x1C040306u);
+	L.pc = 0x0B314; op_lqd(L, 0x34000202u);
+	L.pc = 0x0B318; op_ai(L, 0x1C040204u);
+	L.pc = 0x0B31C; op_clgt(L, 0x58018683u);
+	L.pc = 0x0B320; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B324; op_stqd(L, 0x24000282u);
+	L.pc = 0x0B328; op_ai(L, 0x1C040285u);
+	L.pc = 0x0B32C; op_brnz(L, 0x217FFC83u);
+	if (L.pc == 0x0B310) { if (s.can_chain(cw, 0x0B310) && --budget) goto L_34a39beb5f8a0828; goto out; }
+	goto out;
+out:
+	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6];
+	s.pc = L.pc;
+}
+void spu_aotc_451(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[17] = s.gpr[17]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[79] = s.gpr[79]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x0B350: goto L_f272e2bcca98e021;
+		case 0x0B568: goto L_c03e9e769c0864e4;
+		case 0x0B5D8: goto L_c803a3cdba429a40;
+		case 0x0B600: goto L_fa8f625e7a294e1f;
+		case 0x0B608: goto L_b923095957794a80;
+		case 0x0B638: goto L_b7502d7243a68007;
+		case 0x0B668: goto L_e7f438e200f3dfe1;
+		default: goto out;
+	}
+L_f272e2bcca98e021:
+	s.instructions += 6;
+	L.pc = 0x0B350; op_andi(L, 0x1403C883u);
+	L.pc = 0x0B354; op_shlqbyi(L, 0x3FE00706u);
+	L.pc = 0x0B358; op_andi(L, 0x1403C708u);
+	L.pc = 0x0B35C; op_shlqbyi(L, 0x3FE00884u);
+	L.pc = 0x0B360; op_or_(L, 0x08220182u);
+	L.pc = 0x0B364; op_brnz(L, 0x21004082u);
+	if (L.pc == 0x0B568) { if (s.can_chain(cw, 0x0B568) && --budget) goto L_c03e9e769c0864e4; goto out; }
+	goto out;
+L_c03e9e769c0864e4:
+	s.instructions += 28;
+	L.pc = 0x0B568; op_sf(L, 0x0800C405u);
+	L.pc = 0x0B56C; op_lqd(L, 0x34000889u);
+	L.pc = 0x0B570; op_ila(L, 0x424F4002u);
+	L.pc = 0x0B574; op_lqd(L, 0x3400488Au);
+	L.pc = 0x0B578; op_shli(L, 0x0F610287u);
+	L.pc = 0x0B57C; op_fsmbi(L, 0x32FFFF83u);
+	L.pc = 0x0B580; op_a(L, 0x18020686u);
+	L.pc = 0x0B584; op_lqd(L, 0x3400070Cu);
+	L.pc = 0x0B588; op_a(L, 0x1813C102u);
+	L.pc = 0x0B58C; op_sfi(L, 0x0C000304u);
+	L.pc = 0x0B590; op_sfi(L, 0x0C040414u);
+	L.pc = 0x0B594; op_lqx(L, 0x38808388u);
+	L.pc = 0x0B598; op_clgti(L, 0x5C03C306u);
+	L.pc = 0x0B59C; op_rotqmby(L, 0x3BA10184u);
+	L.pc = 0x0B5A0; op_cgti(L, 0x4C000295u);
+	L.pc = 0x0B5A4; op_shlqby(L, 0x3BE50183u);
+	L.pc = 0x0B5A8; op_ceqi(L, 0x7C000307u);
+	L.pc = 0x0B5AC; op_rotqmby(L, 0x3BA14496u);
+	L.pc = 0x0B5B0; op_ceqi(L, 0x7C000A85u);
+	L.pc = 0x0B5B4; op_fsm(L, 0x3680038Bu);
+	L.pc = 0x0B5B8; op_or_(L, 0x08210187u);
+	L.pc = 0x0B5BC; op_shufb(L, 0xB0828488u);
+	L.pc = 0x0B5C0; op_fsm(L, 0x36800282u);
+	L.pc = 0x0B5C4; op_selb(L, 0x8061C18Bu);
+	L.pc = 0x0B5C8; op_selb(L, 0x80458202u);
+	L.pc = 0x0B5CC; op_selb(L, 0x80430103u);
+	L.pc = 0x0B5D0; op_stqd(L, 0x24000702u);
+	L.pc = 0x0B5D4; op_brz(L, 0x207FAB86u);
+	if (L.pc == 0x0B5D8) { if (s.can_chain(cw, 0x0B5D8) && --budget) goto L_c803a3cdba429a40; goto out; }
+	goto out;
+L_c803a3cdba429a40:
+	s.instructions += 10;
+	L.pc = 0x0B5D8; op_a(L, 0x18050886u);
+	L.pc = 0x0B5DC; op_ila(L, 0x424F4003u);
+	L.pc = 0x0B5E0; op_andi(L, 0x1403C302u);
+	L.pc = 0x0B5E4; op_a(L, 0x1813C183u);
+	L.pc = 0x0B5E8; op_shli(L, 0x0F610102u);
+	L.pc = 0x0B5EC; op_sf(L, 0x08034A05u);
+	L.pc = 0x0B5F0; op_a(L, 0x1805070Cu);
+	L.pc = 0x0B5F4; op_clgti(L, 0x5C03C284u);
+	L.pc = 0x0B5F8; op_lqx(L, 0x3880C107u);
+	L.pc = 0x0B5FC; op_brnz(L, 0x21000784u);
+	if (L.pc == 0x0B638) { if (s.can_chain(cw, 0x0B638) && --budget) goto L_b7502d7243a68007; goto out; }
+	if (L.pc == 0x0B600) { if (s.can_chain(cw, 0x0B600) && --budget) goto L_fa8f625e7a294e1f; goto out; }
+	goto out;
+L_fa8f625e7a294e1f:
+	s.instructions += 2;
+	L.pc = 0x0B600; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B604; op_brz(L, 0x207FA585u);
+	if (L.pc == 0x0B608) { if (s.can_chain(cw, 0x0B608) && --budget) goto L_b923095957794a80; goto out; }
+	goto out;
+L_b923095957794a80:
+	s.instructions += 12;
+	L.pc = 0x0B608; op_sfi(L, 0x0C000284u);
+	L.pc = 0x0B60C; op_nop(L, 0x127FA48Au);
+	L.pc = 0x0B610; op_il(L, 0x40FFFF82u);
+	L.pc = 0x0B614; op_lqd(L, 0x34000303u);
+	L.pc = 0x0B618; op_lqd(L, 0x34004305u);
+	L.pc = 0x0B61C; op_lqd(L, 0x34000606u);
+	L.pc = 0x0B620; op_rotqmby(L, 0x3BA10102u);
+	L.pc = 0x0B624; op_shufb(L, 0xB0614187u);
+	L.pc = 0x0B628; op_selb(L, 0x80618182u);
+	L.pc = 0x0B62C; op_stqd(L, 0x24000603u);
+	L.pc = 0x0B630; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B634; op_br(L, 0x327F9F80u);
+	goto out;
+L_b7502d7243a68007:
+	s.instructions += 12;
+	L.pc = 0x0B638; op_ai(L, 0x1CFC0285u);
+	L.pc = 0x0B63C; op_nop(L, 0x127FFF8Au);
+	L.pc = 0x0B640; op_lqd(L, 0x34000302u);
+	L.pc = 0x0B644; op_ai(L, 0x1C040306u);
+	L.pc = 0x0B648; op_clgti(L, 0x5C03C284u);
+	L.pc = 0x0B64C; op_lqd(L, 0x34000303u);
+	L.pc = 0x0B650; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B654; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B658; op_shufb(L, 0xB040C107u);
+	L.pc = 0x0B65C; op_stqd(L, 0x24000602u);
+	L.pc = 0x0B660; op_ai(L, 0x1C04060Cu);
+	L.pc = 0x0B664; op_brnz(L, 0x217FFA84u);
+	if (L.pc == 0x0B638) { if (s.can_chain(cw, 0x0B638) && --budget) goto L_b7502d7243a68007; goto out; }
+	if (L.pc == 0x0B668) { if (s.can_chain(cw, 0x0B668) && --budget) goto L_e7f438e200f3dfe1; goto out; }
+	goto out;
+L_e7f438e200f3dfe1:
+	s.instructions += 2;
+	L.pc = 0x0B668; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0B66C; op_br(L, 0x327FF280u);
+	if (L.pc == 0x0B600) { if (s.can_chain(cw, 0x0B600) && --budget) goto L_fa8f625e7a294e1f; goto out; }
+	goto out;
+out:
+	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22];
+	s.pc = L.pc;
+}
+void spu_aotc_452(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5619,7 +7571,7 @@ L_066ca8da2b6d3f44:
 out:
 	return;
 }
-void spu_aotc_426(SPUThread& __restrict s) {
+void spu_aotc_453(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -5747,7 +7699,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[54] = L.gpr[54]; s.gpr[55] = L.gpr[55]; s.gpr[56] = L.gpr[56]; s.gpr[57] = L.gpr[57]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[61] = L.gpr[61]; s.gpr[62] = L.gpr[62]; s.gpr[63] = L.gpr[63]; s.gpr[64] = L.gpr[64]; s.gpr[65] = L.gpr[65]; s.gpr[83] = L.gpr[83]; s.gpr[85] = L.gpr[85]; s.gpr[89] = L.gpr[89];
 	s.pc = L.pc;
 }
-void spu_aotc_427(SPUThread& __restrict s) {
+void spu_aotc_454(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5776,7 +7728,7 @@ L_96c0530efa297b78:
 out:
 	return;
 }
-void spu_aotc_428(SPUThread& __restrict s) {
+void spu_aotc_455(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5800,7 +7752,7 @@ L_e2c2a09647ffcce8:
 out:
 	return;
 }
-void spu_aotc_429(SPUThread& __restrict s) {
+void spu_aotc_456(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5833,7 +7785,7 @@ L_a41d9acadf7ef6b8:
 out:
 	return;
 }
-void spu_aotc_430(SPUThread& __restrict s) {
+void spu_aotc_457(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5862,7 +7814,7 @@ L_593746332278721b:
 out:
 	return;
 }
-void spu_aotc_431(SPUThread& __restrict s) {
+void spu_aotc_458(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5886,7 +7838,7 @@ L_e0cc4ac071710d86:
 out:
 	return;
 }
-void spu_aotc_432(SPUThread& __restrict s) {
+void spu_aotc_459(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -5921,7 +7873,7 @@ L_dc3d5451084bf993:
 out:
 	return;
 }
-void spu_aotc_433(SPUThread& __restrict s) {
+void spu_aotc_460(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -6380,7 +8332,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95]; s.gpr[96] = L.gpr[96]; s.gpr[97] = L.gpr[97]; s.gpr[98] = L.gpr[98]; s.gpr[99] = L.gpr[99]; s.gpr[100] = L.gpr[100]; s.gpr[101] = L.gpr[101]; s.gpr[102] = L.gpr[102]; s.gpr[103] = L.gpr[103]; s.gpr[104] = L.gpr[104]; s.gpr[105] = L.gpr[105]; s.gpr[106] = L.gpr[106]; s.gpr[107] = L.gpr[107];
 	s.pc = L.pc;
 }
-void spu_aotc_434(SPUThread& __restrict s) {
+void spu_aotc_461(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -6400,7 +8352,7 @@ L_56f41e4fee1aaf92:
 out:
 	return;
 }
-void spu_aotc_435(SPUThread& __restrict s) {
+void spu_aotc_462(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -6429,7 +8381,7 @@ L_2a27d75cac7a6536:
 out:
 	return;
 }
-void spu_aotc_436(SPUThread& __restrict s) {
+void spu_aotc_463(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7041,7 +8993,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95]; s.gpr[96] = L.gpr[96]; s.gpr[97] = L.gpr[97]; s.gpr[98] = L.gpr[98]; s.gpr[99] = L.gpr[99];
 	s.pc = L.pc;
 }
-void spu_aotc_437(SPUThread& __restrict s) {
+void spu_aotc_464(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7145,7 +9097,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88];
 	s.pc = L.pc;
 }
-void spu_aotc_438(SPUThread& __restrict s) {
+void spu_aotc_465(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -7168,7 +9120,7 @@ L_a49a75ac1b62e9b7:
 out:
 	return;
 }
-void spu_aotc_439(SPUThread& __restrict s) {
+void spu_aotc_466(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7325,7 +9277,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34];
 	s.pc = L.pc;
 }
-void spu_aotc_440(SPUThread& __restrict s) {
+void spu_aotc_467(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7510,7 +9462,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93];
 	s.pc = L.pc;
 }
-void spu_aotc_441(SPUThread& __restrict s) {
+void spu_aotc_468(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7593,7 +9545,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[17] = L.gpr[17]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91];
 	s.pc = L.pc;
 }
-void spu_aotc_442(SPUThread& __restrict s) {
+void spu_aotc_469(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7637,7 +9589,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13];
 	s.pc = L.pc;
 }
-void spu_aotc_443(SPUThread& __restrict s) {
+void spu_aotc_470(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7682,7 +9634,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15];
 	s.pc = L.pc;
 }
-void spu_aotc_444(SPUThread& __restrict s) {
+void spu_aotc_471(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7800,7 +9752,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94];
 	s.pc = L.pc;
 }
-void spu_aotc_445(SPUThread& __restrict s) {
+void spu_aotc_472(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -7953,7 +9905,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26];
 	s.pc = L.pc;
 }
-void spu_aotc_446(SPUThread& __restrict s) {
+void spu_aotc_473(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -8113,7 +10065,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34];
 	s.pc = L.pc;
 }
-void spu_aotc_447(SPUThread& __restrict s) {
+void spu_aotc_474(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -8326,7 +10278,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[40] = L.gpr[40]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50];
 	s.pc = L.pc;
 }
-void spu_aotc_448(SPUThread& __restrict s) {
+void spu_aotc_475(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -8420,7 +10372,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17];
 	s.pc = L.pc;
 }
-void spu_aotc_449(SPUThread& __restrict s) {
+void spu_aotc_476(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -8515,7 +10467,7 @@ out:
 	s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13];
 	s.pc = L.pc;
 }
-void spu_aotc_450(SPUThread& __restrict s) {
+void spu_aotc_477(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -8613,7 +10565,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12];
 	s.pc = L.pc;
 }
-void spu_aotc_451(SPUThread& __restrict s) {
+void spu_aotc_478(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -9027,7 +10979,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95]; s.gpr[96] = L.gpr[96]; s.gpr[126] = L.gpr[126];
 	s.pc = L.pc;
 }
-void spu_aotc_452(SPUThread& __restrict s) {
+void spu_aotc_479(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -9206,7 +11158,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[84] = L.gpr[84];
 	s.pc = L.pc;
 }
-void spu_aotc_453(SPUThread& __restrict s) {
+void spu_aotc_480(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -9523,7 +11475,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[80] = L.gpr[80];
 	s.pc = L.pc;
 }
-void spu_aotc_454(SPUThread& __restrict s) {
+void spu_aotc_481(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -9603,11 +11555,11 @@ L_f43daac48cd75084:
 out:
 	return;
 }
-void spu_aotc_455(SPUThread& __restrict s) {
+void spu_aotc_482(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[14] = s.gpr[14]; L.gpr[16] = s.gpr[16]; L.gpr[20] = s.gpr[20]; L.gpr[34] = s.gpr[34]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[89] = s.gpr[89]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[92] = s.gpr[92]; L.gpr[93] = s.gpr[93]; L.gpr[94] = s.gpr[94]; L.gpr[127] = s.gpr[127];
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[16] = s.gpr[16]; L.gpr[20] = s.gpr[20]; L.gpr[34] = s.gpr[34]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[89] = s.gpr[89]; L.gpr[90] = s.gpr[90]; L.gpr[91] = s.gpr[91]; L.gpr[92] = s.gpr[92]; L.gpr[93] = s.gpr[93]; L.gpr[94] = s.gpr[94]; L.gpr[127] = s.gpr[127];
 	L.pc = s.pc;
 	switch (L.pc) {
 		case 0x0CFE0: goto L_f936c05697656c44;
@@ -9618,6 +11570,7 @@ void spu_aotc_455(SPUThread& __restrict s) {
 		case 0x0D360: goto L_401d403f671071ea;
 		case 0x0D370: goto L_536768fb08694b23;
 		case 0x0D3A0: goto L_fd90af454cd669a5;
+		case 0x0D3C8: goto L_120054a35100ce98;
 		case 0x0D3CC: goto L_3bc34480eba0978e;
 		case 0x0D3E0: goto L_989f5bfeb4e5ae07;
 		case 0x0D3EC: goto L_91da990a54d4c3d0;
@@ -9629,12 +11582,18 @@ void spu_aotc_455(SPUThread& __restrict s) {
 		case 0x0D474: goto L_bea11d5c279bf254;
 		case 0x0D480: goto L_b4c01f4007ad0d15;
 		case 0x0D498: goto L_05cbceb4ee73e0e8;
+		case 0x0D4B4: goto L_86cd84e107a5a295;
 		case 0x0D4C8: goto L_e1a12320873936c2;
 		case 0x0D54C: goto L_221687d1cecf261e;
 		case 0x0D554: goto L_42d12d146ad24c88;
 		case 0x0D560: goto L_c7b2209df4e71700;
+		case 0x0D580: goto L_45cc23fb604f5b97;
 		case 0x0D5A0: goto L_fdf1a884bfabf29b;
 		case 0x0D5D0: goto L_a349d577bc50fc47;
+		case 0x0D738: goto L_74c90b9701d41b58;
+		case 0x0D768: goto L_eaea64eb81600c39;
+		case 0x0D958: goto L_e8024b78fda4490f;
+		case 0x0D96C: goto L_d5cb2c63e0c5712a;
 		case 0x0E1BC: goto L_f8eeada559a9ff39;
 		default: goto out;
 	}
@@ -9799,6 +11758,30 @@ L_fd90af454cd669a5:
 	if (L.pc == 0x0D370) { if (s.can_chain(cw, 0x0D370) && --budget) goto L_536768fb08694b23; goto out; }
 	if (L.pc == 0x0D3CC) { if (s.can_chain(cw, 0x0D3CC) && --budget) goto L_3bc34480eba0978e; goto out; }
 	goto out;
+L_120054a35100ce98:
+	s.instructions += 20;
+	L.pc = 0x0D3C8; op_il(L, 0x40804A06u);
+	L.pc = 0x0D3CC; op_lqd(L, 0x341E2904u);
+	L.pc = 0x0D3D0; op_il(L, 0x4083CC05u);
+	L.pc = 0x0D3D4; op_lqx(L, 0x3881A983u);
+	L.pc = 0x0D3D8; op_lqx(L, 0x38816902u);
+	L.pc = 0x0D3DC; op_rotqby(L, 0x3B818186u);
+	L.pc = 0x0D3E0; op_ila(L, 0x42810183u);
+	L.pc = 0x0D3E4; op_rotqby(L, 0x3B814102u);
+	L.pc = 0x0D3E8; op_lqd(L, 0x34034305u);
+	L.pc = 0x0D3EC; op_shufb(L, 0xB0408103u);
+	L.pc = 0x0D3F0; op_cwd(L, 0x3EC30083u);
+	L.pc = 0x0D3F4; op_fma(L, 0xE0808205u);
+	L.pc = 0x0D3F8; op_ilhu(L, 0x411FC002u);
+	L.pc = 0x0D3FC; op_shufb(L, 0xB0410103u);
+	L.pc = 0x0D400; op_stqd(L, 0x24034302u);
+	L.pc = 0x0D404; op_lqd(L, 0x3400A982u);
+	L.pc = 0x0D408; op_rotqbyi(L, 0x3F834102u);
+	L.pc = 0x0D40C; op_ceqbi(L, 0x7E000102u);
+	L.pc = 0x0D410; op_xsbh(L, 0x56C00102u);
+	L.pc = 0x0D414; op_brhz(L, 0x22001402u);
+	if (L.pc == 0x0D4B4) { if (s.can_chain(cw, 0x0D4B4) && --budget) goto L_86cd84e107a5a295; goto out; }
+	goto out;
 L_3bc34480eba0978e:
 	s.instructions += 5;
 	L.pc = 0x0D3CC; op_ai(L, 0x1C006B56u);
@@ -9931,6 +11914,16 @@ L_05cbceb4ee73e0e8:
 	L.pc = 0x0D4C4; op_brz(L, 0x20001102u);
 	if (L.pc == 0x0D4C8) { if (s.can_chain(cw, 0x0D4C8) && --budget) goto L_e1a12320873936c2; goto out; }
 	goto out;
+L_86cd84e107a5a295:
+	s.instructions += 5;
+	L.pc = 0x0D4B4; op_lqd(L, 0x34022982u);
+	L.pc = 0x0D4B8; op_rotqbyi(L, 0x3F834102u);
+	L.pc = 0x0D4BC; op_ceqbi(L, 0x7E000102u);
+	L.pc = 0x0D4C0; op_xsbh(L, 0x56C00102u);
+	L.pc = 0x0D4C4; op_brhnz(L, 0x23001782u);
+	if (L.pc == 0x0D580) { if (s.can_chain(cw, 0x0D580) && --budget) goto L_45cc23fb604f5b97; goto out; }
+	if (L.pc == 0x0D4C8) { if (s.can_chain(cw, 0x0D4C8) && --budget) goto L_e1a12320873936c2; goto out; }
+	goto out;
 L_e1a12320873936c2:
 	s.instructions += 22;
 	L.pc = 0x0D4C8; op_cgti(L, 0x4C004402u);
@@ -10002,6 +11995,21 @@ L_c7b2209df4e71700:
 	if (L.pc == 0x0D5A0) { if (s.can_chain(cw, 0x0D5A0) && --budget) goto L_fdf1a884bfabf29b; goto out; }
 	if (L.pc == 0x0D5D0) { if (s.can_chain(cw, 0x0D5D0) && --budget) goto L_a349d577bc50fc47; goto out; }
 	goto out;
+L_45cc23fb604f5b97:
+	s.instructions += 12;
+	L.pc = 0x0D580; op_ai(L, 0x1C2C0081u);
+	L.pc = 0x0D584; op_lqd(L, 0x34FFC0D0u);
+	L.pc = 0x0D588; op_lqd(L, 0x34FF80D1u);
+	L.pc = 0x0D58C; op_lqd(L, 0x34FF40D2u);
+	L.pc = 0x0D590; op_lqd(L, 0x34FF00D3u);
+	L.pc = 0x0D594; op_lqd(L, 0x34FEC0D4u);
+	L.pc = 0x0D598; op_lqd(L, 0x34FE80D5u);
+	L.pc = 0x0D59C; op_lqd(L, 0x34FE40D6u);
+	L.pc = 0x0D5A0; op_lqd(L, 0x34FE00D7u);
+	L.pc = 0x0D5A4; op_lqd(L, 0x34FDC0D8u);
+	L.pc = 0x0D5A8; op_lqd(L, 0x34004080u);
+	L.pc = 0x0D5AC; op_bi(L, 0x35000000u);
+	goto out;
 L_fdf1a884bfabf29b:
 	s.instructions += 12;
 	L.pc = 0x0D5A0; op_ai(L, 0x1C004387u);
@@ -10024,6 +12032,58 @@ L_a349d577bc50fc47:
 	L.pc = 0x0D5D0; op_nop(L, 0x4020007Fu);
 	L.pc = 0x0D5D4; op_br(L, 0x32017D00u);
 	if (L.pc == 0x0E1BC) { if (s.can_chain(cw, 0x0E1BC) && --budget) goto L_f8eeada559a9ff39; goto out; }
+	goto out;
+L_74c90b9701d41b58:
+	s.instructions += 12;
+	L.pc = 0x0D738; op_il(L, 0x4083CA03u);
+	L.pc = 0x0D73C; op_nop(L, 0x101A790Au);
+	L.pc = 0x0D740; op_ilhu(L, 0x411E5184u);
+	L.pc = 0x0D744; op_lqx(L, 0x3880E902u);
+	L.pc = 0x0D748; op_iohl(L, 0x60EB8504u);
+	L.pc = 0x0D74C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D750; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D754; op_rotqby(L, 0x3B80C103u);
+	L.pc = 0x0D758; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D75C; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D760; op_fcgt(L, 0x58410182u);
+	L.pc = 0x0D764; op_brz(L, 0x207F8C82u);
+	if (L.pc == 0x0D3C8) { if (s.can_chain(cw, 0x0D3C8) && --budget) goto L_120054a35100ce98; goto out; }
+	if (L.pc == 0x0D768) { if (s.can_chain(cw, 0x0D768) && --budget) goto L_eaea64eb81600c39; goto out; }
+	goto out;
+L_eaea64eb81600c39:
+	s.instructions += 16;
+	L.pc = 0x0D768; op_il(L, 0x40804A06u);
+	L.pc = 0x0D76C; op_nop(L, 0x101A790Eu);
+	L.pc = 0x0D770; op_fs(L, 0x58A10183u);
+	L.pc = 0x0D774; op_lqd(L, 0x341DE905u);
+	L.pc = 0x0D778; op_ila(L, 0x42810182u);
+	L.pc = 0x0D77C; op_lqx(L, 0x3881A984u);
+	L.pc = 0x0D780; op_shufb(L, 0xB060C182u);
+	L.pc = 0x0D784; op_rotqby(L, 0x3B818206u);
+	L.pc = 0x0D788; op_cwd(L, 0x3EC30084u);
+	L.pc = 0x0D78C; op_lqd(L, 0x34034302u);
+	L.pc = 0x0D790; op_fma(L, 0xE0A0C282u);
+	L.pc = 0x0D794; op_ilhu(L, 0x411FC002u);
+	L.pc = 0x0D798; op_shufb(L, 0xB0414104u);
+	L.pc = 0x0D79C; op_stqd(L, 0x24034302u);
+	L.pc = 0x0D7A0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D7A4; op_br(L, 0x327F8480u);
+	if (L.pc == 0x0D3C8) { if (s.can_chain(cw, 0x0D3C8) && --budget) goto L_120054a35100ce98; goto out; }
+	goto out;
+L_e8024b78fda4490f:
+	s.instructions += 5;
+	L.pc = 0x0D958; op_and_(L, 0x18352803u);
+	L.pc = 0x0D95C; op_lqx(L, 0x38946902u);
+	L.pc = 0x0D960; op_rotqby(L, 0x3B944102u);
+	L.pc = 0x0D964; op_clgt(L, 0x5800C102u);
+	L.pc = 0x0D968; op_brnz(L, 0x217FF902u);
+	if (L.pc == 0x0D96C) { if (s.can_chain(cw, 0x0D96C) && --budget) goto L_d5cb2c63e0c5712a; goto out; }
+	goto out;
+L_d5cb2c63e0c5712a:
+	s.instructions += 2;
+	L.pc = 0x0D96C; op_lqd(L, 0x34002953u);
+	L.pc = 0x0D970; op_br(L, 0x327FB900u);
+	if (L.pc == 0x0D738) { if (s.can_chain(cw, 0x0D738) && --budget) goto L_74c90b9701d41b58; goto out; }
 	goto out;
 L_f8eeada559a9ff39:
 	s.instructions += 18;
@@ -10050,7 +12110,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94];
 	s.pc = L.pc;
 }
-void spu_aotc_456(SPUThread& __restrict s) {
+void spu_aotc_483(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -10079,259 +12139,311 @@ L_4d440315c9556e54:
 out:
 	return;
 }
-void spu_aotc_457(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D0C4: goto L_89a413e5f4115723;
-		case 0x0D0E4: goto L_1b8500a2976a1dfb;
-		default: goto out;
-	}
-L_89a413e5f4115723:
-	s.instructions += 8;
-	s.pc = 0x0D0C4; op_lqd(s, 0x34004282u);
-	s.pc = 0x0D0C8; op_lqd(s, 0x34024783u);
-	s.pc = 0x0D0CC; op_shli(s, 0x0F608102u);
-	s.pc = 0x0D0D0; op_a(s, 0x18014102u);
-	s.pc = 0x0D0D4; op_lqd(s, 0x3400C105u);
-	s.pc = 0x0D0D8; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0D0DC; op_rotqby(s, 0x3B808282u);
-	s.pc = 0x0D0E0; op_brsl(s, 0x33000085u);
-	if (s.pc == 0x0D0E4) { if (s.can_chain(cw, 0x0D0E4) && --budget) goto L_1b8500a2976a1dfb; goto out; }
-	goto out;
-L_1b8500a2976a1dfb:
-	s.instructions += 2;
-	s.pc = 0x0D0E4; op_ai(s, 0x1C020285u);
-	s.pc = 0x0D0E8; op_bi(s, 0x35080280u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_458(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D0EC: goto L_21151e39b637dcaa;
-		case 0x0D10C: goto L_fbfb8008a14deba7;
-		default: goto out;
-	}
-L_21151e39b637dcaa:
-	s.instructions += 8;
-	s.pc = 0x0D0EC; op_wrch(s, 0x21A00802u);
-	if (s.halted) { s.pc = 0x0D0F0; goto out; }
-	s.pc = 0x0D0F0; op_wrch(s, 0x21A00904u);
-	if (s.halted) { s.pc = 0x0D0F4; goto out; }
-	s.pc = 0x0D0F4; op_sf(s, 0x08018382u);
-	s.pc = 0x0D0F8; op_wrch(s, 0x21A00982u);
-	if (s.halted) { s.pc = 0x0D0FC; goto out; }
-	s.pc = 0x0D0FC; op_wrch(s, 0x21A00A03u);
-	if (s.halted) { s.pc = 0x0D100; goto out; }
-	s.pc = 0x0D100; op_il(s, 0x40802002u);
-	s.pc = 0x0D104; op_wrch(s, 0x21A00A82u);
-	if (s.halted) { s.pc = 0x0D108; goto out; }
-	s.pc = 0x0D108; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D10C) { if (s.can_chain(cw, 0x0D10C) && --budget) goto L_fbfb8008a14deba7; goto out; }
-	goto out;
-L_fbfb8008a14deba7:
-	s.instructions += 2;
-	s.pc = 0x0D10C; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D110; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_459(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D1FC: goto L_075391c1d5d63473;
-		case 0x0D214: goto L_b17ec13f80747a4a;
-		default: goto out;
-	}
-L_075391c1d5d63473:
-	s.instructions += 6;
-	s.pc = 0x0D1FC; op_wrch(s, 0x21A00B02u);
-	if (s.halted) { s.pc = 0x0D200; goto out; }
-	s.pc = 0x0D200; op_il(s, 0x40800103u);
-	s.pc = 0x0D204; op_wrch(s, 0x21A00B83u);
-	if (s.halted) { s.pc = 0x0D208; goto out; }
-	s.pc = 0x0D208; op_rdch(s, 0x01A00C02u);
-	if (s.halted) { s.pc = 0x0D20C; goto out; }
-	s.pc = 0x0D20C; op_nop(s, 0x00200000u);
-	s.pc = 0x0D210; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D214) { if (s.can_chain(cw, 0x0D214) && --budget) goto L_b17ec13f80747a4a; goto out; }
-	goto out;
-L_b17ec13f80747a4a:
-	s.instructions += 2;
-	s.pc = 0x0D214; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D218; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_460(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D21C: goto L_7a4d4d17ef705b1d;
-		case 0x0D23C: goto L_dd447e4af54e4e8d;
-		default: goto out;
-	}
-L_7a4d4d17ef705b1d:
-	s.instructions += 8;
-	s.pc = 0x0D21C; op_lqd(s, 0x34004282u);
-	s.pc = 0x0D220; op_lqd(s, 0x34024783u);
-	s.pc = 0x0D224; op_shli(s, 0x0F608102u);
-	s.pc = 0x0D228; op_a(s, 0x18014102u);
-	s.pc = 0x0D22C; op_lqd(s, 0x3400C105u);
-	s.pc = 0x0D230; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0D234; op_rotqby(s, 0x3B808282u);
-	s.pc = 0x0D238; op_brsl(s, 0x33000085u);
-	if (s.pc == 0x0D23C) { if (s.can_chain(cw, 0x0D23C) && --budget) goto L_dd447e4af54e4e8d; goto out; }
-	goto out;
-L_dd447e4af54e4e8d:
-	s.instructions += 2;
-	s.pc = 0x0D23C; op_ai(s, 0x1C020285u);
-	s.pc = 0x0D240; op_bi(s, 0x35080280u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_461(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D244: goto L_d17fbc2c565bb80c;
-		case 0x0D264: goto L_d7e7dd105c415cfa;
-		default: goto out;
-	}
-L_d17fbc2c565bb80c:
-	s.instructions += 8;
-	s.pc = 0x0D244; op_wrch(s, 0x21A00802u);
-	if (s.halted) { s.pc = 0x0D248; goto out; }
-	s.pc = 0x0D248; op_wrch(s, 0x21A00904u);
-	if (s.halted) { s.pc = 0x0D24C; goto out; }
-	s.pc = 0x0D24C; op_sf(s, 0x08018382u);
-	s.pc = 0x0D250; op_wrch(s, 0x21A00982u);
-	if (s.halted) { s.pc = 0x0D254; goto out; }
-	s.pc = 0x0D254; op_wrch(s, 0x21A00A03u);
-	if (s.halted) { s.pc = 0x0D258; goto out; }
-	s.pc = 0x0D258; op_il(s, 0x40802002u);
-	s.pc = 0x0D25C; op_wrch(s, 0x21A00A82u);
-	if (s.halted) { s.pc = 0x0D260; goto out; }
-	s.pc = 0x0D260; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D264) { if (s.can_chain(cw, 0x0D264) && --budget) goto L_d7e7dd105c415cfa; goto out; }
-	goto out;
-L_d7e7dd105c415cfa:
-	s.instructions += 2;
-	s.pc = 0x0D264; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D268; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_462(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D32C: goto L_16089954cf24a4b1;
-		case 0x0D344: goto L_4348c552c1fd0035;
-		default: goto out;
-	}
-L_16089954cf24a4b1:
-	s.instructions += 6;
-	s.pc = 0x0D32C; op_wrch(s, 0x21A00B03u);
-	if (s.halted) { s.pc = 0x0D330; goto out; }
-	s.pc = 0x0D330; op_il(s, 0x40800102u);
-	s.pc = 0x0D334; op_wrch(s, 0x21A00B82u);
-	if (s.halted) { s.pc = 0x0D338; goto out; }
-	s.pc = 0x0D338; op_rdch(s, 0x01A00C03u);
-	if (s.halted) { s.pc = 0x0D33C; goto out; }
-	s.pc = 0x0D33C; op_nop(s, 0x00200000u);
-	s.pc = 0x0D340; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D344) { if (s.can_chain(cw, 0x0D344) && --budget) goto L_4348c552c1fd0035; goto out; }
-	goto out;
-L_4348c552c1fd0035:
-	s.instructions += 2;
-	s.pc = 0x0D344; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D348; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_463(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D34C: goto L_7abcdc1437094d10;
-		case 0x0D36C: goto L_8ea3f4ebbf8b30ba;
-		default: goto out;
-	}
-L_7abcdc1437094d10:
-	s.instructions += 8;
-	s.pc = 0x0D34C; op_lqd(s, 0x34004382u);
-	s.pc = 0x0D350; op_lqd(s, 0x3402E883u);
-	s.pc = 0x0D354; op_shli(s, 0x0F608102u);
-	s.pc = 0x0D358; op_a(s, 0x1801C102u);
-	s.pc = 0x0D35C; op_lqd(s, 0x3400C105u);
-	s.pc = 0x0D360; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0D364; op_rotqby(s, 0x3B808282u);
-	s.pc = 0x0D368; op_brsl(s, 0x33000085u);
-	if (s.pc == 0x0D36C) { if (s.can_chain(cw, 0x0D36C) && --budget) goto L_8ea3f4ebbf8b30ba; goto out; }
-	goto out;
-L_8ea3f4ebbf8b30ba:
-	s.instructions += 2;
-	s.pc = 0x0D36C; op_ai(s, 0x1C020285u);
-	s.pc = 0x0D370; op_bi(s, 0x35080280u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_464(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D374: goto L_4734f1b864f94986;
-		case 0x0D394: goto L_238e0d5fd8da6e65;
-		default: goto out;
-	}
-L_4734f1b864f94986:
-	s.instructions += 8;
-	s.pc = 0x0D374; op_wrch(s, 0x21A00802u);
-	if (s.halted) { s.pc = 0x0D378; goto out; }
-	s.pc = 0x0D378; op_wrch(s, 0x21A00904u);
-	if (s.halted) { s.pc = 0x0D37C; goto out; }
-	s.pc = 0x0D37C; op_sf(s, 0x08018402u);
-	s.pc = 0x0D380; op_wrch(s, 0x21A00982u);
-	if (s.halted) { s.pc = 0x0D384; goto out; }
-	s.pc = 0x0D384; op_wrch(s, 0x21A00A03u);
-	if (s.halted) { s.pc = 0x0D388; goto out; }
-	s.pc = 0x0D388; op_il(s, 0x40801002u);
-	s.pc = 0x0D38C; op_wrch(s, 0x21A00A82u);
-	if (s.halted) { s.pc = 0x0D390; goto out; }
-	s.pc = 0x0D390; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D394) { if (s.can_chain(cw, 0x0D394) && --budget) goto L_238e0d5fd8da6e65; goto out; }
-	goto out;
-L_238e0d5fd8da6e65:
-	s.instructions += 2;
-	s.pc = 0x0D394; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D398; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_465(SPUThread& __restrict s) {
+void spu_aotc_484(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[23] = s.gpr[23]; L.gpr[24] = s.gpr[24]; L.gpr[25] = s.gpr[25]; L.gpr[26] = s.gpr[26]; L.gpr[27] = s.gpr[27]; L.gpr[28] = s.gpr[28]; L.gpr[29] = s.gpr[29]; L.gpr[30] = s.gpr[30]; L.gpr[31] = s.gpr[31]; L.gpr[32] = s.gpr[32]; L.gpr[33] = s.gpr[33]; L.gpr[34] = s.gpr[34]; L.gpr[35] = s.gpr[35]; L.gpr[36] = s.gpr[36]; L.gpr[37] = s.gpr[37]; L.gpr[38] = s.gpr[38]; L.gpr[39] = s.gpr[39]; L.gpr[40] = s.gpr[40]; L.gpr[41] = s.gpr[41]; L.gpr[42] = s.gpr[42]; L.gpr[43] = s.gpr[43]; L.gpr[44] = s.gpr[44]; L.gpr[45] = s.gpr[45]; L.gpr[46] = s.gpr[46]; L.gpr[47] = s.gpr[47]; L.gpr[48] = s.gpr[48]; L.gpr[49] = s.gpr[49]; L.gpr[50] = s.gpr[50]; L.gpr[51] = s.gpr[51]; L.gpr[52] = s.gpr[52]; L.gpr[53] = s.gpr[53]; L.gpr[54] = s.gpr[54]; L.gpr[55] = s.gpr[55]; L.gpr[56] = s.gpr[56]; L.gpr[57] = s.gpr[57]; L.gpr[58] = s.gpr[58]; L.gpr[59] = s.gpr[59]; L.gpr[60] = s.gpr[60]; L.gpr[61] = s.gpr[61]; L.gpr[62] = s.gpr[62]; L.gpr[63] = s.gpr[63]; L.gpr[64] = s.gpr[64]; L.gpr[65] = s.gpr[65]; L.gpr[66] = s.gpr[66]; L.gpr[67] = s.gpr[67]; L.gpr[68] = s.gpr[68]; L.gpr[69] = s.gpr[69]; L.gpr[70] = s.gpr[70]; L.gpr[71] = s.gpr[71]; L.gpr[72] = s.gpr[72]; L.gpr[79] = s.gpr[79]; L.gpr[84] = s.gpr[84]; L.gpr[87] = s.gpr[87]; L.gpr[127] = s.gpr[127];
+	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[23] = s.gpr[23]; L.gpr[24] = s.gpr[24]; L.gpr[25] = s.gpr[25]; L.gpr[26] = s.gpr[26]; L.gpr[27] = s.gpr[27]; L.gpr[28] = s.gpr[28]; L.gpr[29] = s.gpr[29]; L.gpr[30] = s.gpr[30]; L.gpr[31] = s.gpr[31]; L.gpr[32] = s.gpr[32]; L.gpr[33] = s.gpr[33]; L.gpr[34] = s.gpr[34]; L.gpr[35] = s.gpr[35]; L.gpr[36] = s.gpr[36]; L.gpr[37] = s.gpr[37]; L.gpr[38] = s.gpr[38]; L.gpr[39] = s.gpr[39]; L.gpr[40] = s.gpr[40]; L.gpr[41] = s.gpr[41]; L.gpr[42] = s.gpr[42]; L.gpr[43] = s.gpr[43]; L.gpr[44] = s.gpr[44]; L.gpr[45] = s.gpr[45]; L.gpr[46] = s.gpr[46]; L.gpr[47] = s.gpr[47]; L.gpr[48] = s.gpr[48]; L.gpr[49] = s.gpr[49]; L.gpr[50] = s.gpr[50]; L.gpr[51] = s.gpr[51]; L.gpr[52] = s.gpr[52]; L.gpr[53] = s.gpr[53]; L.gpr[54] = s.gpr[54]; L.gpr[55] = s.gpr[55]; L.gpr[56] = s.gpr[56]; L.gpr[57] = s.gpr[57]; L.gpr[58] = s.gpr[58]; L.gpr[59] = s.gpr[59]; L.gpr[60] = s.gpr[60]; L.gpr[61] = s.gpr[61]; L.gpr[62] = s.gpr[62]; L.gpr[63] = s.gpr[63]; L.gpr[64] = s.gpr[64]; L.gpr[65] = s.gpr[65]; L.gpr[66] = s.gpr[66]; L.gpr[67] = s.gpr[67]; L.gpr[68] = s.gpr[68]; L.gpr[69] = s.gpr[69]; L.gpr[70] = s.gpr[70]; L.gpr[71] = s.gpr[71]; L.gpr[72] = s.gpr[72]; L.gpr[79] = s.gpr[79]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[127] = s.gpr[127];
 	L.pc = s.pc;
 	switch (L.pc) {
+		case 0x0D0C0: goto L_0fbe6d86fbda9ee4;
+		case 0x0D1CC: goto L_dc96e0090149923b;
+		case 0x0D1E0: goto L_378f081232ea4295;
+		case 0x0D240: goto L_2200e98152b6a51f;
+		case 0x0D2A0: goto L_e087e0f5ee6f10d6;
+		case 0x0D2B8: goto L_f65e8cd9abe7e2cf;
+		case 0x0D308: goto L_266f7df4f9a7559d;
+		case 0x0D318: goto L_41b4a0caa24ee5b2;
+		case 0x0D368: goto L_860c1f19d0222339;
+		case 0x0D398: goto L_f6ca08df09daf0da;
 		case 0x0D440: goto L_8e96b8e0c04aa986;
 		case 0x0D628: goto L_f05dc3fd7bd54b97;
 		case 0x0D6D8: goto L_c78e840cb58f5863;
+		case 0x0D918: goto L_f6405895080d0963;
+		case 0x0D978: goto L_f926e4e32428350e;
+		case 0x0DA20: goto L_8454e480a62422f5;
+		case 0x0DA7C: goto L_1e60d50d13540f7e;
+		case 0x0DAA0: goto L_b8a2c5ce2632f468;
+		case 0x0DAC0: goto L_261dc74c389951c3;
+		case 0x0DAE0: goto L_274dfc6a2f6be6b3;
+		case 0x0DB10: goto L_6f9ec6078cb50861;
+		case 0x0DDCC: goto L_73c84bee56a660c2;
+		case 0x0DDD8: goto L_a295dca6f4d8f7d0;
+		case 0x0DDE0: goto L_4173e6d6ba07ad57;
+		case 0x0DE14: goto L_89ee1760180b9681;
+		case 0x0DE58: goto L_fc3a4602d052da28;
+		case 0x0DE60: goto L_3d7aebeb032e24ca;
+		case 0x0DE68: goto L_4bbf3d9c0e28d842;
+		case 0x0DE80: goto L_b688c8fa757aa5b8;
+		case 0x0DE84: goto L_0bbef63a7b24bf3e;
+		case 0x0DE88: goto L_b974c32636268e44;
+		case 0x0DE90: goto L_e9e39d8cd302ab8a;
+		case 0x0DEA8: goto L_4e5d5e0e0c9b3499;
+		case 0x0DED8: goto L_65eed0d9d7862b67;
+		case 0x0DEE8: goto L_d5bf849f29d1c678;
+		case 0x0DEF0: goto L_7c4d72f58ad5bb30;
+		case 0x0DF08: goto L_c1cec1cf20f86882;
+		case 0x0DF10: goto L_7d402f951ddb65ac;
+		case 0x0DF64: goto L_874be8f56977a585;
+		case 0x0DF78: goto L_9c641e227b160d25;
+		case 0x0E0A8: goto L_5b487f6a9074fe8b;
+		case 0x0E0AC: goto L_3dca4be4058a4c82;
+		case 0x0E0B8: goto L_7f2c4ae39a6b8140;
+		case 0x0E108: goto L_ce4aabb695a17abf;
+		case 0x0EC48: goto L_e19d42a1acea638a;
+		case 0x0EC78: goto L_50aa06513e3e967a;
+		case 0x0EC98: goto L_e7d5852556cdafd0;
+		case 0x0ED08: goto L_e1876c478debbf5a;
+		case 0x0ED30: goto L_a44b9d0c86b8401a;
+		case 0x0EFC0: goto L_2f8f0ec92c86758d;
 		default: goto out;
 	}
+L_0fbe6d86fbda9ee4:
+	s.instructions += 67;
+	L.pc = 0x0D0C0; op_il(L, 0x4080420Du);
+	L.pc = 0x0D0C4; op_stqd(L, 0x24FF40D2u);
+	L.pc = 0x0D0C8; op_ori(L, 0x040001D2u);
+	L.pc = 0x0D0CC; op_stqd(L, 0x24FF00D3u);
+	L.pc = 0x0D0D0; op_il(L, 0x40801203u);
+	L.pc = 0x0D0D4; op_stqd(L, 0x24FF80D1u);
+	L.pc = 0x0D0D8; op_il(L, 0x40839E0Bu);
+	L.pc = 0x0D0DC; op_lqd(L, 0x34002953u);
+	L.pc = 0x0D0E0; op_ai(L, 0x1C038184u);
+	L.pc = 0x0D0E4; op_stqd(L, 0x24FEC0D4u);
+	L.pc = 0x0D0E8; op_il(L, 0x4080060Cu);
+	L.pc = 0x0D0EC; op_stqd(L, 0x24004080u);
+	L.pc = 0x0D0F0; op_il(L, 0x40803E10u);
+	L.pc = 0x0D0F4; op_stqd(L, 0x24FFC0D0u);
+	L.pc = 0x0D0F8; op_il(L, 0x40800054u);
+	L.pc = 0x0D0FC; op_stqd(L, 0x24FE80D5u);
+	L.pc = 0x0D100; op_il(L, 0x4080000Au);
+	L.pc = 0x0D104; op_nop(L, 0x00200000u);
+	L.pc = 0x0D108; op_ai(L, 0x1C102982u);
+	L.pc = 0x0D10C; op_lqx(L, 0x3880E983u);
+	L.pc = 0x0D110; op_lqx(L, 0x38836985u);
+	L.pc = 0x0D114; op_lqd(L, 0x3400C109u);
+	L.pc = 0x0D118; op_lqd(L, 0x34004108u);
+	L.pc = 0x0D11C; op_lqd(L, 0x34008107u);
+	L.pc = 0x0D120; op_ila(L, 0x427FFF82u);
+	L.pc = 0x0D124; op_lqd(L, 0x34012986u);
+	L.pc = 0x0D128; op_rotqby(L, 0x3B810183u);
+	L.pc = 0x0D12C; op_rotqby(L, 0x3B834285u);
+	L.pc = 0x0D130; op_stqd(L, 0x24FE40D6u);
+	L.pc = 0x0D134; op_stqd(L, 0x24FE00D7u);
+	L.pc = 0x0D138; op_mpyui(L, 0x75340184u);
+	L.pc = 0x0D13C; op_stqd(L, 0x24FDC0D8u);
+	L.pc = 0x0D140; op_and_(L, 0x1820818Du);
+	L.pc = 0x0D144; op_stqd(L, 0x24FD4081u);
+	L.pc = 0x0D148; op_ai(L, 0x1CD40081u);
+	L.pc = 0x0D14C; op_fsmbi(L, 0x32800003u);
+	L.pc = 0x0D150; op_cbd(L, 0x3E80008Eu);
+	L.pc = 0x0D154; op_cwx(L, 0x3AC2C08Fu);
+	L.pc = 0x0D158; op_a(L, 0x180102D1u);
+	L.pc = 0x0D15C; op_nop(L, 0x00200000u);
+	L.pc = 0x0D160; op_ai(L, 0x1C042882u);
+	L.pc = 0x0D164; op_stqd(L, 0x24006886u);
+	L.pc = 0x0D168; op_a(L, 0x18042886u);
+	L.pc = 0x0D16C; op_stqd(L, 0x2400C109u);
+	L.pc = 0x0D170; op_stqd(L, 0x24004108u);
+	L.pc = 0x0D174; op_stqd(L, 0x24008107u);
+	L.pc = 0x0D178; op_lqd(L, 0x34022982u);
+	L.pc = 0x0D17C; op_shufb(L, 0xB040818Eu);
+	L.pc = 0x0D180; op_stqd(L, 0x24022982u);
+	L.pc = 0x0D184; op_lqx(L, 0x3882E902u);
+	L.pc = 0x0D188; op_rotqby(L, 0x3B82C103u);
+	L.pc = 0x0D18C; op_shli(L, 0x0F608182u);
+	L.pc = 0x0D190; op_ai(L, 0x1C004185u);
+	L.pc = 0x0D194; op_il(L, 0x40832003u);
+	L.pc = 0x0D198; op_a(L, 0x18148102u);
+	L.pc = 0x0D19C; op_a(L, 0x1800C102u);
+	L.pc = 0x0D1A0; op_lqx(L, 0x38830103u);
+	L.pc = 0x0D1A4; op_cwx(L, 0x3AC30104u);
+	L.pc = 0x0D1A8; op_shufb(L, 0xB060C684u);
+	L.pc = 0x0D1AC; op_stqx(L, 0x28830103u);
+	L.pc = 0x0D1B0; op_lqx(L, 0x3882E902u);
+	L.pc = 0x0D1B4; op_shufb(L, 0xB040828Fu);
+	L.pc = 0x0D1B8; op_stqx(L, 0x2882E902u);
+	L.pc = 0x0D1BC; op_lqx(L, 0x38842882u);
+	L.pc = 0x0D1C0; op_rotqby(L, 0x3B818102u);
+	L.pc = 0x0D1C4; op_cgti(L, 0x4C000102u);
+	L.pc = 0x0D1C8; op_brnz(L, 0x21007E02u);
+	if (L.pc == 0x0D1CC) { if (s.can_chain(cw, 0x0D1CC) && --budget) goto L_dc96e0090149923b; goto out; }
+	goto out;
+L_dc96e0090149923b:
+	s.instructions += 5;
+	L.pc = 0x0D1CC; op_il(L, 0x40839E02u);
+	L.pc = 0x0D1D0; op_lqx(L, 0x3880A903u);
+	L.pc = 0x0D1D4; op_rotqby(L, 0x3B808182u);
+	L.pc = 0x0D1D8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D1DC; op_brz(L, 0x20002782u);
+	if (L.pc == 0x0D318) { if (s.can_chain(cw, 0x0D318) && --budget) goto L_41b4a0caa24ee5b2; goto out; }
+	if (L.pc == 0x0D1E0) { if (s.can_chain(cw, 0x0D1E0) && --budget) goto L_378f081232ea4295; goto out; }
+	goto out;
+L_378f081232ea4295:
+	s.instructions += 19;
+	L.pc = 0x0D1E0; op_il(L, 0x40804204u);
+	L.pc = 0x0D1E4; op_nop(L, 0x00200000u);
+	L.pc = 0x0D1E8; op_il(L, 0x40804403u);
+	L.pc = 0x0D1EC; op_shlqbyi(L, 0x3FE0011Cu);
+	L.pc = 0x0D1F0; op_il(L, 0x40800011u);
+	L.pc = 0x0D1F4; op_lqx(L, 0x38812985u);
+	L.pc = 0x0D1F8; op_ila(L, 0x427FFF9Bu);
+	L.pc = 0x0D1FC; op_lqx(L, 0x3880E982u);
+	L.pc = 0x0D200; op_il(L, 0x4083201Du);
+	L.pc = 0x0D204; op_lqa(L, 0x30C2DC17u);
+	L.pc = 0x0D208; op_il(L, 0x4080061Au);
+	L.pc = 0x0D20C; op_lqa(L, 0x30C2DA14u);
+	L.pc = 0x0D210; op_il(L, 0x40806219u);
+	L.pc = 0x0D214; op_lqa(L, 0x30C2D813u);
+	L.pc = 0x0D218; op_il(L, 0x40806318u);
+	L.pc = 0x0D21C; op_lqa(L, 0x30C2D612u);
+	L.pc = 0x0D220; op_rotqby(L, 0x3B810296u);
+	L.pc = 0x0D224; op_rotqby(L, 0x3B80C115u);
+	L.pc = 0x0D228; op_br(L, 0x32000300u);
+	if (L.pc == 0x0D240) { if (s.can_chain(cw, 0x0D240) && --budget) goto L_2200e98152b6a51f; goto out; }
+	goto out;
+L_2200e98152b6a51f:
+	s.instructions += 24;
+	L.pc = 0x0D240; op_and_(L, 0x1826C882u);
+	L.pc = 0x0D244; op_nop(L, 0x101A4596u);
+	L.pc = 0x0D248; op_ai(L, 0x1C038C84u);
+	L.pc = 0x0D24C; op_shli(L, 0x0F608102u);
+	L.pc = 0x0D250; op_ai(L, 0x1C038C05u);
+	L.pc = 0x0D254; op_a(L, 0x18148102u);
+	L.pc = 0x0D258; op_a(L, 0x18074102u);
+	L.pc = 0x0D25C; op_nop(L, 0x00200000u);
+	L.pc = 0x0D260; op_a(L, 0x18068103u);
+	L.pc = 0x0D264; op_lqx(L, 0x38868102u);
+	L.pc = 0x0D268; op_rotqby(L, 0x3B80C102u);
+	L.pc = 0x0D26C; op_il(L, 0x40806803u);
+	L.pc = 0x0D270; op_mpyh(L, 0x78A0C103u);
+	L.pc = 0x0D274; op_mpyui(L, 0x75340102u);
+	L.pc = 0x0D278; op_a(L, 0x18008182u);
+	L.pc = 0x0D27C; op_a(L, 0x18008B0Du);
+	L.pc = 0x0D280; op_lqx(L, 0x38864682u);
+	L.pc = 0x0D284; op_lqx(L, 0x38860683u);
+	L.pc = 0x0D288; op_rotqby(L, 0x3B810102u);
+	L.pc = 0x0D28C; op_rotqby(L, 0x3B81418Au);
+	L.pc = 0x0D290; op_xshw(L, 0x55C00102u);
+	L.pc = 0x0D294; op_shli(L, 0x0F610102u);
+	L.pc = 0x0D298; op_a(L, 0x18008A8Fu);
+	L.pc = 0x0D29C; op_brhz(L, 0x227FF20Au);
+	if (L.pc == 0x0D2A0) { if (s.can_chain(cw, 0x0D2A0) && --budget) goto L_e087e0f5ee6f10d6; goto out; }
+	goto out;
+L_e087e0f5ee6f10d6:
+	s.instructions += 26;
+	L.pc = 0x0D2A0; op_ori(L, 0x04000510u);
+	L.pc = 0x0D2A4; op_nop(L, 0x101A5718u);
+	L.pc = 0x0D2A8; op_il(L, 0x4080000Eu);
+	L.pc = 0x0D2AC; op_fsmbi(L, 0x3280000Cu);
+	L.pc = 0x0D2B0; op_ai(L, 0x1C04068Bu);
+	L.pc = 0x0D2B4; op_nop(L, 0x00200000u);
+	L.pc = 0x0D2B8; op_ahi(L, 0x1D00470Eu);
+	L.pc = 0x0D2BC; op_lqx(L, 0x3883C602u);
+	L.pc = 0x0D2C0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D2C4; op_lqd(L, 0x34004686u);
+	L.pc = 0x0D2C8; op_clgth(L, 0x5903880Au);
+	L.pc = 0x0D2CC; op_lqd(L, 0x34004583u);
+	L.pc = 0x0D2D0; op_lqd(L, 0x34008584u);
+	L.pc = 0x0D2D4; op_lqd(L, 0x3400C585u);
+	L.pc = 0x0D2D8; op_shufb(L, 0xB0E08117u);
+	L.pc = 0x0D2DC; op_shufb(L, 0xB1008114u);
+	L.pc = 0x0D2E0; op_shufb(L, 0xB1208113u);
+	L.pc = 0x0D2E4; op_shufb(L, 0xB0408112u);
+	L.pc = 0x0D2E8; op_fm(L, 0x58C1C306u);
+	L.pc = 0x0D2EC; op_fma(L, 0xE0620186u);
+	L.pc = 0x0D2F0; op_fma(L, 0xE0824203u);
+	L.pc = 0x0D2F4; op_fma(L, 0xE0A08284u);
+	L.pc = 0x0D2F8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D2FC; op_stqx(L, 0x2883C605u);
+	L.pc = 0x0D300; op_ai(L, 0x1C04060Cu);
+	L.pc = 0x0D304; op_brhnz(L, 0x237FF68Au);
+	if (L.pc == 0x0D2B8) { if (s.can_chain(cw, 0x0D2B8) && --budget) goto L_f65e8cd9abe7e2cf; goto out; }
+	if (L.pc == 0x0D308) { if (s.can_chain(cw, 0x0D308) && --budget) goto L_266f7df4f9a7559d; goto out; }
+	goto out;
+L_f65e8cd9abe7e2cf:
+	s.instructions += 20;
+	L.pc = 0x0D2B8; op_ahi(L, 0x1D00470Eu);
+	L.pc = 0x0D2BC; op_lqx(L, 0x3883C602u);
+	L.pc = 0x0D2C0; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D2C4; op_lqd(L, 0x34004686u);
+	L.pc = 0x0D2C8; op_clgth(L, 0x5903880Au);
+	L.pc = 0x0D2CC; op_lqd(L, 0x34004583u);
+	L.pc = 0x0D2D0; op_lqd(L, 0x34008584u);
+	L.pc = 0x0D2D4; op_lqd(L, 0x3400C585u);
+	L.pc = 0x0D2D8; op_shufb(L, 0xB0E08117u);
+	L.pc = 0x0D2DC; op_shufb(L, 0xB1008114u);
+	L.pc = 0x0D2E0; op_shufb(L, 0xB1208113u);
+	L.pc = 0x0D2E4; op_shufb(L, 0xB0408112u);
+	L.pc = 0x0D2E8; op_fm(L, 0x58C1C306u);
+	L.pc = 0x0D2EC; op_fma(L, 0xE0620186u);
+	L.pc = 0x0D2F0; op_fma(L, 0xE0824203u);
+	L.pc = 0x0D2F4; op_fma(L, 0xE0A08284u);
+	L.pc = 0x0D2F8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D2FC; op_stqx(L, 0x2883C605u);
+	L.pc = 0x0D300; op_ai(L, 0x1C04060Cu);
+	L.pc = 0x0D304; op_brhnz(L, 0x237FF68Au);
+	if (L.pc == 0x0D2B8) { if (s.can_chain(cw, 0x0D2B8) && --budget) goto L_f65e8cd9abe7e2cf; goto out; }
+	if (L.pc == 0x0D308) { if (s.can_chain(cw, 0x0D308) && --budget) goto L_266f7df4f9a7559d; goto out; }
+	goto out;
+L_266f7df4f9a7559d:
+	s.instructions += 4;
+	L.pc = 0x0D308; op_ahi(L, 0x1D004891u);
+	L.pc = 0x0D30C; op_and_(L, 0x1826C882u);
+	L.pc = 0x0D310; op_clgt(L, 0x58008E02u);
+	L.pc = 0x0D314; op_brnz(L, 0x217FE582u);
+	if (L.pc == 0x0D240) { if (s.can_chain(cw, 0x0D240) && --budget) goto L_2200e98152b6a51f; goto out; }
+	if (L.pc == 0x0D318) { if (s.can_chain(cw, 0x0D318) && --budget) goto L_41b4a0caa24ee5b2; goto out; }
+	goto out;
+L_41b4a0caa24ee5b2:
+	s.instructions += 20;
+	L.pc = 0x0D318; op_il(L, 0x4083CA04u);
+	L.pc = 0x0D31C; op_fsmbi(L, 0x32800007u);
+	L.pc = 0x0D320; op_il(L, 0x4083CC05u);
+	L.pc = 0x0D324; op_lqx(L, 0x38812902u);
+	L.pc = 0x0D328; op_cwx(L, 0x3AC10083u);
+	L.pc = 0x0D32C; op_cwx(L, 0x3AC14086u);
+	L.pc = 0x0D330; op_shufb(L, 0xB0408383u);
+	L.pc = 0x0D334; op_stqx(L, 0x28812902u);
+	L.pc = 0x0D338; op_lqx(L, 0x38816903u);
+	L.pc = 0x0D33C; op_lqa(L, 0x30A67002u);
+	L.pc = 0x0D340; op_shufb(L, 0xB060C386u);
+	L.pc = 0x0D344; op_stqd(L, 0x241DE902u);
+	L.pc = 0x0D348; op_stqx(L, 0x28816903u);
+	L.pc = 0x0D34C; op_lqa(L, 0x30A67002u);
+	L.pc = 0x0D350; op_stqd(L, 0x241E2902u);
+	L.pc = 0x0D354; op_lqd(L, 0x3400A982u);
+	L.pc = 0x0D358; op_rotqbyi(L, 0x3F834102u);
+	L.pc = 0x0D35C; op_ceqbi(L, 0x7E000102u);
+	L.pc = 0x0D360; op_xsbh(L, 0x56C00102u);
+	L.pc = 0x0D364; op_brhnz(L, 0x23005882u);
+	if (L.pc == 0x0D628) { if (s.can_chain(cw, 0x0D628) && --budget) goto L_f05dc3fd7bd54b97; goto out; }
+	if (L.pc == 0x0D368) { if (s.can_chain(cw, 0x0D368) && --budget) goto L_860c1f19d0222339; goto out; }
+	goto out;
+L_860c1f19d0222339:
+	s.instructions += 12;
+	L.pc = 0x0D368; op_il(L, 0x40801204u);
+	L.pc = 0x0D36C; op_il(L, 0x40804205u);
+	L.pc = 0x0D370; op_ai(L, 0x1C038203u);
+	L.pc = 0x0D374; op_lqx(L, 0x38812984u);
+	L.pc = 0x0D378; op_lqx(L, 0x38816982u);
+	L.pc = 0x0D37C; op_rotqby(L, 0x3B80C207u);
+	L.pc = 0x0D380; op_rotqby(L, 0x3B814106u);
+	L.pc = 0x0D384; op_mpyui(L, 0x75340385u);
+	L.pc = 0x0D388; op_a(L, 0x18014302u);
+	L.pc = 0x0D38C; op_lqd(L, 0x34018102u);
+	L.pc = 0x0D390; op_cgti(L, 0x4C00C103u);
+	L.pc = 0x0D394; op_brz(L, 0x2000A383u);
+	if (L.pc == 0x0D398) { if (s.can_chain(cw, 0x0D398) && --budget) goto L_f6ca08df09daf0da; goto out; }
+	goto out;
+L_f6ca08df09daf0da:
+	s.instructions += 4;
+	L.pc = 0x0D398; op_il(L, 0x40839E02u);
+	L.pc = 0x0D39C; op_lqx(L, 0x3880A903u);
+	L.pc = 0x0D3A0; op_rotqby(L, 0x3B808182u);
+	L.pc = 0x0D3A4; op_brnz(L, 0x2100AE82u);
+	if (L.pc == 0x0D918) { if (s.can_chain(cw, 0x0D918) && --budget) goto L_f6405895080d0963; goto out; }
+	goto out;
 L_8e96b8e0c04aa986:
 	s.instructions += 166;
 	L.pc = 0x0D440; op_ilhu(L, 0x411EC017u);
@@ -10628,621 +12740,25 @@ L_c78e840cb58f5863:
 	L.pc = 0x0D7F0; op_ori(L, 0x04001E06u);
 	L.pc = 0x0D7F4; op_bi(L, 0x35000700u);
 	goto out;
-out:
-	s.gpr[2] = L.gpr[2]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50]; s.gpr[51] = L.gpr[51]; s.gpr[52] = L.gpr[52]; s.gpr[53] = L.gpr[53]; s.gpr[54] = L.gpr[54]; s.gpr[55] = L.gpr[55]; s.gpr[56] = L.gpr[56]; s.gpr[57] = L.gpr[57]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[61] = L.gpr[61]; s.gpr[62] = L.gpr[62]; s.gpr[63] = L.gpr[63]; s.gpr[64] = L.gpr[64]; s.gpr[65] = L.gpr[65]; s.gpr[66] = L.gpr[66]; s.gpr[67] = L.gpr[67]; s.gpr[68] = L.gpr[68]; s.gpr[69] = L.gpr[69]; s.gpr[70] = L.gpr[70]; s.gpr[71] = L.gpr[71]; s.gpr[72] = L.gpr[72];
-	s.pc = L.pc;
-}
-void spu_aotc_466(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[9] = s.gpr[9]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
-		case 0x0D4F0: goto L_3dd6594caca2ac17;
-		case 0x0D520: goto L_928f40771066f329;
-		default: goto out;
-	}
-L_3dd6594caca2ac17:
-	s.instructions += 12;
-	L.pc = 0x0D4F0; op_a(L, 0x1814EA02u);
-	L.pc = 0x0D4F4; op_lqx(L, 0x3894EA04u);
-	L.pc = 0x0D4F8; op_ori(L, 0x04002B83u);
-	L.pc = 0x0D4FC; op_ai(L, 0x1C0068D1u);
-	L.pc = 0x0D500; op_rotqby(L, 0x3B808202u);
-	L.pc = 0x0D504; op_a(L, 0x1800AA82u);
-	L.pc = 0x0D508; op_shli(L, 0x0F608102u);
-	L.pc = 0x0D50C; op_nop(L, 0x00200000u);
-	L.pc = 0x0D510; op_a(L, 0x18160104u);
-	L.pc = 0x0D514; op_lqx(L, 0x38960102u);
-	L.pc = 0x0D518; op_rotqby(L, 0x3B810104u);
-	L.pc = 0x0D51C; op_brsl(L, 0x33707880u);
+L_f6405895080d0963:
+	s.instructions += 16;
+	L.pc = 0x0D918; op_il(L, 0x40800050u);
+	L.pc = 0x0D91C; op_nop(L, 0x1015CD0Eu);
+	L.pc = 0x0D920; op_ila(L, 0x427FFFD4u);
+	L.pc = 0x0D924; op_il(L, 0x40832055u);
+	L.pc = 0x0D928; op_il(L, 0x40800653u);
+	L.pc = 0x0D92C; op_il(L, 0x40839E51u);
+	L.pc = 0x0D930; op_and_(L, 0x18352802u);
+	L.pc = 0x0D934; op_shlqbyi(L, 0x3FE02903u);
+	L.pc = 0x0D938; op_ahi(L, 0x1D006850u);
+	L.pc = 0x0D93C; op_shli(L, 0x0F608102u);
+	L.pc = 0x0D940; op_a(L, 0x18148102u);
+	L.pc = 0x0D944; op_a(L, 0x18154102u);
+	L.pc = 0x0D948; op_a(L, 0x1814C104u);
+	L.pc = 0x0D94C; op_lqx(L, 0x3894C102u);
+	L.pc = 0x0D950; op_rotqby(L, 0x3B810104u);
+	L.pc = 0x0D954; op_brsl(L, 0x337AA280u);
 	goto out;
-L_928f40771066f329:
-	s.instructions += 11;
-	L.pc = 0x0D520; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0D524; op_nop(L, 0x101A9E09u);
-	L.pc = 0x0D528; op_cgt(L, 0x48146B02u);
-	L.pc = 0x0D52C; op_lqd(L, 0x34002804u);
-	L.pc = 0x0D530; op_cwd(L, 0x3EC02805u);
-	L.pc = 0x0D534; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0D538; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0D53C; op_shufb(L, 0xB0810185u);
-	L.pc = 0x0D540; op_stqd(L, 0x24002804u);
-	L.pc = 0x0D544; op_ai(L, 0x1C012850u);
-	L.pc = 0x0D548; op_brnz(L, 0x217FF502u);
-	if (L.pc == 0x0D4F0) { if (s.can_chain(cw, 0x0D4F0) && --budget) goto L_3dd6594caca2ac17; goto out; }
-	goto out;
-out:
-	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81];
-	s.pc = L.pc;
-}
-void spu_aotc_467(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D51C: goto L_8cb9d9009f66c2af;
-		case 0x0D534: goto L_bc22fd320c66c41b;
-		default: goto out;
-	}
-L_8cb9d9009f66c2af:
-	s.instructions += 6;
-	s.pc = 0x0D51C; op_wrch(s, 0x21A00B03u);
-	if (s.halted) { s.pc = 0x0D520; goto out; }
-	s.pc = 0x0D520; op_il(s, 0x40800102u);
-	s.pc = 0x0D524; op_wrch(s, 0x21A00B82u);
-	if (s.halted) { s.pc = 0x0D528; goto out; }
-	s.pc = 0x0D528; op_rdch(s, 0x01A00C03u);
-	if (s.halted) { s.pc = 0x0D52C; goto out; }
-	s.pc = 0x0D52C; op_nop(s, 0x00200000u);
-	s.pc = 0x0D530; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D534) { if (s.can_chain(cw, 0x0D534) && --budget) goto L_bc22fd320c66c41b; goto out; }
-	goto out;
-L_bc22fd320c66c41b:
-	s.instructions += 2;
-	s.pc = 0x0D534; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D538; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_468(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D554: goto L_3c16d9b814d389db;
-		case 0x0D574: goto L_69b4e1595515f5db;
-		default: goto out;
-	}
-L_3c16d9b814d389db:
-	s.instructions += 8;
-	s.pc = 0x0D554; op_wrch(s, 0x21A00802u);
-	if (s.halted) { s.pc = 0x0D558; goto out; }
-	s.pc = 0x0D558; op_wrch(s, 0x21A00905u);
-	if (s.halted) { s.pc = 0x0D55C; goto out; }
-	s.pc = 0x0D55C; op_shli(s, 0x0F608204u);
-	s.pc = 0x0D560; op_wrch(s, 0x21A00984u);
-	if (s.halted) { s.pc = 0x0D564; goto out; }
-	s.pc = 0x0D564; op_wrch(s, 0x21A00A03u);
-	if (s.halted) { s.pc = 0x0D568; goto out; }
-	s.pc = 0x0D568; op_il(s, 0x40801002u);
-	s.pc = 0x0D56C; op_wrch(s, 0x21A00A82u);
-	if (s.halted) { s.pc = 0x0D570; goto out; }
-	s.pc = 0x0D570; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D574) { if (s.can_chain(cw, 0x0D574) && --budget) goto L_69b4e1595515f5db; goto out; }
-	goto out;
-L_69b4e1595515f5db:
-	s.instructions += 2;
-	s.pc = 0x0D574; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D578; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_469(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D57C: goto L_9a82f8ea959a8623;
-		case 0x0D5B0: goto L_4c4685d46d8cac89;
-		case 0x0D5D4: goto L_c2dee10fff1c78d7;
-		default: goto out;
-	}
-L_9a82f8ea959a8623:
-	s.instructions += 13;
-	s.pc = 0x0D57C; op_lqd(s, 0x34002902u);
-	s.pc = 0x0D580; op_lqd(s, 0x34006906u);
-	s.pc = 0x0D584; op_stqd(s, 0x2400E902u);
-	s.pc = 0x0D588; op_lqd(s, 0x34012904u);
-	s.pc = 0x0D58C; op_lqd(s, 0x3401E902u);
-	s.pc = 0x0D590; op_ori(s, 0x04000205u);
-	s.pc = 0x0D594; op_a(s, 0x18008302u);
-	s.pc = 0x0D598; op_clgt(s, 0x58014103u);
-	s.pc = 0x0D59C; op_selb(s, 0x80A14103u);
-	s.pc = 0x0D5A0; op_clgt(s, 0x58018284u);
-	s.pc = 0x0D5A4; op_stqd(s, 0x2400A905u);
-	s.pc = 0x0D5A8; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0D5AC; op_brz(s, 0x2000B284u);
-	if (s.pc == 0x0D5B0) { if (s.can_chain(cw, 0x0D5B0) && --budget) goto L_4c4685d46d8cac89; goto out; }
-	goto out;
-L_4c4685d46d8cac89:
-	s.instructions += 9;
-	s.pc = 0x0D5B0; op_shli(s, 0x0F608302u);
-	s.pc = 0x0D5B4; op_lqd(s, 0x34026904u);
-	s.pc = 0x0D5B8; op_il(s, 0x40800083u);
-	s.pc = 0x0D5BC; op_nop(s, 0x127F21A2u);
-	s.pc = 0x0D5C0; op_a(s, 0x18008204u);
-	s.pc = 0x0D5C4; op_stqd(s, 0x24016904u);
-	s.pc = 0x0D5C8; op_lqd(s, 0x34010482u);
-	s.pc = 0x0D5CC; op_shl(s, 0x0B608183u);
-	s.pc = 0x0D5D0; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D5D4) { if (s.can_chain(cw, 0x0D5D4) && --budget) goto L_c2dee10fff1c78d7; goto out; }
-	goto out;
-L_c2dee10fff1c78d7:
-	s.instructions += 2;
-	s.pc = 0x0D5D4; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D5D8; op_bi(s, 0x35080100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_470(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D5DC: goto L_94c5db49c084196f;
-		case 0x0D5F4: goto L_8155094d183ba85b;
-		default: goto out;
-	}
-L_94c5db49c084196f:
-	s.instructions += 6;
-	s.pc = 0x0D5DC; op_wrch(s, 0x21A00B03u);
-	if (s.halted) { s.pc = 0x0D5E0; goto out; }
-	s.pc = 0x0D5E0; op_il(s, 0x40800102u);
-	s.pc = 0x0D5E4; op_wrch(s, 0x21A00B82u);
-	if (s.halted) { s.pc = 0x0D5E8; goto out; }
-	s.pc = 0x0D5E8; op_rdch(s, 0x01A00C03u);
-	if (s.halted) { s.pc = 0x0D5EC; goto out; }
-	s.pc = 0x0D5EC; op_nop(s, 0x00200000u);
-	s.pc = 0x0D5F0; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D5F4) { if (s.can_chain(cw, 0x0D5F4) && --budget) goto L_8155094d183ba85b; goto out; }
-	goto out;
-L_8155094d183ba85b:
-	s.instructions += 2;
-	s.pc = 0x0D5F4; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D5F8; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_471(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D5FC: goto L_366a75d7bb49b349;
-		case 0x0D60C: goto L_cf0de2490a17bfd3;
-		default: goto out;
-	}
-L_366a75d7bb49b349:
-	s.instructions += 4;
-	s.pc = 0x0D5FC; op_lqd(s, 0x34004482u);
-	s.pc = 0x0D600; op_nop(s, 0x4020007Fu);
-	s.pc = 0x0D604; op_lqd(s, 0x34010483u);
-	s.pc = 0x0D608; op_brsl(s, 0x33000087u);
-	if (s.pc == 0x0D60C) { if (s.can_chain(cw, 0x0D60C) && --budget) goto L_cf0de2490a17bfd3; goto out; }
-	goto out;
-L_cf0de2490a17bfd3:
-	s.instructions += 2;
-	s.pc = 0x0D60C; op_ai(s, 0x1C020387u);
-	s.pc = 0x0D610; op_bi(s, 0x35080380u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_472(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	switch (s.pc) {
-		case 0x0D614: goto L_eaadabf44f648988;
-		case 0x0D63C: goto L_5d19f2cdbcfb681e;
-		default: goto out;
-	}
-L_eaadabf44f648988:
-	s.instructions += 10;
-	s.pc = 0x0D614; op_wrch(s, 0x21A00802u);
-	if (s.halted) { s.pc = 0x0D618; goto out; }
-	s.pc = 0x0D618; op_wrch(s, 0x21A00904u);
-	if (s.halted) { s.pc = 0x0D61C; goto out; }
-	s.pc = 0x0D61C; op_sf(s, 0x08014302u);
-	s.pc = 0x0D620; op_shli(s, 0x0F608102u);
-	s.pc = 0x0D624; op_wrch(s, 0x21A00982u);
-	if (s.halted) { s.pc = 0x0D628; goto out; }
-	s.pc = 0x0D628; op_wrch(s, 0x21A00A03u);
-	if (s.halted) { s.pc = 0x0D62C; goto out; }
-	s.pc = 0x0D62C; op_il(s, 0x40802002u);
-	s.pc = 0x0D630; op_wrch(s, 0x21A00A82u);
-	if (s.halted) { s.pc = 0x0D634; goto out; }
-	s.pc = 0x0D634; op_nop(s, 0x00200000u);
-	s.pc = 0x0D638; op_brsl(s, 0x33000082u);
-	if (s.pc == 0x0D63C) { if (s.can_chain(cw, 0x0D63C) && --budget) goto L_5d19f2cdbcfb681e; goto out; }
-	goto out;
-L_5d19f2cdbcfb681e:
-	s.instructions += 2;
-	s.pc = 0x0D63C; op_ai(s, 0x1C020102u);
-	s.pc = 0x0D640; op_bi(s, 0x35040100u);
-	goto out;
-out:
-	return;
-}
-void spu_aotc_473(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[23] = s.gpr[23]; L.gpr[24] = s.gpr[24]; L.gpr[25] = s.gpr[25]; L.gpr[26] = s.gpr[26]; L.gpr[27] = s.gpr[27]; L.gpr[28] = s.gpr[28]; L.gpr[29] = s.gpr[29]; L.gpr[30] = s.gpr[30]; L.gpr[31] = s.gpr[31]; L.gpr[33] = s.gpr[33]; L.gpr[34] = s.gpr[34]; L.gpr[35] = s.gpr[35]; L.gpr[36] = s.gpr[36]; L.gpr[38] = s.gpr[38]; L.gpr[39] = s.gpr[39]; L.gpr[40] = s.gpr[40]; L.gpr[43] = s.gpr[43]; L.gpr[45] = s.gpr[45]; L.gpr[46] = s.gpr[46]; L.gpr[47] = s.gpr[47]; L.gpr[49] = s.gpr[49]; L.gpr[50] = s.gpr[50]; L.gpr[51] = s.gpr[51]; L.gpr[52] = s.gpr[52]; L.gpr[53] = s.gpr[53]; L.gpr[54] = s.gpr[54]; L.gpr[55] = s.gpr[55]; L.gpr[56] = s.gpr[56]; L.gpr[57] = s.gpr[57]; L.gpr[58] = s.gpr[58]; L.gpr[59] = s.gpr[59]; L.gpr[60] = s.gpr[60]; L.gpr[61] = s.gpr[61]; L.gpr[62] = s.gpr[62]; L.gpr[63] = s.gpr[63]; L.gpr[64] = s.gpr[64]; L.gpr[65] = s.gpr[65]; L.gpr[66] = s.gpr[66]; L.gpr[67] = s.gpr[67]; L.gpr[68] = s.gpr[68]; L.gpr[69] = s.gpr[69]; L.gpr[70] = s.gpr[70]; L.gpr[71] = s.gpr[71]; L.gpr[72] = s.gpr[72]; L.gpr[73] = s.gpr[73]; L.gpr[74] = s.gpr[74]; L.gpr[75] = s.gpr[75]; L.gpr[76] = s.gpr[76]; L.gpr[77] = s.gpr[77]; L.gpr[112] = s.gpr[112]; L.gpr[125] = s.gpr[125]; L.gpr[126] = s.gpr[126]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
-		case 0x0D7F8: goto L_c457e8a9f5454353;
-		case 0x0D800: goto L_75669d8167b0264b;
-		case 0x0DA10: goto L_086fdfd22989c211;
-		case 0x0DDF0: goto L_b48bbbb1941a3f20;
-		default: goto out;
-	}
-L_c457e8a9f5454353:
-	s.instructions += 134;
-	if (spu_skip_triangle_cull(L)) goto out;
-	L.pc = 0x0D7F8; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0D7FC; op_nop(L, 0x12800084u);
-	L.pc = 0x0D800; op_ceqi(L, 0x7C00030Bu);
-	L.pc = 0x0D804; op_shufb(L, 0xB0CE9C35u);
-	L.pc = 0x0D808; op_fs(L, 0x58A30718u);
-	L.pc = 0x0D80C; op_shufb(L, 0xB29121B5u);
-	L.pc = 0x0D810; op_and_(L, 0x1822DF15u);
-	L.pc = 0x0D814; op_shufb(L, 0xB2C28CB5u);
-	L.pc = 0x0D818; op_fcgt(L, 0x5844C397u);
-	L.pc = 0x0D81C; op_shufb(L, 0xB332A4B2u);
-	L.pc = 0x0D820; op_fs(L, 0x58A1C98Au);
-	L.pc = 0x0D824; op_shufb(L, 0xB0CEC331u);
-	L.pc = 0x0D828; op_selb(L, 0x8201C997u);
-	L.pc = 0x0D82C; op_rotqby(L, 0x3B83599Au);
-	L.pc = 0x0D830; op_fs(L, 0x58A3079Eu);
-	L.pc = 0x0D834; op_shufb(L, 0xB2C48B31u);
-	L.pc = 0x0D838; op_andc(L, 0x582BCC1Bu);
-	L.pc = 0x0D83C; op_shufb(L, 0xB2864A2Eu);
-	L.pc = 0x0D840; op_ceqi(L, 0x7C000319u);
-	L.pc = 0x0D844; op_rotqbyi(L, 0x3F822438u);
-	L.pc = 0x0D848; op_selb(L, 0x8244C397u);
-	L.pc = 0x0D84C; op_shufb(L, 0xB2F2011Au);
-	L.pc = 0x0D850; op_ori(L, 0x04001FC8u);
-	L.pc = 0x0D854; op_lqx(L, 0x388F5E3Fu);
-	L.pc = 0x0D858; op_or_(L, 0x08250B13u);
-	L.pc = 0x0D85C; op_rotqbyi(L, 0x3F820282u);
-	L.pc = 0x0D860; op_fcgt(L, 0x5843C614u);
-	L.pc = 0x0D864; op_rotqbyi(L, 0x3F801E06u);
-	L.pc = 0x0D868; op_andbi(L, 0x16200993u);
-	L.pc = 0x0D86C; op_stqx(L, 0x2880C697u);
-	L.pc = 0x0D870; op_selb(L, 0x83430794u);
-	L.pc = 0x0D874; op_ceqi(L, 0x7C000993u);
-	L.pc = 0x0D878; op_shlhi(L, 0x0FE11FBAu);
-	L.pc = 0x0D87C; op_orc(L, 0x59264993u);
-	L.pc = 0x0D880; op_andc(L, 0x582BCF16u);
-	L.pc = 0x0D884; op_andc(L, 0x58254993u);
-	L.pc = 0x0D888; op_fs(L, 0x58A1C89Fu);
-	L.pc = 0x0D88C; op_rotqbyi(L, 0x3F821D15u);
-	L.pc = 0x0D890; op_andi(L, 0x14020987u);
-	L.pc = 0x0D894; op_rotqbyi(L, 0x3F809D3Bu);
-	L.pc = 0x0D898; op_fa(L, 0x58858D9Bu);
-	L.pc = 0x0D89C; op_lqx(L, 0x38821D13u);
-	L.pc = 0x0D8A0; op_a(L, 0x1801C68Du);
-	L.pc = 0x0D8A4; op_rotqbyi(L, 0x3F810396u);
-	L.pc = 0x0D8A8; op_andc(L, 0x582BC519u);
-	L.pc = 0x0D8AC; op_rotqmbyi(L, 0x3FBF8AC3u);
-	L.pc = 0x0D8B0; op_selb(L, 0x81E3C614u);
-	L.pc = 0x0D8B4; op_rotqby(L, 0x3B8359C4u);
-	L.pc = 0x0D8B8; op_andc(L, 0x582BCF8Cu);
-	L.pc = 0x0D8BC; op_rotqbyi(L, 0x3F808AC9u);
-	L.pc = 0x0D8C0; op_a(L, 0x18034B14u);
-	L.pc = 0x0D8C4; op_lqx(L, 0x38820A95u);
-	L.pc = 0x0D8C8; op_fa(L, 0x58830CCAu);
-	L.pc = 0x0D8CC; op_lqx(L, 0x3882218Cu);
-	L.pc = 0x0D8D0; op_fcgt(L, 0x58468743u);
-	L.pc = 0x0D8D4; op_shufb(L, 0xB70E0BC4u);
-	L.pc = 0x0D8D8; op_fcgt(L, 0x5843C744u);
-	L.pc = 0x0D8DC; op_rotqby(L, 0x3B8519CBu);
-	L.pc = 0x0D8E0; op_fcgt(L, 0x58440896u);
-	L.pc = 0x0D8E4; op_lqx(L, 0x38822497u);
-	L.pc = 0x0D8E8; op_rotmi(L, 0x0F3C1D3Au);
-	L.pc = 0x0D8EC; op_rotqbyi(L, 0x3F820399u);
-	L.pc = 0x0D8F0; op_selb(L, 0x83438D43u);
-	L.pc = 0x0D8F4; op_stqx(L, 0x2880C6B8u);
-	L.pc = 0x0D8F8; op_fa(L, 0x5886E543u);
-	L.pc = 0x0D8FC; op_shufb(L, 0xB1A15C4Bu);
-	L.pc = 0x0D900; op_ori(L, 0x04002085u);
-	L.pc = 0x0D904; op_lqx(L, 0x38901E41u);
-	L.pc = 0x0D908; op_fcgt(L, 0x584488B8u);
-	L.pc = 0x0D90C; op_lqx(L, 0x38821D9Bu);
-	L.pc = 0x0D910; op_selb(L, 0x81C3C744u);
-	L.pc = 0x0D914; op_shufb(L, 0xB1E549A4u);
-	L.pc = 0x0D918; op_selb(L, 0x82C44816u);
-	L.pc = 0x0D91C; op_lqx(L, 0x38821D10u);
-	L.pc = 0x0D920; op_selb(L, 0x822488B8u);
-	L.pc = 0x0D924; op_shufb(L, 0xB24549A8u);
-	L.pc = 0x0D928; op_fma(L, 0xE710D137u);
-	L.pc = 0x0D92C; op_stqx(L, 0x2880CA0Du);
-	L.pc = 0x0D930; op_fa(L, 0x588596C3u);
-	L.pc = 0x0D934; op_shlqbii(L, 0x3F6120BBu);
-	L.pc = 0x0D938; op_fa(L, 0x588696C4u);
-	L.pc = 0x0D93C; op_shufb(L, 0xB265CDA4u);
-	L.pc = 0x0D940; op_a(L, 0x18050C94u);
-	L.pc = 0x0D944; op_shufb(L, 0xB2A5CDA8u);
-	L.pc = 0x0D948; op_cflts(L, 0x762B48C9u);
-	L.pc = 0x0D94C; op_shufb(L, 0xB2C30824u);
-	L.pc = 0x0D950; op_rotmi(L, 0x0F3C1DBAu);
-	L.pc = 0x0D954; op_rotqbyi(L, 0x3F821D97u);
-	L.pc = 0x0D958; op_fnms(L, 0xD9828C38u);
-	L.pc = 0x0D95C; op_rotqbyi(L, 0x3F809DCDu);
-	L.pc = 0x0D960; op_cflts(L, 0x762B618Au);
-	L.pc = 0x0D964; op_lqx(L, 0x38821D98u);
-	L.pc = 0x0D968; op_cflts(L, 0x762B6219u);
-	L.pc = 0x0D96C; op_rotqby(L, 0x3B85199Au);
-	L.pc = 0x0D970; op_cflts(L, 0x762B471Bu);
-	L.pc = 0x0D974; op_rotqmbyi(L, 0x3FBF8BCAu);
-	L.pc = 0x0D978; op_fcgt(L, 0x58471A38u);
-	L.pc = 0x0D97C; op_rotqbyi(L, 0x3F808BCBu);
-	L.pc = 0x0D980; op_fcgt(L, 0x58475A3Bu);
-	L.pc = 0x0D984; op_lqx(L, 0x3882269Cu);
-	L.pc = 0x0D988; op_fma(L, 0xE3A78FCCu);
-	L.pc = 0x0D98C; op_lqx(L, 0x38821D1Eu);
-	L.pc = 0x0D990; op_fcgt(L, 0x58519A3Au);
-	L.pc = 0x0D994; op_lqx(L, 0x3882251Fu);
-	L.pc = 0x0D998; op_ai(L, 0x1C081E3Cu);
-	L.pc = 0x0D99C; op_lqx(L, 0x388225C6u);
-	L.pc = 0x0D9A0; op_ceq(L, 0x7802A48Au);
-	L.pc = 0x0D9A4; op_lqx(L, 0x38820B97u);
-	L.pc = 0x0D9A8; op_fcgt(L, 0x5851C8C9u);
-	L.pc = 0x0D9AC; op_rotqbyi(L, 0x3F830387u);
-	L.pc = 0x0D9B0; op_fcgt(L, 0x5851474Au);
-	L.pc = 0x0D9B4; op_shufb(L, 0xB2030828u);
-	L.pc = 0x0D9B8; op_xor_(L, 0x48275CCBu);
-	L.pc = 0x0D9BC; op_shufb(L, 0xB040869Au);
-	L.pc = 0x0D9C0; op_ceq(L, 0x78064D99u);
-	L.pc = 0x0D9C4; op_shufb(L, 0xB187CF26u);
-	L.pc = 0x0D9C8; op_a(L, 0x1801CA0Du);
-	L.pc = 0x0D9CC; op_shufb(L, 0xB1D18E26u);
-	L.pc = 0x0D9D0; op_shufb(L, 0xB345CC28u);
-	L.pc = 0x0D9D4; op_shufb(L, 0xB3718E28u);
-	L.pc = 0x0D9D8; op_selb(L, 0x80E30B23u);
-	L.pc = 0x0D9DC; op_shufb(L, 0xB1858627u);
-	L.pc = 0x0D9E0; op_selb(L, 0x822389A3u);
-	L.pc = 0x0D9E4; op_shufb(L, 0xB1C4C727u);
-	L.pc = 0x0D9E8; op_selb(L, 0x88C68923u);
-	L.pc = 0x0D9EC; op_shufb(L, 0xB2C5CC26u);
-	L.pc = 0x0D9F0; op_selb(L, 0x83A6CAA3u);
-	L.pc = 0x0D9F4; op_shufb(L, 0xB2A7CF28u);
-	L.pc = 0x0D9F8; op_shlqby(L, 0x3BEDA592u);
-	L.pc = 0x0D9FC; op_stqx(L, 0x2880CA02u);
-	L.pc = 0x0DA00; op_selb(L, 0x826587A3u);
-	L.pc = 0x0DA04; op_shufb(L, 0xB1E3CB27u);
-	L.pc = 0x0DA08; op_selb(L, 0x83854823u);
-	L.pc = 0x0DA0C; op_brz(L, 0x207FBE8Bu);
-	if (L.pc == 0x0D800) { if (s.can_chain(cw, 0x0D800) && --budget) goto L_75669d8167b0264b; goto out; }
-	if (L.pc == 0x0DA10) { if (s.can_chain(cw, 0x0DA10) && --budget) goto L_086fdfd22989c211; goto out; }
-	goto out;
-L_75669d8167b0264b:
-	s.instructions += 132;
-	L.pc = 0x0D800; op_ceqi(L, 0x7C00030Bu);
-	L.pc = 0x0D804; op_shufb(L, 0xB0CE9C35u);
-	L.pc = 0x0D808; op_fs(L, 0x58A30718u);
-	L.pc = 0x0D80C; op_shufb(L, 0xB29121B5u);
-	L.pc = 0x0D810; op_and_(L, 0x1822DF15u);
-	L.pc = 0x0D814; op_shufb(L, 0xB2C28CB5u);
-	L.pc = 0x0D818; op_fcgt(L, 0x5844C397u);
-	L.pc = 0x0D81C; op_shufb(L, 0xB332A4B2u);
-	L.pc = 0x0D820; op_fs(L, 0x58A1C98Au);
-	L.pc = 0x0D824; op_shufb(L, 0xB0CEC331u);
-	L.pc = 0x0D828; op_selb(L, 0x8201C997u);
-	L.pc = 0x0D82C; op_rotqby(L, 0x3B83599Au);
-	L.pc = 0x0D830; op_fs(L, 0x58A3079Eu);
-	L.pc = 0x0D834; op_shufb(L, 0xB2C48B31u);
-	L.pc = 0x0D838; op_andc(L, 0x582BCC1Bu);
-	L.pc = 0x0D83C; op_shufb(L, 0xB2864A2Eu);
-	L.pc = 0x0D840; op_ceqi(L, 0x7C000319u);
-	L.pc = 0x0D844; op_rotqbyi(L, 0x3F822438u);
-	L.pc = 0x0D848; op_selb(L, 0x8244C397u);
-	L.pc = 0x0D84C; op_shufb(L, 0xB2F2011Au);
-	L.pc = 0x0D850; op_ori(L, 0x04001FC8u);
-	L.pc = 0x0D854; op_lqx(L, 0x388F5E3Fu);
-	L.pc = 0x0D858; op_or_(L, 0x08250B13u);
-	L.pc = 0x0D85C; op_rotqbyi(L, 0x3F820282u);
-	L.pc = 0x0D860; op_fcgt(L, 0x5843C614u);
-	L.pc = 0x0D864; op_rotqbyi(L, 0x3F801E06u);
-	L.pc = 0x0D868; op_andbi(L, 0x16200993u);
-	L.pc = 0x0D86C; op_stqx(L, 0x2880C697u);
-	L.pc = 0x0D870; op_selb(L, 0x83430794u);
-	L.pc = 0x0D874; op_ceqi(L, 0x7C000993u);
-	L.pc = 0x0D878; op_shlhi(L, 0x0FE11FBAu);
-	L.pc = 0x0D87C; op_orc(L, 0x59264993u);
-	L.pc = 0x0D880; op_andc(L, 0x582BCF16u);
-	L.pc = 0x0D884; op_andc(L, 0x58254993u);
-	L.pc = 0x0D888; op_fs(L, 0x58A1C89Fu);
-	L.pc = 0x0D88C; op_rotqbyi(L, 0x3F821D15u);
-	L.pc = 0x0D890; op_andi(L, 0x14020987u);
-	L.pc = 0x0D894; op_rotqbyi(L, 0x3F809D3Bu);
-	L.pc = 0x0D898; op_fa(L, 0x58858D9Bu);
-	L.pc = 0x0D89C; op_lqx(L, 0x38821D13u);
-	L.pc = 0x0D8A0; op_a(L, 0x1801C68Du);
-	L.pc = 0x0D8A4; op_rotqbyi(L, 0x3F810396u);
-	L.pc = 0x0D8A8; op_andc(L, 0x582BC519u);
-	L.pc = 0x0D8AC; op_rotqmbyi(L, 0x3FBF8AC3u);
-	L.pc = 0x0D8B0; op_selb(L, 0x81E3C614u);
-	L.pc = 0x0D8B4; op_rotqby(L, 0x3B8359C4u);
-	L.pc = 0x0D8B8; op_andc(L, 0x582BCF8Cu);
-	L.pc = 0x0D8BC; op_rotqbyi(L, 0x3F808AC9u);
-	L.pc = 0x0D8C0; op_a(L, 0x18034B14u);
-	L.pc = 0x0D8C4; op_lqx(L, 0x38820A95u);
-	L.pc = 0x0D8C8; op_fa(L, 0x58830CCAu);
-	L.pc = 0x0D8CC; op_lqx(L, 0x3882218Cu);
-	L.pc = 0x0D8D0; op_fcgt(L, 0x58468743u);
-	L.pc = 0x0D8D4; op_shufb(L, 0xB70E0BC4u);
-	L.pc = 0x0D8D8; op_fcgt(L, 0x5843C744u);
-	L.pc = 0x0D8DC; op_rotqby(L, 0x3B8519CBu);
-	L.pc = 0x0D8E0; op_fcgt(L, 0x58440896u);
-	L.pc = 0x0D8E4; op_lqx(L, 0x38822497u);
-	L.pc = 0x0D8E8; op_rotmi(L, 0x0F3C1D3Au);
-	L.pc = 0x0D8EC; op_rotqbyi(L, 0x3F820399u);
-	L.pc = 0x0D8F0; op_selb(L, 0x83438D43u);
-	L.pc = 0x0D8F4; op_stqx(L, 0x2880C6B8u);
-	L.pc = 0x0D8F8; op_fa(L, 0x5886E543u);
-	L.pc = 0x0D8FC; op_shufb(L, 0xB1A15C4Bu);
-	L.pc = 0x0D900; op_ori(L, 0x04002085u);
-	L.pc = 0x0D904; op_lqx(L, 0x38901E41u);
-	L.pc = 0x0D908; op_fcgt(L, 0x584488B8u);
-	L.pc = 0x0D90C; op_lqx(L, 0x38821D9Bu);
-	L.pc = 0x0D910; op_selb(L, 0x81C3C744u);
-	L.pc = 0x0D914; op_shufb(L, 0xB1E549A4u);
-	L.pc = 0x0D918; op_selb(L, 0x82C44816u);
-	L.pc = 0x0D91C; op_lqx(L, 0x38821D10u);
-	L.pc = 0x0D920; op_selb(L, 0x822488B8u);
-	L.pc = 0x0D924; op_shufb(L, 0xB24549A8u);
-	L.pc = 0x0D928; op_fma(L, 0xE710D137u);
-	L.pc = 0x0D92C; op_stqx(L, 0x2880CA0Du);
-	L.pc = 0x0D930; op_fa(L, 0x588596C3u);
-	L.pc = 0x0D934; op_shlqbii(L, 0x3F6120BBu);
-	L.pc = 0x0D938; op_fa(L, 0x588696C4u);
-	L.pc = 0x0D93C; op_shufb(L, 0xB265CDA4u);
-	L.pc = 0x0D940; op_a(L, 0x18050C94u);
-	L.pc = 0x0D944; op_shufb(L, 0xB2A5CDA8u);
-	L.pc = 0x0D948; op_cflts(L, 0x762B48C9u);
-	L.pc = 0x0D94C; op_shufb(L, 0xB2C30824u);
-	L.pc = 0x0D950; op_rotmi(L, 0x0F3C1DBAu);
-	L.pc = 0x0D954; op_rotqbyi(L, 0x3F821D97u);
-	L.pc = 0x0D958; op_fnms(L, 0xD9828C38u);
-	L.pc = 0x0D95C; op_rotqbyi(L, 0x3F809DCDu);
-	L.pc = 0x0D960; op_cflts(L, 0x762B618Au);
-	L.pc = 0x0D964; op_lqx(L, 0x38821D98u);
-	L.pc = 0x0D968; op_cflts(L, 0x762B6219u);
-	L.pc = 0x0D96C; op_rotqby(L, 0x3B85199Au);
-	L.pc = 0x0D970; op_cflts(L, 0x762B471Bu);
-	L.pc = 0x0D974; op_rotqmbyi(L, 0x3FBF8BCAu);
-	L.pc = 0x0D978; op_fcgt(L, 0x58471A38u);
-	L.pc = 0x0D97C; op_rotqbyi(L, 0x3F808BCBu);
-	L.pc = 0x0D980; op_fcgt(L, 0x58475A3Bu);
-	L.pc = 0x0D984; op_lqx(L, 0x3882269Cu);
-	L.pc = 0x0D988; op_fma(L, 0xE3A78FCCu);
-	L.pc = 0x0D98C; op_lqx(L, 0x38821D1Eu);
-	L.pc = 0x0D990; op_fcgt(L, 0x58519A3Au);
-	L.pc = 0x0D994; op_lqx(L, 0x3882251Fu);
-	L.pc = 0x0D998; op_ai(L, 0x1C081E3Cu);
-	L.pc = 0x0D99C; op_lqx(L, 0x388225C6u);
-	L.pc = 0x0D9A0; op_ceq(L, 0x7802A48Au);
-	L.pc = 0x0D9A4; op_lqx(L, 0x38820B97u);
-	L.pc = 0x0D9A8; op_fcgt(L, 0x5851C8C9u);
-	L.pc = 0x0D9AC; op_rotqbyi(L, 0x3F830387u);
-	L.pc = 0x0D9B0; op_fcgt(L, 0x5851474Au);
-	L.pc = 0x0D9B4; op_shufb(L, 0xB2030828u);
-	L.pc = 0x0D9B8; op_xor_(L, 0x48275CCBu);
-	L.pc = 0x0D9BC; op_shufb(L, 0xB040869Au);
-	L.pc = 0x0D9C0; op_ceq(L, 0x78064D99u);
-	L.pc = 0x0D9C4; op_shufb(L, 0xB187CF26u);
-	L.pc = 0x0D9C8; op_a(L, 0x1801CA0Du);
-	L.pc = 0x0D9CC; op_shufb(L, 0xB1D18E26u);
-	L.pc = 0x0D9D0; op_shufb(L, 0xB345CC28u);
-	L.pc = 0x0D9D4; op_shufb(L, 0xB3718E28u);
-	L.pc = 0x0D9D8; op_selb(L, 0x80E30B23u);
-	L.pc = 0x0D9DC; op_shufb(L, 0xB1858627u);
-	L.pc = 0x0D9E0; op_selb(L, 0x822389A3u);
-	L.pc = 0x0D9E4; op_shufb(L, 0xB1C4C727u);
-	L.pc = 0x0D9E8; op_selb(L, 0x88C68923u);
-	L.pc = 0x0D9EC; op_shufb(L, 0xB2C5CC26u);
-	L.pc = 0x0D9F0; op_selb(L, 0x83A6CAA3u);
-	L.pc = 0x0D9F4; op_shufb(L, 0xB2A7CF28u);
-	L.pc = 0x0D9F8; op_shlqby(L, 0x3BEDA592u);
-	L.pc = 0x0D9FC; op_stqx(L, 0x2880CA02u);
-	L.pc = 0x0DA00; op_selb(L, 0x826587A3u);
-	L.pc = 0x0DA04; op_shufb(L, 0xB1E3CB27u);
-	L.pc = 0x0DA08; op_selb(L, 0x83854823u);
-	L.pc = 0x0DA0C; op_brz(L, 0x207FBE8Bu);
-	if (L.pc == 0x0D800) { if (s.can_chain(cw, 0x0D800) && --budget) goto L_75669d8167b0264b; goto out; }
-	if (L.pc == 0x0DA10) { if (s.can_chain(cw, 0x0DA10) && --budget) goto L_086fdfd22989c211; goto out; }
-	goto out;
-L_086fdfd22989c211:
-	s.instructions += 2;
-	L.pc = 0x0DA10; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0DA14; op_br(L, 0x32007B80u);
-	if (L.pc == 0x0DDF0) { if (s.can_chain(cw, 0x0DDF0) && --budget) goto L_b48bbbb1941a3f20; goto out; }
-	goto out;
-L_b48bbbb1941a3f20:
-	s.instructions += 22;
-	L.pc = 0x0DDF0; op_rotmi(L, 0x0F3F4685u);
-	L.pc = 0x0DDF4; op_nop(L, 0x00200000u);
-	L.pc = 0x0DDF8; op_nop(L, 0x40200003u);
-	L.pc = 0x0DDFC; op_cwd(L, 0x3EC20206u);
-	L.pc = 0x0DE00; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0DE04; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE08; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0DE0C; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE10; op_cgti(L, 0x4C00028Au);
-	L.pc = 0x0DE14; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE18; op_nop(L, 0x4020002Bu);
-	L.pc = 0x0DE1C; op_shufb(L, 0xB0C84286u);
-	L.pc = 0x0DE20; op_selb(L, 0x8150800Au);
-	L.pc = 0x0DE24; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE28; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0DE2C; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE30; op_nop(L, 0x4020007Fu);
-	L.pc = 0x0DE34; op_nop(L, 0x00200000u);
-	L.pc = 0x0DE38; op_nop(L, 0x40200009u);
-	L.pc = 0x0DE3C; op_stqd(L, 0x24000206u);
-	L.pc = 0x0DE40; op_nop(L, 0x40200009u);
-	L.pc = 0x0DE44; op_bi(L, 0x35000500u);
-	goto out;
-out:
-	s.gpr[2] = L.gpr[2]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[56] = L.gpr[56]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[63] = L.gpr[63]; s.gpr[65] = L.gpr[65]; s.gpr[67] = L.gpr[67]; s.gpr[68] = L.gpr[68]; s.gpr[70] = L.gpr[70]; s.gpr[72] = L.gpr[72]; s.gpr[73] = L.gpr[73]; s.gpr[74] = L.gpr[74]; s.gpr[75] = L.gpr[75]; s.gpr[76] = L.gpr[76]; s.gpr[77] = L.gpr[77];
-	s.pc = L.pc;
-}
-void spu_aotc_474(SPUThread& __restrict s) {
-	const u64 cw = s.code_writes;
-	u32 budget = 4096;
-	SpuLocal L(s);
-	L.gpr[0] = s.gpr[0]; L.gpr[1] = s.gpr[1]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[23] = s.gpr[23]; L.gpr[24] = s.gpr[24]; L.gpr[25] = s.gpr[25]; L.gpr[26] = s.gpr[26]; L.gpr[27] = s.gpr[27]; L.gpr[28] = s.gpr[28]; L.gpr[29] = s.gpr[29]; L.gpr[30] = s.gpr[30]; L.gpr[31] = s.gpr[31]; L.gpr[32] = s.gpr[32]; L.gpr[33] = s.gpr[33]; L.gpr[34] = s.gpr[34]; L.gpr[35] = s.gpr[35]; L.gpr[36] = s.gpr[36]; L.gpr[37] = s.gpr[37]; L.gpr[38] = s.gpr[38]; L.gpr[39] = s.gpr[39]; L.gpr[40] = s.gpr[40]; L.gpr[41] = s.gpr[41]; L.gpr[42] = s.gpr[42]; L.gpr[43] = s.gpr[43]; L.gpr[44] = s.gpr[44]; L.gpr[45] = s.gpr[45]; L.gpr[72] = s.gpr[72]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[82] = s.gpr[82]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[127] = s.gpr[127];
-	L.pc = s.pc;
-	switch (L.pc) {
-		case 0x0D978: goto L_f926e4e32428350e;
-		case 0x0DA20: goto L_8454e480a62422f5;
-		case 0x0DA7C: goto L_1e60d50d13540f7e;
-		case 0x0DAA0: goto L_b8a2c5ce2632f468;
-		case 0x0DAC0: goto L_261dc74c389951c3;
-		case 0x0DAE0: goto L_274dfc6a2f6be6b3;
-		case 0x0DB10: goto L_6f9ec6078cb50861;
-		case 0x0DDCC: goto L_73c84bee56a660c2;
-		case 0x0DDD8: goto L_a295dca6f4d8f7d0;
-		case 0x0DDE0: goto L_4173e6d6ba07ad57;
-		case 0x0DE14: goto L_89ee1760180b9681;
-		case 0x0DE58: goto L_fc3a4602d052da28;
-		case 0x0DE60: goto L_3d7aebeb032e24ca;
-		case 0x0DE68: goto L_4bbf3d9c0e28d842;
-		case 0x0DE80: goto L_b688c8fa757aa5b8;
-		case 0x0DE84: goto L_0bbef63a7b24bf3e;
-		case 0x0DE88: goto L_b974c32636268e44;
-		case 0x0DE90: goto L_e9e39d8cd302ab8a;
-		case 0x0DEA8: goto L_4e5d5e0e0c9b3499;
-		case 0x0DED8: goto L_65eed0d9d7862b67;
-		case 0x0DEE8: goto L_d5bf849f29d1c678;
-		case 0x0DEF0: goto L_7c4d72f58ad5bb30;
-		case 0x0DF08: goto L_c1cec1cf20f86882;
-		case 0x0DF10: goto L_7d402f951ddb65ac;
-		case 0x0DF64: goto L_874be8f56977a585;
-		case 0x0DF78: goto L_9c641e227b160d25;
-		case 0x0E0A8: goto L_5b487f6a9074fe8b;
-		case 0x0E0AC: goto L_3dca4be4058a4c82;
-		case 0x0E0B8: goto L_7f2c4ae39a6b8140;
-		case 0x0E108: goto L_ce4aabb695a17abf;
-		case 0x0EC48: goto L_e19d42a1acea638a;
-		case 0x0EC78: goto L_50aa06513e3e967a;
-		case 0x0EC98: goto L_e7d5852556cdafd0;
-		case 0x0ED08: goto L_e1876c478debbf5a;
-		case 0x0EFC0: goto L_2f8f0ec92c86758d;
-		default: goto out;
-	}
 L_f926e4e32428350e:
 	s.instructions += 42;
 	L.pc = 0x0D978; op_il(L, 0x4080420Au);
@@ -11757,6 +13273,7 @@ L_e7d5852556cdafd0:
 	L.pc = 0x0ECFC; op_xsbh(L, 0x56C00102u);
 	L.pc = 0x0ED00; op_nop(L, 0x4020007Fu);
 	L.pc = 0x0ED04; op_brhz(L, 0x22000582u);
+	if (L.pc == 0x0ED30) { if (s.can_chain(cw, 0x0ED30) && --budget) goto L_a44b9d0c86b8401a; goto out; }
 	if (L.pc == 0x0ED08) { if (s.can_chain(cw, 0x0ED08) && --budget) goto L_e1876c478debbf5a; goto out; }
 	goto out;
 L_e1876c478debbf5a:
@@ -11772,6 +13289,23 @@ L_e1876c478debbf5a:
 	L.pc = 0x0ED28; op_nop(L, 0x4020007Fu);
 	L.pc = 0x0ED2C; op_brhnz(L, 0x23005282u);
 	if (L.pc == 0x0EFC0) { if (s.can_chain(cw, 0x0EFC0) && --budget) goto L_2f8f0ec92c86758d; goto out; }
+	if (L.pc == 0x0ED30) { if (s.can_chain(cw, 0x0ED30) && --budget) goto L_a44b9d0c86b8401a; goto out; }
+	goto out;
+L_a44b9d0c86b8401a:
+	s.instructions += 12;
+	L.pc = 0x0ED30; op_ai(L, 0x1C280081u);
+	L.pc = 0x0ED34; op_shlqbyi(L, 0x3FE02903u);
+	L.pc = 0x0ED38; op_lqd(L, 0x34004080u);
+	L.pc = 0x0ED3C; op_lqd(L, 0x34FFC0D0u);
+	L.pc = 0x0ED40; op_lqd(L, 0x34FF80D1u);
+	L.pc = 0x0ED44; op_lqd(L, 0x34FF40D2u);
+	L.pc = 0x0ED48; op_lqd(L, 0x34FF00D3u);
+	L.pc = 0x0ED4C; op_lqd(L, 0x34FEC0D4u);
+	L.pc = 0x0ED50; op_lqd(L, 0x34FE80D5u);
+	L.pc = 0x0ED54; op_lqd(L, 0x34FE40D6u);
+	L.pc = 0x0ED58; op_lqd(L, 0x34FE00D7u);
+	L.pc = 0x0ED5C; op_br(L, 0x327C6C80u);
+	if (L.pc == 0x0D0C0) { if (s.can_chain(cw, 0x0D0C0) && --budget) goto L_0fbe6d86fbda9ee4; goto out; }
 	goto out;
 L_2f8f0ec92c86758d:
 	s.instructions += 14;
@@ -11792,10 +13326,818 @@ L_2f8f0ec92c86758d:
 	if (L.pc == 0x0D978) { if (s.can_chain(cw, 0x0D978) && --budget) goto L_f926e4e32428350e; goto out; }
 	goto out;
 out:
-	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
+	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50]; s.gpr[51] = L.gpr[51]; s.gpr[52] = L.gpr[52]; s.gpr[53] = L.gpr[53]; s.gpr[54] = L.gpr[54]; s.gpr[55] = L.gpr[55]; s.gpr[56] = L.gpr[56]; s.gpr[57] = L.gpr[57]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[61] = L.gpr[61]; s.gpr[62] = L.gpr[62]; s.gpr[63] = L.gpr[63]; s.gpr[64] = L.gpr[64]; s.gpr[65] = L.gpr[65]; s.gpr[66] = L.gpr[66]; s.gpr[67] = L.gpr[67]; s.gpr[68] = L.gpr[68]; s.gpr[69] = L.gpr[69]; s.gpr[70] = L.gpr[70]; s.gpr[71] = L.gpr[71]; s.gpr[72] = L.gpr[72]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
 	s.pc = L.pc;
 }
-void spu_aotc_475(SPUThread& __restrict s) {
+void spu_aotc_485(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D0C4: goto L_89a413e5f4115723;
+		case 0x0D0E4: goto L_1b8500a2976a1dfb;
+		default: goto out;
+	}
+L_89a413e5f4115723:
+	s.instructions += 8;
+	s.pc = 0x0D0C4; op_lqd(s, 0x34004282u);
+	s.pc = 0x0D0C8; op_lqd(s, 0x34024783u);
+	s.pc = 0x0D0CC; op_shli(s, 0x0F608102u);
+	s.pc = 0x0D0D0; op_a(s, 0x18014102u);
+	s.pc = 0x0D0D4; op_lqd(s, 0x3400C105u);
+	s.pc = 0x0D0D8; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0D0DC; op_rotqby(s, 0x3B808282u);
+	s.pc = 0x0D0E0; op_brsl(s, 0x33000085u);
+	if (s.pc == 0x0D0E4) { if (s.can_chain(cw, 0x0D0E4) && --budget) goto L_1b8500a2976a1dfb; goto out; }
+	goto out;
+L_1b8500a2976a1dfb:
+	s.instructions += 2;
+	s.pc = 0x0D0E4; op_ai(s, 0x1C020285u);
+	s.pc = 0x0D0E8; op_bi(s, 0x35080280u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_486(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D0EC: goto L_21151e39b637dcaa;
+		case 0x0D10C: goto L_fbfb8008a14deba7;
+		default: goto out;
+	}
+L_21151e39b637dcaa:
+	s.instructions += 8;
+	s.pc = 0x0D0EC; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0D0F0; goto out; }
+	s.pc = 0x0D0F0; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x0D0F4; goto out; }
+	s.pc = 0x0D0F4; op_sf(s, 0x08018382u);
+	s.pc = 0x0D0F8; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x0D0FC; goto out; }
+	s.pc = 0x0D0FC; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x0D100; goto out; }
+	s.pc = 0x0D100; op_il(s, 0x40802002u);
+	s.pc = 0x0D104; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x0D108; goto out; }
+	s.pc = 0x0D108; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D10C) { if (s.can_chain(cw, 0x0D10C) && --budget) goto L_fbfb8008a14deba7; goto out; }
+	goto out;
+L_fbfb8008a14deba7:
+	s.instructions += 2;
+	s.pc = 0x0D10C; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D110; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_487(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D1FC: goto L_075391c1d5d63473;
+		case 0x0D214: goto L_b17ec13f80747a4a;
+		default: goto out;
+	}
+L_075391c1d5d63473:
+	s.instructions += 6;
+	s.pc = 0x0D1FC; op_wrch(s, 0x21A00B02u);
+	if (s.halted) { s.pc = 0x0D200; goto out; }
+	s.pc = 0x0D200; op_il(s, 0x40800103u);
+	s.pc = 0x0D204; op_wrch(s, 0x21A00B83u);
+	if (s.halted) { s.pc = 0x0D208; goto out; }
+	s.pc = 0x0D208; op_rdch(s, 0x01A00C02u);
+	if (s.halted) { s.pc = 0x0D20C; goto out; }
+	s.pc = 0x0D20C; op_nop(s, 0x00200000u);
+	s.pc = 0x0D210; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D214) { if (s.can_chain(cw, 0x0D214) && --budget) goto L_b17ec13f80747a4a; goto out; }
+	goto out;
+L_b17ec13f80747a4a:
+	s.instructions += 2;
+	s.pc = 0x0D214; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D218; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_488(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D21C: goto L_7a4d4d17ef705b1d;
+		case 0x0D23C: goto L_dd447e4af54e4e8d;
+		default: goto out;
+	}
+L_7a4d4d17ef705b1d:
+	s.instructions += 8;
+	s.pc = 0x0D21C; op_lqd(s, 0x34004282u);
+	s.pc = 0x0D220; op_lqd(s, 0x34024783u);
+	s.pc = 0x0D224; op_shli(s, 0x0F608102u);
+	s.pc = 0x0D228; op_a(s, 0x18014102u);
+	s.pc = 0x0D22C; op_lqd(s, 0x3400C105u);
+	s.pc = 0x0D230; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0D234; op_rotqby(s, 0x3B808282u);
+	s.pc = 0x0D238; op_brsl(s, 0x33000085u);
+	if (s.pc == 0x0D23C) { if (s.can_chain(cw, 0x0D23C) && --budget) goto L_dd447e4af54e4e8d; goto out; }
+	goto out;
+L_dd447e4af54e4e8d:
+	s.instructions += 2;
+	s.pc = 0x0D23C; op_ai(s, 0x1C020285u);
+	s.pc = 0x0D240; op_bi(s, 0x35080280u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_489(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D244: goto L_d17fbc2c565bb80c;
+		case 0x0D264: goto L_d7e7dd105c415cfa;
+		default: goto out;
+	}
+L_d17fbc2c565bb80c:
+	s.instructions += 8;
+	s.pc = 0x0D244; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0D248; goto out; }
+	s.pc = 0x0D248; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x0D24C; goto out; }
+	s.pc = 0x0D24C; op_sf(s, 0x08018382u);
+	s.pc = 0x0D250; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x0D254; goto out; }
+	s.pc = 0x0D254; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x0D258; goto out; }
+	s.pc = 0x0D258; op_il(s, 0x40802002u);
+	s.pc = 0x0D25C; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x0D260; goto out; }
+	s.pc = 0x0D260; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D264) { if (s.can_chain(cw, 0x0D264) && --budget) goto L_d7e7dd105c415cfa; goto out; }
+	goto out;
+L_d7e7dd105c415cfa:
+	s.instructions += 2;
+	s.pc = 0x0D264; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D268; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_490(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D32C: goto L_16089954cf24a4b1;
+		case 0x0D344: goto L_4348c552c1fd0035;
+		default: goto out;
+	}
+L_16089954cf24a4b1:
+	s.instructions += 6;
+	s.pc = 0x0D32C; op_wrch(s, 0x21A00B03u);
+	if (s.halted) { s.pc = 0x0D330; goto out; }
+	s.pc = 0x0D330; op_il(s, 0x40800102u);
+	s.pc = 0x0D334; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x0D338; goto out; }
+	s.pc = 0x0D338; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x0D33C; goto out; }
+	s.pc = 0x0D33C; op_nop(s, 0x00200000u);
+	s.pc = 0x0D340; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D344) { if (s.can_chain(cw, 0x0D344) && --budget) goto L_4348c552c1fd0035; goto out; }
+	goto out;
+L_4348c552c1fd0035:
+	s.instructions += 2;
+	s.pc = 0x0D344; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D348; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_491(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D34C: goto L_7abcdc1437094d10;
+		case 0x0D36C: goto L_8ea3f4ebbf8b30ba;
+		default: goto out;
+	}
+L_7abcdc1437094d10:
+	s.instructions += 8;
+	s.pc = 0x0D34C; op_lqd(s, 0x34004382u);
+	s.pc = 0x0D350; op_lqd(s, 0x3402E883u);
+	s.pc = 0x0D354; op_shli(s, 0x0F608102u);
+	s.pc = 0x0D358; op_a(s, 0x1801C102u);
+	s.pc = 0x0D35C; op_lqd(s, 0x3400C105u);
+	s.pc = 0x0D360; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0D364; op_rotqby(s, 0x3B808282u);
+	s.pc = 0x0D368; op_brsl(s, 0x33000085u);
+	if (s.pc == 0x0D36C) { if (s.can_chain(cw, 0x0D36C) && --budget) goto L_8ea3f4ebbf8b30ba; goto out; }
+	goto out;
+L_8ea3f4ebbf8b30ba:
+	s.instructions += 2;
+	s.pc = 0x0D36C; op_ai(s, 0x1C020285u);
+	s.pc = 0x0D370; op_bi(s, 0x35080280u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_492(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D374: goto L_4734f1b864f94986;
+		case 0x0D394: goto L_238e0d5fd8da6e65;
+		default: goto out;
+	}
+L_4734f1b864f94986:
+	s.instructions += 8;
+	s.pc = 0x0D374; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0D378; goto out; }
+	s.pc = 0x0D378; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x0D37C; goto out; }
+	s.pc = 0x0D37C; op_sf(s, 0x08018402u);
+	s.pc = 0x0D380; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x0D384; goto out; }
+	s.pc = 0x0D384; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x0D388; goto out; }
+	s.pc = 0x0D388; op_il(s, 0x40801002u);
+	s.pc = 0x0D38C; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x0D390; goto out; }
+	s.pc = 0x0D390; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D394) { if (s.can_chain(cw, 0x0D394) && --budget) goto L_238e0d5fd8da6e65; goto out; }
+	goto out;
+L_238e0d5fd8da6e65:
+	s.instructions += 2;
+	s.pc = 0x0D394; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D398; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_493(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[9] = s.gpr[9]; L.gpr[80] = s.gpr[80]; L.gpr[81] = s.gpr[81]; L.gpr[83] = s.gpr[83]; L.gpr[84] = s.gpr[84]; L.gpr[85] = s.gpr[85]; L.gpr[86] = s.gpr[86]; L.gpr[87] = s.gpr[87]; L.gpr[88] = s.gpr[88]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x0D4F0: goto L_3dd6594caca2ac17;
+		case 0x0D520: goto L_928f40771066f329;
+		default: goto out;
+	}
+L_3dd6594caca2ac17:
+	s.instructions += 12;
+	L.pc = 0x0D4F0; op_a(L, 0x1814EA02u);
+	L.pc = 0x0D4F4; op_lqx(L, 0x3894EA04u);
+	L.pc = 0x0D4F8; op_ori(L, 0x04002B83u);
+	L.pc = 0x0D4FC; op_ai(L, 0x1C0068D1u);
+	L.pc = 0x0D500; op_rotqby(L, 0x3B808202u);
+	L.pc = 0x0D504; op_a(L, 0x1800AA82u);
+	L.pc = 0x0D508; op_shli(L, 0x0F608102u);
+	L.pc = 0x0D50C; op_nop(L, 0x00200000u);
+	L.pc = 0x0D510; op_a(L, 0x18160104u);
+	L.pc = 0x0D514; op_lqx(L, 0x38960102u);
+	L.pc = 0x0D518; op_rotqby(L, 0x3B810104u);
+	L.pc = 0x0D51C; op_brsl(L, 0x33707880u);
+	goto out;
+L_928f40771066f329:
+	s.instructions += 11;
+	L.pc = 0x0D520; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D524; op_nop(L, 0x101A9E09u);
+	L.pc = 0x0D528; op_cgt(L, 0x48146B02u);
+	L.pc = 0x0D52C; op_lqd(L, 0x34002804u);
+	L.pc = 0x0D530; op_cwd(L, 0x3EC02805u);
+	L.pc = 0x0D534; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D538; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D53C; op_shufb(L, 0xB0810185u);
+	L.pc = 0x0D540; op_stqd(L, 0x24002804u);
+	L.pc = 0x0D544; op_ai(L, 0x1C012850u);
+	L.pc = 0x0D548; op_brnz(L, 0x217FF502u);
+	if (L.pc == 0x0D4F0) { if (s.can_chain(cw, 0x0D4F0) && --budget) goto L_3dd6594caca2ac17; goto out; }
+	goto out;
+out:
+	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81];
+	s.pc = L.pc;
+}
+void spu_aotc_494(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D51C: goto L_8cb9d9009f66c2af;
+		case 0x0D534: goto L_bc22fd320c66c41b;
+		default: goto out;
+	}
+L_8cb9d9009f66c2af:
+	s.instructions += 6;
+	s.pc = 0x0D51C; op_wrch(s, 0x21A00B03u);
+	if (s.halted) { s.pc = 0x0D520; goto out; }
+	s.pc = 0x0D520; op_il(s, 0x40800102u);
+	s.pc = 0x0D524; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x0D528; goto out; }
+	s.pc = 0x0D528; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x0D52C; goto out; }
+	s.pc = 0x0D52C; op_nop(s, 0x00200000u);
+	s.pc = 0x0D530; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D534) { if (s.can_chain(cw, 0x0D534) && --budget) goto L_bc22fd320c66c41b; goto out; }
+	goto out;
+L_bc22fd320c66c41b:
+	s.instructions += 2;
+	s.pc = 0x0D534; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D538; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_495(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D554: goto L_3c16d9b814d389db;
+		case 0x0D574: goto L_69b4e1595515f5db;
+		default: goto out;
+	}
+L_3c16d9b814d389db:
+	s.instructions += 8;
+	s.pc = 0x0D554; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0D558; goto out; }
+	s.pc = 0x0D558; op_wrch(s, 0x21A00905u);
+	if (s.halted) { s.pc = 0x0D55C; goto out; }
+	s.pc = 0x0D55C; op_shli(s, 0x0F608204u);
+	s.pc = 0x0D560; op_wrch(s, 0x21A00984u);
+	if (s.halted) { s.pc = 0x0D564; goto out; }
+	s.pc = 0x0D564; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x0D568; goto out; }
+	s.pc = 0x0D568; op_il(s, 0x40801002u);
+	s.pc = 0x0D56C; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x0D570; goto out; }
+	s.pc = 0x0D570; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D574) { if (s.can_chain(cw, 0x0D574) && --budget) goto L_69b4e1595515f5db; goto out; }
+	goto out;
+L_69b4e1595515f5db:
+	s.instructions += 2;
+	s.pc = 0x0D574; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D578; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_496(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D57C: goto L_9a82f8ea959a8623;
+		case 0x0D5B0: goto L_4c4685d46d8cac89;
+		case 0x0D5D4: goto L_c2dee10fff1c78d7;
+		default: goto out;
+	}
+L_9a82f8ea959a8623:
+	s.instructions += 13;
+	s.pc = 0x0D57C; op_lqd(s, 0x34002902u);
+	s.pc = 0x0D580; op_lqd(s, 0x34006906u);
+	s.pc = 0x0D584; op_stqd(s, 0x2400E902u);
+	s.pc = 0x0D588; op_lqd(s, 0x34012904u);
+	s.pc = 0x0D58C; op_lqd(s, 0x3401E902u);
+	s.pc = 0x0D590; op_ori(s, 0x04000205u);
+	s.pc = 0x0D594; op_a(s, 0x18008302u);
+	s.pc = 0x0D598; op_clgt(s, 0x58014103u);
+	s.pc = 0x0D59C; op_selb(s, 0x80A14103u);
+	s.pc = 0x0D5A0; op_clgt(s, 0x58018284u);
+	s.pc = 0x0D5A4; op_stqd(s, 0x2400A905u);
+	s.pc = 0x0D5A8; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0D5AC; op_brz(s, 0x2000B284u);
+	if (s.pc == 0x0D5B0) { if (s.can_chain(cw, 0x0D5B0) && --budget) goto L_4c4685d46d8cac89; goto out; }
+	goto out;
+L_4c4685d46d8cac89:
+	s.instructions += 9;
+	s.pc = 0x0D5B0; op_shli(s, 0x0F608302u);
+	s.pc = 0x0D5B4; op_lqd(s, 0x34026904u);
+	s.pc = 0x0D5B8; op_il(s, 0x40800083u);
+	s.pc = 0x0D5BC; op_nop(s, 0x127F21A2u);
+	s.pc = 0x0D5C0; op_a(s, 0x18008204u);
+	s.pc = 0x0D5C4; op_stqd(s, 0x24016904u);
+	s.pc = 0x0D5C8; op_lqd(s, 0x34010482u);
+	s.pc = 0x0D5CC; op_shl(s, 0x0B608183u);
+	s.pc = 0x0D5D0; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D5D4) { if (s.can_chain(cw, 0x0D5D4) && --budget) goto L_c2dee10fff1c78d7; goto out; }
+	goto out;
+L_c2dee10fff1c78d7:
+	s.instructions += 2;
+	s.pc = 0x0D5D4; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D5D8; op_bi(s, 0x35080100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_497(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D5DC: goto L_94c5db49c084196f;
+		case 0x0D5F4: goto L_8155094d183ba85b;
+		default: goto out;
+	}
+L_94c5db49c084196f:
+	s.instructions += 6;
+	s.pc = 0x0D5DC; op_wrch(s, 0x21A00B03u);
+	if (s.halted) { s.pc = 0x0D5E0; goto out; }
+	s.pc = 0x0D5E0; op_il(s, 0x40800102u);
+	s.pc = 0x0D5E4; op_wrch(s, 0x21A00B82u);
+	if (s.halted) { s.pc = 0x0D5E8; goto out; }
+	s.pc = 0x0D5E8; op_rdch(s, 0x01A00C03u);
+	if (s.halted) { s.pc = 0x0D5EC; goto out; }
+	s.pc = 0x0D5EC; op_nop(s, 0x00200000u);
+	s.pc = 0x0D5F0; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D5F4) { if (s.can_chain(cw, 0x0D5F4) && --budget) goto L_8155094d183ba85b; goto out; }
+	goto out;
+L_8155094d183ba85b:
+	s.instructions += 2;
+	s.pc = 0x0D5F4; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D5F8; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_498(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D5FC: goto L_366a75d7bb49b349;
+		case 0x0D60C: goto L_cf0de2490a17bfd3;
+		default: goto out;
+	}
+L_366a75d7bb49b349:
+	s.instructions += 4;
+	s.pc = 0x0D5FC; op_lqd(s, 0x34004482u);
+	s.pc = 0x0D600; op_nop(s, 0x4020007Fu);
+	s.pc = 0x0D604; op_lqd(s, 0x34010483u);
+	s.pc = 0x0D608; op_brsl(s, 0x33000087u);
+	if (s.pc == 0x0D60C) { if (s.can_chain(cw, 0x0D60C) && --budget) goto L_cf0de2490a17bfd3; goto out; }
+	goto out;
+L_cf0de2490a17bfd3:
+	s.instructions += 2;
+	s.pc = 0x0D60C; op_ai(s, 0x1C020387u);
+	s.pc = 0x0D610; op_bi(s, 0x35080380u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_499(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0D614: goto L_eaadabf44f648988;
+		case 0x0D63C: goto L_5d19f2cdbcfb681e;
+		default: goto out;
+	}
+L_eaadabf44f648988:
+	s.instructions += 10;
+	s.pc = 0x0D614; op_wrch(s, 0x21A00802u);
+	if (s.halted) { s.pc = 0x0D618; goto out; }
+	s.pc = 0x0D618; op_wrch(s, 0x21A00904u);
+	if (s.halted) { s.pc = 0x0D61C; goto out; }
+	s.pc = 0x0D61C; op_sf(s, 0x08014302u);
+	s.pc = 0x0D620; op_shli(s, 0x0F608102u);
+	s.pc = 0x0D624; op_wrch(s, 0x21A00982u);
+	if (s.halted) { s.pc = 0x0D628; goto out; }
+	s.pc = 0x0D628; op_wrch(s, 0x21A00A03u);
+	if (s.halted) { s.pc = 0x0D62C; goto out; }
+	s.pc = 0x0D62C; op_il(s, 0x40802002u);
+	s.pc = 0x0D630; op_wrch(s, 0x21A00A82u);
+	if (s.halted) { s.pc = 0x0D634; goto out; }
+	s.pc = 0x0D634; op_nop(s, 0x00200000u);
+	s.pc = 0x0D638; op_brsl(s, 0x33000082u);
+	if (s.pc == 0x0D63C) { if (s.can_chain(cw, 0x0D63C) && --budget) goto L_5d19f2cdbcfb681e; goto out; }
+	goto out;
+L_5d19f2cdbcfb681e:
+	s.instructions += 2;
+	s.pc = 0x0D63C; op_ai(s, 0x1C020102u);
+	s.pc = 0x0D640; op_bi(s, 0x35040100u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_500(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	SpuLocal L(s);
+	L.gpr[0] = s.gpr[0]; L.gpr[2] = s.gpr[2]; L.gpr[3] = s.gpr[3]; L.gpr[4] = s.gpr[4]; L.gpr[5] = s.gpr[5]; L.gpr[6] = s.gpr[6]; L.gpr[7] = s.gpr[7]; L.gpr[8] = s.gpr[8]; L.gpr[9] = s.gpr[9]; L.gpr[10] = s.gpr[10]; L.gpr[11] = s.gpr[11]; L.gpr[12] = s.gpr[12]; L.gpr[13] = s.gpr[13]; L.gpr[14] = s.gpr[14]; L.gpr[15] = s.gpr[15]; L.gpr[16] = s.gpr[16]; L.gpr[17] = s.gpr[17]; L.gpr[18] = s.gpr[18]; L.gpr[19] = s.gpr[19]; L.gpr[20] = s.gpr[20]; L.gpr[21] = s.gpr[21]; L.gpr[22] = s.gpr[22]; L.gpr[23] = s.gpr[23]; L.gpr[24] = s.gpr[24]; L.gpr[25] = s.gpr[25]; L.gpr[26] = s.gpr[26]; L.gpr[27] = s.gpr[27]; L.gpr[28] = s.gpr[28]; L.gpr[29] = s.gpr[29]; L.gpr[30] = s.gpr[30]; L.gpr[31] = s.gpr[31]; L.gpr[33] = s.gpr[33]; L.gpr[34] = s.gpr[34]; L.gpr[35] = s.gpr[35]; L.gpr[36] = s.gpr[36]; L.gpr[38] = s.gpr[38]; L.gpr[39] = s.gpr[39]; L.gpr[40] = s.gpr[40]; L.gpr[43] = s.gpr[43]; L.gpr[45] = s.gpr[45]; L.gpr[46] = s.gpr[46]; L.gpr[47] = s.gpr[47]; L.gpr[49] = s.gpr[49]; L.gpr[50] = s.gpr[50]; L.gpr[51] = s.gpr[51]; L.gpr[52] = s.gpr[52]; L.gpr[53] = s.gpr[53]; L.gpr[54] = s.gpr[54]; L.gpr[55] = s.gpr[55]; L.gpr[56] = s.gpr[56]; L.gpr[57] = s.gpr[57]; L.gpr[58] = s.gpr[58]; L.gpr[59] = s.gpr[59]; L.gpr[60] = s.gpr[60]; L.gpr[61] = s.gpr[61]; L.gpr[62] = s.gpr[62]; L.gpr[63] = s.gpr[63]; L.gpr[64] = s.gpr[64]; L.gpr[65] = s.gpr[65]; L.gpr[66] = s.gpr[66]; L.gpr[67] = s.gpr[67]; L.gpr[68] = s.gpr[68]; L.gpr[69] = s.gpr[69]; L.gpr[70] = s.gpr[70]; L.gpr[71] = s.gpr[71]; L.gpr[72] = s.gpr[72]; L.gpr[73] = s.gpr[73]; L.gpr[74] = s.gpr[74]; L.gpr[75] = s.gpr[75]; L.gpr[76] = s.gpr[76]; L.gpr[77] = s.gpr[77]; L.gpr[112] = s.gpr[112]; L.gpr[125] = s.gpr[125]; L.gpr[126] = s.gpr[126]; L.gpr[127] = s.gpr[127];
+	L.pc = s.pc;
+	switch (L.pc) {
+		case 0x0D7F8: goto L_c457e8a9f5454353;
+		case 0x0D800: goto L_75669d8167b0264b;
+		case 0x0DA10: goto L_086fdfd22989c211;
+		case 0x0DDF0: goto L_b48bbbb1941a3f20;
+		default: goto out;
+	}
+L_c457e8a9f5454353:
+	s.instructions += 134;
+	if (spu_skip_triangle_cull(L)) goto out;
+	L.pc = 0x0D7F8; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0D7FC; op_nop(L, 0x12800084u);
+	L.pc = 0x0D800; op_ceqi(L, 0x7C00030Bu);
+	L.pc = 0x0D804; op_shufb(L, 0xB0CE9C35u);
+	L.pc = 0x0D808; op_fs(L, 0x58A30718u);
+	L.pc = 0x0D80C; op_shufb(L, 0xB29121B5u);
+	L.pc = 0x0D810; op_and_(L, 0x1822DF15u);
+	L.pc = 0x0D814; op_shufb(L, 0xB2C28CB5u);
+	L.pc = 0x0D818; op_fcgt(L, 0x5844C397u);
+	L.pc = 0x0D81C; op_shufb(L, 0xB332A4B2u);
+	L.pc = 0x0D820; op_fs(L, 0x58A1C98Au);
+	L.pc = 0x0D824; op_shufb(L, 0xB0CEC331u);
+	L.pc = 0x0D828; op_selb(L, 0x8201C997u);
+	L.pc = 0x0D82C; op_rotqby(L, 0x3B83599Au);
+	L.pc = 0x0D830; op_fs(L, 0x58A3079Eu);
+	L.pc = 0x0D834; op_shufb(L, 0xB2C48B31u);
+	L.pc = 0x0D838; op_andc(L, 0x582BCC1Bu);
+	L.pc = 0x0D83C; op_shufb(L, 0xB2864A2Eu);
+	L.pc = 0x0D840; op_ceqi(L, 0x7C000319u);
+	L.pc = 0x0D844; op_rotqbyi(L, 0x3F822438u);
+	L.pc = 0x0D848; op_selb(L, 0x8244C397u);
+	L.pc = 0x0D84C; op_shufb(L, 0xB2F2011Au);
+	L.pc = 0x0D850; op_ori(L, 0x04001FC8u);
+	L.pc = 0x0D854; op_lqx(L, 0x388F5E3Fu);
+	L.pc = 0x0D858; op_or_(L, 0x08250B13u);
+	L.pc = 0x0D85C; op_rotqbyi(L, 0x3F820282u);
+	L.pc = 0x0D860; op_fcgt(L, 0x5843C614u);
+	L.pc = 0x0D864; op_rotqbyi(L, 0x3F801E06u);
+	L.pc = 0x0D868; op_andbi(L, 0x16200993u);
+	L.pc = 0x0D86C; op_stqx(L, 0x2880C697u);
+	L.pc = 0x0D870; op_selb(L, 0x83430794u);
+	L.pc = 0x0D874; op_ceqi(L, 0x7C000993u);
+	L.pc = 0x0D878; op_shlhi(L, 0x0FE11FBAu);
+	L.pc = 0x0D87C; op_orc(L, 0x59264993u);
+	L.pc = 0x0D880; op_andc(L, 0x582BCF16u);
+	L.pc = 0x0D884; op_andc(L, 0x58254993u);
+	L.pc = 0x0D888; op_fs(L, 0x58A1C89Fu);
+	L.pc = 0x0D88C; op_rotqbyi(L, 0x3F821D15u);
+	L.pc = 0x0D890; op_andi(L, 0x14020987u);
+	L.pc = 0x0D894; op_rotqbyi(L, 0x3F809D3Bu);
+	L.pc = 0x0D898; op_fa(L, 0x58858D9Bu);
+	L.pc = 0x0D89C; op_lqx(L, 0x38821D13u);
+	L.pc = 0x0D8A0; op_a(L, 0x1801C68Du);
+	L.pc = 0x0D8A4; op_rotqbyi(L, 0x3F810396u);
+	L.pc = 0x0D8A8; op_andc(L, 0x582BC519u);
+	L.pc = 0x0D8AC; op_rotqmbyi(L, 0x3FBF8AC3u);
+	L.pc = 0x0D8B0; op_selb(L, 0x81E3C614u);
+	L.pc = 0x0D8B4; op_rotqby(L, 0x3B8359C4u);
+	L.pc = 0x0D8B8; op_andc(L, 0x582BCF8Cu);
+	L.pc = 0x0D8BC; op_rotqbyi(L, 0x3F808AC9u);
+	L.pc = 0x0D8C0; op_a(L, 0x18034B14u);
+	L.pc = 0x0D8C4; op_lqx(L, 0x38820A95u);
+	L.pc = 0x0D8C8; op_fa(L, 0x58830CCAu);
+	L.pc = 0x0D8CC; op_lqx(L, 0x3882218Cu);
+	L.pc = 0x0D8D0; op_fcgt(L, 0x58468743u);
+	L.pc = 0x0D8D4; op_shufb(L, 0xB70E0BC4u);
+	L.pc = 0x0D8D8; op_fcgt(L, 0x5843C744u);
+	L.pc = 0x0D8DC; op_rotqby(L, 0x3B8519CBu);
+	L.pc = 0x0D8E0; op_fcgt(L, 0x58440896u);
+	L.pc = 0x0D8E4; op_lqx(L, 0x38822497u);
+	L.pc = 0x0D8E8; op_rotmi(L, 0x0F3C1D3Au);
+	L.pc = 0x0D8EC; op_rotqbyi(L, 0x3F820399u);
+	L.pc = 0x0D8F0; op_selb(L, 0x83438D43u);
+	L.pc = 0x0D8F4; op_stqx(L, 0x2880C6B8u);
+	L.pc = 0x0D8F8; op_fa(L, 0x5886E543u);
+	L.pc = 0x0D8FC; op_shufb(L, 0xB1A15C4Bu);
+	L.pc = 0x0D900; op_ori(L, 0x04002085u);
+	L.pc = 0x0D904; op_lqx(L, 0x38901E41u);
+	L.pc = 0x0D908; op_fcgt(L, 0x584488B8u);
+	L.pc = 0x0D90C; op_lqx(L, 0x38821D9Bu);
+	L.pc = 0x0D910; op_selb(L, 0x81C3C744u);
+	L.pc = 0x0D914; op_shufb(L, 0xB1E549A4u);
+	L.pc = 0x0D918; op_selb(L, 0x82C44816u);
+	L.pc = 0x0D91C; op_lqx(L, 0x38821D10u);
+	L.pc = 0x0D920; op_selb(L, 0x822488B8u);
+	L.pc = 0x0D924; op_shufb(L, 0xB24549A8u);
+	L.pc = 0x0D928; op_fma(L, 0xE710D137u);
+	L.pc = 0x0D92C; op_stqx(L, 0x2880CA0Du);
+	L.pc = 0x0D930; op_fa(L, 0x588596C3u);
+	L.pc = 0x0D934; op_shlqbii(L, 0x3F6120BBu);
+	L.pc = 0x0D938; op_fa(L, 0x588696C4u);
+	L.pc = 0x0D93C; op_shufb(L, 0xB265CDA4u);
+	L.pc = 0x0D940; op_a(L, 0x18050C94u);
+	L.pc = 0x0D944; op_shufb(L, 0xB2A5CDA8u);
+	L.pc = 0x0D948; op_cflts(L, 0x762B48C9u);
+	L.pc = 0x0D94C; op_shufb(L, 0xB2C30824u);
+	L.pc = 0x0D950; op_rotmi(L, 0x0F3C1DBAu);
+	L.pc = 0x0D954; op_rotqbyi(L, 0x3F821D97u);
+	L.pc = 0x0D958; op_fnms(L, 0xD9828C38u);
+	L.pc = 0x0D95C; op_rotqbyi(L, 0x3F809DCDu);
+	L.pc = 0x0D960; op_cflts(L, 0x762B618Au);
+	L.pc = 0x0D964; op_lqx(L, 0x38821D98u);
+	L.pc = 0x0D968; op_cflts(L, 0x762B6219u);
+	L.pc = 0x0D96C; op_rotqby(L, 0x3B85199Au);
+	L.pc = 0x0D970; op_cflts(L, 0x762B471Bu);
+	L.pc = 0x0D974; op_rotqmbyi(L, 0x3FBF8BCAu);
+	L.pc = 0x0D978; op_fcgt(L, 0x58471A38u);
+	L.pc = 0x0D97C; op_rotqbyi(L, 0x3F808BCBu);
+	L.pc = 0x0D980; op_fcgt(L, 0x58475A3Bu);
+	L.pc = 0x0D984; op_lqx(L, 0x3882269Cu);
+	L.pc = 0x0D988; op_fma(L, 0xE3A78FCCu);
+	L.pc = 0x0D98C; op_lqx(L, 0x38821D1Eu);
+	L.pc = 0x0D990; op_fcgt(L, 0x58519A3Au);
+	L.pc = 0x0D994; op_lqx(L, 0x3882251Fu);
+	L.pc = 0x0D998; op_ai(L, 0x1C081E3Cu);
+	L.pc = 0x0D99C; op_lqx(L, 0x388225C6u);
+	L.pc = 0x0D9A0; op_ceq(L, 0x7802A48Au);
+	L.pc = 0x0D9A4; op_lqx(L, 0x38820B97u);
+	L.pc = 0x0D9A8; op_fcgt(L, 0x5851C8C9u);
+	L.pc = 0x0D9AC; op_rotqbyi(L, 0x3F830387u);
+	L.pc = 0x0D9B0; op_fcgt(L, 0x5851474Au);
+	L.pc = 0x0D9B4; op_shufb(L, 0xB2030828u);
+	L.pc = 0x0D9B8; op_xor_(L, 0x48275CCBu);
+	L.pc = 0x0D9BC; op_shufb(L, 0xB040869Au);
+	L.pc = 0x0D9C0; op_ceq(L, 0x78064D99u);
+	L.pc = 0x0D9C4; op_shufb(L, 0xB187CF26u);
+	L.pc = 0x0D9C8; op_a(L, 0x1801CA0Du);
+	L.pc = 0x0D9CC; op_shufb(L, 0xB1D18E26u);
+	L.pc = 0x0D9D0; op_shufb(L, 0xB345CC28u);
+	L.pc = 0x0D9D4; op_shufb(L, 0xB3718E28u);
+	L.pc = 0x0D9D8; op_selb(L, 0x80E30B23u);
+	L.pc = 0x0D9DC; op_shufb(L, 0xB1858627u);
+	L.pc = 0x0D9E0; op_selb(L, 0x822389A3u);
+	L.pc = 0x0D9E4; op_shufb(L, 0xB1C4C727u);
+	L.pc = 0x0D9E8; op_selb(L, 0x88C68923u);
+	L.pc = 0x0D9EC; op_shufb(L, 0xB2C5CC26u);
+	L.pc = 0x0D9F0; op_selb(L, 0x83A6CAA3u);
+	L.pc = 0x0D9F4; op_shufb(L, 0xB2A7CF28u);
+	L.pc = 0x0D9F8; op_shlqby(L, 0x3BEDA592u);
+	L.pc = 0x0D9FC; op_stqx(L, 0x2880CA02u);
+	L.pc = 0x0DA00; op_selb(L, 0x826587A3u);
+	L.pc = 0x0DA04; op_shufb(L, 0xB1E3CB27u);
+	L.pc = 0x0DA08; op_selb(L, 0x83854823u);
+	L.pc = 0x0DA0C; op_brz(L, 0x207FBE8Bu);
+	if (L.pc == 0x0D800) { if (s.can_chain(cw, 0x0D800) && --budget) goto L_75669d8167b0264b; goto out; }
+	if (L.pc == 0x0DA10) { if (s.can_chain(cw, 0x0DA10) && --budget) goto L_086fdfd22989c211; goto out; }
+	goto out;
+L_75669d8167b0264b:
+	s.instructions += 132;
+	L.pc = 0x0D800; op_ceqi(L, 0x7C00030Bu);
+	L.pc = 0x0D804; op_shufb(L, 0xB0CE9C35u);
+	L.pc = 0x0D808; op_fs(L, 0x58A30718u);
+	L.pc = 0x0D80C; op_shufb(L, 0xB29121B5u);
+	L.pc = 0x0D810; op_and_(L, 0x1822DF15u);
+	L.pc = 0x0D814; op_shufb(L, 0xB2C28CB5u);
+	L.pc = 0x0D818; op_fcgt(L, 0x5844C397u);
+	L.pc = 0x0D81C; op_shufb(L, 0xB332A4B2u);
+	L.pc = 0x0D820; op_fs(L, 0x58A1C98Au);
+	L.pc = 0x0D824; op_shufb(L, 0xB0CEC331u);
+	L.pc = 0x0D828; op_selb(L, 0x8201C997u);
+	L.pc = 0x0D82C; op_rotqby(L, 0x3B83599Au);
+	L.pc = 0x0D830; op_fs(L, 0x58A3079Eu);
+	L.pc = 0x0D834; op_shufb(L, 0xB2C48B31u);
+	L.pc = 0x0D838; op_andc(L, 0x582BCC1Bu);
+	L.pc = 0x0D83C; op_shufb(L, 0xB2864A2Eu);
+	L.pc = 0x0D840; op_ceqi(L, 0x7C000319u);
+	L.pc = 0x0D844; op_rotqbyi(L, 0x3F822438u);
+	L.pc = 0x0D848; op_selb(L, 0x8244C397u);
+	L.pc = 0x0D84C; op_shufb(L, 0xB2F2011Au);
+	L.pc = 0x0D850; op_ori(L, 0x04001FC8u);
+	L.pc = 0x0D854; op_lqx(L, 0x388F5E3Fu);
+	L.pc = 0x0D858; op_or_(L, 0x08250B13u);
+	L.pc = 0x0D85C; op_rotqbyi(L, 0x3F820282u);
+	L.pc = 0x0D860; op_fcgt(L, 0x5843C614u);
+	L.pc = 0x0D864; op_rotqbyi(L, 0x3F801E06u);
+	L.pc = 0x0D868; op_andbi(L, 0x16200993u);
+	L.pc = 0x0D86C; op_stqx(L, 0x2880C697u);
+	L.pc = 0x0D870; op_selb(L, 0x83430794u);
+	L.pc = 0x0D874; op_ceqi(L, 0x7C000993u);
+	L.pc = 0x0D878; op_shlhi(L, 0x0FE11FBAu);
+	L.pc = 0x0D87C; op_orc(L, 0x59264993u);
+	L.pc = 0x0D880; op_andc(L, 0x582BCF16u);
+	L.pc = 0x0D884; op_andc(L, 0x58254993u);
+	L.pc = 0x0D888; op_fs(L, 0x58A1C89Fu);
+	L.pc = 0x0D88C; op_rotqbyi(L, 0x3F821D15u);
+	L.pc = 0x0D890; op_andi(L, 0x14020987u);
+	L.pc = 0x0D894; op_rotqbyi(L, 0x3F809D3Bu);
+	L.pc = 0x0D898; op_fa(L, 0x58858D9Bu);
+	L.pc = 0x0D89C; op_lqx(L, 0x38821D13u);
+	L.pc = 0x0D8A0; op_a(L, 0x1801C68Du);
+	L.pc = 0x0D8A4; op_rotqbyi(L, 0x3F810396u);
+	L.pc = 0x0D8A8; op_andc(L, 0x582BC519u);
+	L.pc = 0x0D8AC; op_rotqmbyi(L, 0x3FBF8AC3u);
+	L.pc = 0x0D8B0; op_selb(L, 0x81E3C614u);
+	L.pc = 0x0D8B4; op_rotqby(L, 0x3B8359C4u);
+	L.pc = 0x0D8B8; op_andc(L, 0x582BCF8Cu);
+	L.pc = 0x0D8BC; op_rotqbyi(L, 0x3F808AC9u);
+	L.pc = 0x0D8C0; op_a(L, 0x18034B14u);
+	L.pc = 0x0D8C4; op_lqx(L, 0x38820A95u);
+	L.pc = 0x0D8C8; op_fa(L, 0x58830CCAu);
+	L.pc = 0x0D8CC; op_lqx(L, 0x3882218Cu);
+	L.pc = 0x0D8D0; op_fcgt(L, 0x58468743u);
+	L.pc = 0x0D8D4; op_shufb(L, 0xB70E0BC4u);
+	L.pc = 0x0D8D8; op_fcgt(L, 0x5843C744u);
+	L.pc = 0x0D8DC; op_rotqby(L, 0x3B8519CBu);
+	L.pc = 0x0D8E0; op_fcgt(L, 0x58440896u);
+	L.pc = 0x0D8E4; op_lqx(L, 0x38822497u);
+	L.pc = 0x0D8E8; op_rotmi(L, 0x0F3C1D3Au);
+	L.pc = 0x0D8EC; op_rotqbyi(L, 0x3F820399u);
+	L.pc = 0x0D8F0; op_selb(L, 0x83438D43u);
+	L.pc = 0x0D8F4; op_stqx(L, 0x2880C6B8u);
+	L.pc = 0x0D8F8; op_fa(L, 0x5886E543u);
+	L.pc = 0x0D8FC; op_shufb(L, 0xB1A15C4Bu);
+	L.pc = 0x0D900; op_ori(L, 0x04002085u);
+	L.pc = 0x0D904; op_lqx(L, 0x38901E41u);
+	L.pc = 0x0D908; op_fcgt(L, 0x584488B8u);
+	L.pc = 0x0D90C; op_lqx(L, 0x38821D9Bu);
+	L.pc = 0x0D910; op_selb(L, 0x81C3C744u);
+	L.pc = 0x0D914; op_shufb(L, 0xB1E549A4u);
+	L.pc = 0x0D918; op_selb(L, 0x82C44816u);
+	L.pc = 0x0D91C; op_lqx(L, 0x38821D10u);
+	L.pc = 0x0D920; op_selb(L, 0x822488B8u);
+	L.pc = 0x0D924; op_shufb(L, 0xB24549A8u);
+	L.pc = 0x0D928; op_fma(L, 0xE710D137u);
+	L.pc = 0x0D92C; op_stqx(L, 0x2880CA0Du);
+	L.pc = 0x0D930; op_fa(L, 0x588596C3u);
+	L.pc = 0x0D934; op_shlqbii(L, 0x3F6120BBu);
+	L.pc = 0x0D938; op_fa(L, 0x588696C4u);
+	L.pc = 0x0D93C; op_shufb(L, 0xB265CDA4u);
+	L.pc = 0x0D940; op_a(L, 0x18050C94u);
+	L.pc = 0x0D944; op_shufb(L, 0xB2A5CDA8u);
+	L.pc = 0x0D948; op_cflts(L, 0x762B48C9u);
+	L.pc = 0x0D94C; op_shufb(L, 0xB2C30824u);
+	L.pc = 0x0D950; op_rotmi(L, 0x0F3C1DBAu);
+	L.pc = 0x0D954; op_rotqbyi(L, 0x3F821D97u);
+	L.pc = 0x0D958; op_fnms(L, 0xD9828C38u);
+	L.pc = 0x0D95C; op_rotqbyi(L, 0x3F809DCDu);
+	L.pc = 0x0D960; op_cflts(L, 0x762B618Au);
+	L.pc = 0x0D964; op_lqx(L, 0x38821D98u);
+	L.pc = 0x0D968; op_cflts(L, 0x762B6219u);
+	L.pc = 0x0D96C; op_rotqby(L, 0x3B85199Au);
+	L.pc = 0x0D970; op_cflts(L, 0x762B471Bu);
+	L.pc = 0x0D974; op_rotqmbyi(L, 0x3FBF8BCAu);
+	L.pc = 0x0D978; op_fcgt(L, 0x58471A38u);
+	L.pc = 0x0D97C; op_rotqbyi(L, 0x3F808BCBu);
+	L.pc = 0x0D980; op_fcgt(L, 0x58475A3Bu);
+	L.pc = 0x0D984; op_lqx(L, 0x3882269Cu);
+	L.pc = 0x0D988; op_fma(L, 0xE3A78FCCu);
+	L.pc = 0x0D98C; op_lqx(L, 0x38821D1Eu);
+	L.pc = 0x0D990; op_fcgt(L, 0x58519A3Au);
+	L.pc = 0x0D994; op_lqx(L, 0x3882251Fu);
+	L.pc = 0x0D998; op_ai(L, 0x1C081E3Cu);
+	L.pc = 0x0D99C; op_lqx(L, 0x388225C6u);
+	L.pc = 0x0D9A0; op_ceq(L, 0x7802A48Au);
+	L.pc = 0x0D9A4; op_lqx(L, 0x38820B97u);
+	L.pc = 0x0D9A8; op_fcgt(L, 0x5851C8C9u);
+	L.pc = 0x0D9AC; op_rotqbyi(L, 0x3F830387u);
+	L.pc = 0x0D9B0; op_fcgt(L, 0x5851474Au);
+	L.pc = 0x0D9B4; op_shufb(L, 0xB2030828u);
+	L.pc = 0x0D9B8; op_xor_(L, 0x48275CCBu);
+	L.pc = 0x0D9BC; op_shufb(L, 0xB040869Au);
+	L.pc = 0x0D9C0; op_ceq(L, 0x78064D99u);
+	L.pc = 0x0D9C4; op_shufb(L, 0xB187CF26u);
+	L.pc = 0x0D9C8; op_a(L, 0x1801CA0Du);
+	L.pc = 0x0D9CC; op_shufb(L, 0xB1D18E26u);
+	L.pc = 0x0D9D0; op_shufb(L, 0xB345CC28u);
+	L.pc = 0x0D9D4; op_shufb(L, 0xB3718E28u);
+	L.pc = 0x0D9D8; op_selb(L, 0x80E30B23u);
+	L.pc = 0x0D9DC; op_shufb(L, 0xB1858627u);
+	L.pc = 0x0D9E0; op_selb(L, 0x822389A3u);
+	L.pc = 0x0D9E4; op_shufb(L, 0xB1C4C727u);
+	L.pc = 0x0D9E8; op_selb(L, 0x88C68923u);
+	L.pc = 0x0D9EC; op_shufb(L, 0xB2C5CC26u);
+	L.pc = 0x0D9F0; op_selb(L, 0x83A6CAA3u);
+	L.pc = 0x0D9F4; op_shufb(L, 0xB2A7CF28u);
+	L.pc = 0x0D9F8; op_shlqby(L, 0x3BEDA592u);
+	L.pc = 0x0D9FC; op_stqx(L, 0x2880CA02u);
+	L.pc = 0x0DA00; op_selb(L, 0x826587A3u);
+	L.pc = 0x0DA04; op_shufb(L, 0xB1E3CB27u);
+	L.pc = 0x0DA08; op_selb(L, 0x83854823u);
+	L.pc = 0x0DA0C; op_brz(L, 0x207FBE8Bu);
+	if (L.pc == 0x0D800) { if (s.can_chain(cw, 0x0D800) && --budget) goto L_75669d8167b0264b; goto out; }
+	if (L.pc == 0x0DA10) { if (s.can_chain(cw, 0x0DA10) && --budget) goto L_086fdfd22989c211; goto out; }
+	goto out;
+L_086fdfd22989c211:
+	s.instructions += 2;
+	L.pc = 0x0DA10; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0DA14; op_br(L, 0x32007B80u);
+	if (L.pc == 0x0DDF0) { if (s.can_chain(cw, 0x0DDF0) && --budget) goto L_b48bbbb1941a3f20; goto out; }
+	goto out;
+L_b48bbbb1941a3f20:
+	s.instructions += 22;
+	L.pc = 0x0DDF0; op_rotmi(L, 0x0F3F4685u);
+	L.pc = 0x0DDF4; op_nop(L, 0x00200000u);
+	L.pc = 0x0DDF8; op_nop(L, 0x40200003u);
+	L.pc = 0x0DDFC; op_cwd(L, 0x3EC20206u);
+	L.pc = 0x0DE00; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0DE04; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE08; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0DE0C; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE10; op_cgti(L, 0x4C00028Au);
+	L.pc = 0x0DE14; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE18; op_nop(L, 0x4020002Bu);
+	L.pc = 0x0DE1C; op_shufb(L, 0xB0C84286u);
+	L.pc = 0x0DE20; op_selb(L, 0x8150800Au);
+	L.pc = 0x0DE24; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE28; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0DE2C; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE30; op_nop(L, 0x4020007Fu);
+	L.pc = 0x0DE34; op_nop(L, 0x00200000u);
+	L.pc = 0x0DE38; op_nop(L, 0x40200009u);
+	L.pc = 0x0DE3C; op_stqd(L, 0x24000206u);
+	L.pc = 0x0DE40; op_nop(L, 0x40200009u);
+	L.pc = 0x0DE44; op_bi(L, 0x35000500u);
+	goto out;
+out:
+	s.gpr[2] = L.gpr[2]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[56] = L.gpr[56]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[63] = L.gpr[63]; s.gpr[65] = L.gpr[65]; s.gpr[67] = L.gpr[67]; s.gpr[68] = L.gpr[68]; s.gpr[70] = L.gpr[70]; s.gpr[72] = L.gpr[72]; s.gpr[73] = L.gpr[73]; s.gpr[74] = L.gpr[74]; s.gpr[75] = L.gpr[75]; s.gpr[76] = L.gpr[76]; s.gpr[77] = L.gpr[77];
+	s.pc = L.pc;
+}
+void spu_aotc_501(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -12017,7 +14359,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[27] = L.gpr[27]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81];
 	s.pc = L.pc;
 }
-void spu_aotc_476(SPUThread& __restrict s) {
+void spu_aotc_502(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12042,7 +14384,7 @@ L_743436ac929d4769:
 out:
 	return;
 }
-void spu_aotc_477(SPUThread& __restrict s) {
+void spu_aotc_503(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12071,7 +14413,7 @@ L_c01c7ea757660b8d:
 out:
 	return;
 }
-void spu_aotc_478(SPUThread& __restrict s) {
+void spu_aotc_504(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12098,7 +14440,7 @@ L_3396449cdc29cfe5:
 out:
 	return;
 }
-void spu_aotc_479(SPUThread& __restrict s) {
+void spu_aotc_505(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12126,7 +14468,7 @@ L_d72f2ab07bf22c0f:
 out:
 	return;
 }
-void spu_aotc_480(SPUThread& __restrict s) {
+void spu_aotc_506(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12159,7 +14501,7 @@ L_1d73b77c37bda848:
 out:
 	return;
 }
-void spu_aotc_481(SPUThread& __restrict s) {
+void spu_aotc_507(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12195,7 +14537,7 @@ L_4892e28690ab24d4:
 out:
 	return;
 }
-void spu_aotc_482(SPUThread& __restrict s) {
+void spu_aotc_508(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12863,7 +15205,30 @@ L_d0c895b68029d800:
 out:
 	return;
 }
-void spu_aotc_483(SPUThread& __restrict s) {
+void spu_aotc_509(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0E350: goto L_4db709296d92a59f;
+		case 0x0EEC4: goto L_dbb4b01dcad8587f;
+		default: goto out;
+	}
+L_4db709296d92a59f:
+	s.instructions += 2;
+	s.pc = 0x0E350; op_ori(s, 0x040001D0u);
+	s.pc = 0x0E354; op_brz(s, 0x20016E51u);
+	if (s.pc == 0x0EEC4) { if (s.can_chain(cw, 0x0EEC4) && --budget) goto L_dbb4b01dcad8587f; goto out; }
+	goto out;
+L_dbb4b01dcad8587f:
+	s.instructions += 3;
+	s.pc = 0x0EEC4; op_ila(s, 0x42985804u);
+	s.pc = 0x0EEC8; op_ilhu(s, 0x41008003u);
+	s.pc = 0x0EECC; op_brsl(s, 0x3307D280u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_510(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -12967,7 +15332,7 @@ L_2389335f52287619:
 out:
 	return;
 }
-void spu_aotc_484(SPUThread& __restrict s) {
+void spu_aotc_511(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -13893,7 +16258,7 @@ L_12e1479b17e71868:
 out:
 	return;
 }
-void spu_aotc_485(SPUThread& __restrict s) {
+void spu_aotc_512(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14078,7 +16443,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[32] = L.gpr[32]; s.gpr[84] = L.gpr[84]; s.gpr[86] = L.gpr[86]; s.gpr[92] = L.gpr[92];
 	s.pc = L.pc;
 }
-void spu_aotc_486(SPUThread& __restrict s) {
+void spu_aotc_513(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -14116,7 +16481,7 @@ L_23f98a465ad2f3f4:
 out:
 	return;
 }
-void spu_aotc_487(SPUThread& __restrict s) {
+void spu_aotc_514(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14351,7 +16716,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[32] = L.gpr[32]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93];
 	s.pc = L.pc;
 }
-void spu_aotc_488(SPUThread& __restrict s) {
+void spu_aotc_515(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -14413,7 +16778,7 @@ L_515c147242a9316f:
 out:
 	return;
 }
-void spu_aotc_489(SPUThread& __restrict s) {
+void spu_aotc_516(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14478,7 +16843,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[80] = L.gpr[80]; s.gpr[83] = L.gpr[83];
 	s.pc = L.pc;
 }
-void spu_aotc_490(SPUThread& __restrict s) {
+void spu_aotc_517(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14541,7 +16906,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[80] = L.gpr[80]; s.gpr[83] = L.gpr[83];
 	s.pc = L.pc;
 }
-void spu_aotc_491(SPUThread& __restrict s) {
+void spu_aotc_518(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -14651,7 +17016,7 @@ L_52d6eefa7be93589:
 out:
 	return;
 }
-void spu_aotc_492(SPUThread& __restrict s) {
+void spu_aotc_519(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14698,7 +17063,35 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[80] = L.gpr[80]; s.gpr[82] = L.gpr[82];
 	s.pc = L.pc;
 }
-void spu_aotc_493(SPUThread& __restrict s) {
+void spu_aotc_520(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x0EED0: goto L_6cb28bf8136061cb;
+		case 0x0EEF4: goto L_bc6572ee51a7ffdd;
+		default: goto out;
+	}
+L_6cb28bf8136061cb:
+	s.instructions += 9;
+	s.pc = 0x0EED0; op_ilhu(s, 0x41402082u);
+	s.pc = 0x0EED4; op_ila(s, 0x42778003u);
+	s.pc = 0x0EED8; op_iohl(s, 0x60848082u);
+	s.pc = 0x0EEDC; op_sf(s, 0x08140102u);
+	s.pc = 0x0EEE0; op_shli(s, 0x0F608104u);
+	s.pc = 0x0EEE4; op_clgti(s, 0x5C040102u);
+	s.pc = 0x0EEE8; op_lqx(s, 0x38810183u);
+	s.pc = 0x0EEEC; op_rotqby(s, 0x3B810183u);
+	s.pc = 0x0EEF0; op_brnz(s, 0x21001782u);
+	if (s.pc == 0x0EEF4) { if (s.can_chain(cw, 0x0EEF4) && --budget) goto L_bc6572ee51a7ffdd; goto out; }
+	goto out;
+L_bc6572ee51a7ffdd:
+	s.instructions += 1;
+	s.pc = 0x0EEF4; op_bi(s, 0x35000180u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_521(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -14889,7 +17282,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[12] = L.gpr[12]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50]; s.gpr[51] = L.gpr[51]; s.gpr[52] = L.gpr[52]; s.gpr[53] = L.gpr[53]; s.gpr[54] = L.gpr[54]; s.gpr[65] = L.gpr[65]; s.gpr[66] = L.gpr[66]; s.gpr[68] = L.gpr[68]; s.gpr[69] = L.gpr[69]; s.gpr[70] = L.gpr[70]; s.gpr[71] = L.gpr[71]; s.gpr[72] = L.gpr[72]; s.gpr[74] = L.gpr[74]; s.gpr[75] = L.gpr[75]; s.gpr[76] = L.gpr[76]; s.gpr[77] = L.gpr[77]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[101] = L.gpr[101]; s.gpr[104] = L.gpr[104]; s.gpr[105] = L.gpr[105]; s.gpr[109] = L.gpr[109]; s.gpr[110] = L.gpr[110]; s.gpr[111] = L.gpr[111]; s.gpr[112] = L.gpr[112]; s.gpr[113] = L.gpr[113]; s.gpr[114] = L.gpr[114]; s.gpr[115] = L.gpr[115]; s.gpr[116] = L.gpr[116]; s.gpr[117] = L.gpr[117]; s.gpr[118] = L.gpr[118]; s.gpr[119] = L.gpr[119]; s.gpr[120] = L.gpr[120]; s.gpr[121] = L.gpr[121]; s.gpr[122] = L.gpr[122]; s.gpr[123] = L.gpr[123]; s.gpr[124] = L.gpr[124]; s.gpr[125] = L.gpr[125]; s.gpr[126] = L.gpr[126]; s.gpr[127] = L.gpr[127];
 	s.pc = L.pc;
 }
-void spu_aotc_494(SPUThread& __restrict s) {
+void spu_aotc_522(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -15655,7 +18048,7 @@ L_6e595bb21e574889:
 out:
 	return;
 }
-void spu_aotc_495(SPUThread& __restrict s) {
+void spu_aotc_523(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -15680,7 +18073,7 @@ L_663e263d4ae299c6:
 out:
 	return;
 }
-void spu_aotc_496(SPUThread& __restrict s) {
+void spu_aotc_524(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -15812,7 +18205,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84];
 	s.pc = L.pc;
 }
-void spu_aotc_497(SPUThread& __restrict s) {
+void spu_aotc_525(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -16577,7 +18970,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95]; s.gpr[96] = L.gpr[96]; s.gpr[97] = L.gpr[97]; s.gpr[98] = L.gpr[98]; s.gpr[99] = L.gpr[99]; s.gpr[100] = L.gpr[100]; s.gpr[101] = L.gpr[101]; s.gpr[102] = L.gpr[102]; s.gpr[103] = L.gpr[103]; s.gpr[104] = L.gpr[104]; s.gpr[105] = L.gpr[105]; s.gpr[106] = L.gpr[106]; s.gpr[107] = L.gpr[107]; s.gpr[108] = L.gpr[108]; s.gpr[109] = L.gpr[109]; s.gpr[110] = L.gpr[110];
 	s.pc = L.pc;
 }
-void spu_aotc_498(SPUThread& __restrict s) {
+void spu_aotc_526(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -16635,7 +19028,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13];
 	s.pc = L.pc;
 }
-void spu_aotc_499(SPUThread& __restrict s) {
+void spu_aotc_527(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -16704,7 +19097,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[80] = L.gpr[80];
 	s.pc = L.pc;
 }
-void spu_aotc_500(SPUThread& __restrict s) {
+void spu_aotc_528(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -16828,7 +19221,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[80] = L.gpr[80];
 	s.pc = L.pc;
 }
-void spu_aotc_501(SPUThread& __restrict s) {
+void spu_aotc_529(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17022,7 +19415,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81];
 	s.pc = L.pc;
 }
-void spu_aotc_502(SPUThread& __restrict s) {
+void spu_aotc_530(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17321,7 +19714,7 @@ out:
 	s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[79] = L.gpr[79];
 	s.pc = L.pc;
 }
-void spu_aotc_503(SPUThread& __restrict s) {
+void spu_aotc_531(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17375,7 +19768,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8];
 	s.pc = L.pc;
 }
-void spu_aotc_504(SPUThread& __restrict s) {
+void spu_aotc_532(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17439,7 +19832,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15];
 	s.pc = L.pc;
 }
-void spu_aotc_505(SPUThread& __restrict s) {
+void spu_aotc_533(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17475,7 +19868,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4];
 	s.pc = L.pc;
 }
-void spu_aotc_506(SPUThread& __restrict s) {
+void spu_aotc_534(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -17764,7 +20157,7 @@ L_e10a4de4edc76ed1:
 out:
 	return;
 }
-void spu_aotc_507(SPUThread& __restrict s) {
+void spu_aotc_535(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -17841,7 +20234,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82];
 	s.pc = L.pc;
 }
-void spu_aotc_508(SPUThread& __restrict s) {
+void spu_aotc_536(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -18202,7 +20595,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50]; s.gpr[51] = L.gpr[51]; s.gpr[52] = L.gpr[52]; s.gpr[53] = L.gpr[53]; s.gpr[54] = L.gpr[54];
 	s.pc = L.pc;
 }
-void spu_aotc_509(SPUThread& __restrict s) {
+void spu_aotc_537(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -18566,7 +20959,7 @@ L_6718be05a3a83197:
 out:
 	return;
 }
-void spu_aotc_510(SPUThread& __restrict s) {
+void spu_aotc_538(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -18674,7 +21067,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84];
 	s.pc = L.pc;
 }
-void spu_aotc_511(SPUThread& __restrict s) {
+void spu_aotc_539(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -18829,7 +21222,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[80] = L.gpr[80];
 	s.pc = L.pc;
 }
-void spu_aotc_512(SPUThread& __restrict s) {
+void spu_aotc_540(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -19271,7 +21664,7 @@ L_64bc1e75212c4c24:
 out:
 	return;
 }
-void spu_aotc_513(SPUThread& __restrict s) {
+void spu_aotc_541(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -19727,7 +22120,7 @@ L_f779325c1b25455c:
 out:
 	return;
 }
-void spu_aotc_514(SPUThread& __restrict s) {
+void spu_aotc_542(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -19939,7 +22332,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82];
 	s.pc = L.pc;
 }
-void spu_aotc_515(SPUThread& __restrict s) {
+void spu_aotc_543(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -19970,7 +22363,7 @@ L_ffc02df5406ccbc7:
 out:
 	return;
 }
-void spu_aotc_516(SPUThread& __restrict s) {
+void spu_aotc_544(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -20012,7 +22405,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10];
 	s.pc = L.pc;
 }
-void spu_aotc_517(SPUThread& __restrict s) {
+void spu_aotc_545(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20048,7 +22441,7 @@ L_e29fe225c3a33ba2:
 out:
 	return;
 }
-void spu_aotc_518(SPUThread& __restrict s) {
+void spu_aotc_546(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20138,7 +22531,7 @@ L_c1f857c433c2188a:
 out:
 	return;
 }
-void spu_aotc_519(SPUThread& __restrict s) {
+void spu_aotc_547(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20377,7 +22770,7 @@ L_b029764e64e0c3e0:
 out:
 	return;
 }
-void spu_aotc_520(SPUThread& __restrict s) {
+void spu_aotc_548(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20473,7 +22866,7 @@ L_e485526ba1e44265:
 out:
 	return;
 }
-void spu_aotc_521(SPUThread& __restrict s) {
+void spu_aotc_549(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -20571,7 +22964,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[80] = L.gpr[80]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90];
 	s.pc = L.pc;
 }
-void spu_aotc_522(SPUThread& __restrict s) {
+void spu_aotc_550(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20600,7 +22993,7 @@ L_24c2b5c2fcfd38ff:
 out:
 	return;
 }
-void spu_aotc_523(SPUThread& __restrict s) {
+void spu_aotc_551(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -20644,7 +23037,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5];
 	s.pc = L.pc;
 }
-void spu_aotc_524(SPUThread& __restrict s) {
+void spu_aotc_552(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -20893,7 +23286,7 @@ L_5947da59e6321a55:
 out:
 	return;
 }
-void spu_aotc_525(SPUThread& __restrict s) {
+void spu_aotc_553(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -21055,7 +23448,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[81] = L.gpr[81];
 	s.pc = L.pc;
 }
-void spu_aotc_526(SPUThread& __restrict s) {
+void spu_aotc_554(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -21251,7 +23644,7 @@ L_4f842589da618f3b:
 out:
 	return;
 }
-void spu_aotc_527(SPUThread& __restrict s) {
+void spu_aotc_555(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -21344,7 +23737,7 @@ L_2dec4270afc141f9:
 out:
 	return;
 }
-void spu_aotc_528(SPUThread& __restrict s) {
+void spu_aotc_556(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -21459,7 +23852,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15];
 	s.pc = L.pc;
 }
-void spu_aotc_529(SPUThread& __restrict s) {
+void spu_aotc_557(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -23367,7 +25760,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[17] = L.gpr[17]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[20] = L.gpr[20]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[25] = L.gpr[25]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27]; s.gpr[28] = L.gpr[28]; s.gpr[29] = L.gpr[29]; s.gpr[30] = L.gpr[30]; s.gpr[31] = L.gpr[31]; s.gpr[32] = L.gpr[32]; s.gpr[33] = L.gpr[33]; s.gpr[34] = L.gpr[34]; s.gpr[35] = L.gpr[35]; s.gpr[36] = L.gpr[36]; s.gpr[37] = L.gpr[37]; s.gpr[38] = L.gpr[38]; s.gpr[39] = L.gpr[39]; s.gpr[40] = L.gpr[40]; s.gpr[41] = L.gpr[41]; s.gpr[42] = L.gpr[42]; s.gpr[43] = L.gpr[43]; s.gpr[44] = L.gpr[44]; s.gpr[45] = L.gpr[45]; s.gpr[46] = L.gpr[46]; s.gpr[47] = L.gpr[47]; s.gpr[48] = L.gpr[48]; s.gpr[49] = L.gpr[49]; s.gpr[50] = L.gpr[50]; s.gpr[51] = L.gpr[51]; s.gpr[52] = L.gpr[52]; s.gpr[53] = L.gpr[53]; s.gpr[54] = L.gpr[54]; s.gpr[55] = L.gpr[55]; s.gpr[56] = L.gpr[56]; s.gpr[57] = L.gpr[57]; s.gpr[58] = L.gpr[58]; s.gpr[59] = L.gpr[59]; s.gpr[60] = L.gpr[60]; s.gpr[61] = L.gpr[61]; s.gpr[62] = L.gpr[62]; s.gpr[63] = L.gpr[63]; s.gpr[64] = L.gpr[64]; s.gpr[65] = L.gpr[65]; s.gpr[66] = L.gpr[66]; s.gpr[67] = L.gpr[67]; s.gpr[68] = L.gpr[68]; s.gpr[69] = L.gpr[69]; s.gpr[70] = L.gpr[70]; s.gpr[71] = L.gpr[71]; s.gpr[72] = L.gpr[72]; s.gpr[73] = L.gpr[73]; s.gpr[74] = L.gpr[74]; s.gpr[75] = L.gpr[75]; s.gpr[76] = L.gpr[76]; s.gpr[77] = L.gpr[77]; s.gpr[78] = L.gpr[78]; s.gpr[79] = L.gpr[79]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87]; s.gpr[88] = L.gpr[88]; s.gpr[89] = L.gpr[89]; s.gpr[90] = L.gpr[90]; s.gpr[91] = L.gpr[91]; s.gpr[92] = L.gpr[92]; s.gpr[93] = L.gpr[93]; s.gpr[94] = L.gpr[94]; s.gpr[95] = L.gpr[95]; s.gpr[96] = L.gpr[96]; s.gpr[97] = L.gpr[97]; s.gpr[98] = L.gpr[98]; s.gpr[99] = L.gpr[99]; s.gpr[100] = L.gpr[100]; s.gpr[101] = L.gpr[101]; s.gpr[102] = L.gpr[102]; s.gpr[103] = L.gpr[103]; s.gpr[104] = L.gpr[104]; s.gpr[105] = L.gpr[105]; s.gpr[106] = L.gpr[106]; s.gpr[107] = L.gpr[107]; s.gpr[108] = L.gpr[108]; s.gpr[109] = L.gpr[109]; s.gpr[110] = L.gpr[110]; s.gpr[111] = L.gpr[111]; s.gpr[112] = L.gpr[112]; s.gpr[113] = L.gpr[113]; s.gpr[114] = L.gpr[114]; s.gpr[115] = L.gpr[115]; s.gpr[116] = L.gpr[116]; s.gpr[117] = L.gpr[117]; s.gpr[118] = L.gpr[118]; s.gpr[119] = L.gpr[119]; s.gpr[120] = L.gpr[120];
 	s.pc = L.pc;
 }
-void spu_aotc_530(SPUThread& __restrict s) {
+void spu_aotc_558(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -23400,7 +25793,7 @@ L_d97046607bb3e5c3:
 out:
 	return;
 }
-void spu_aotc_531(SPUThread& __restrict s) {
+void spu_aotc_559(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -23470,7 +25863,62 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15];
 	s.pc = L.pc;
 }
-void spu_aotc_532(SPUThread& __restrict s) {
+void spu_aotc_560(SPUThread& __restrict s) {
+	const u64 cw = s.code_writes;
+	u32 budget = 4096;
+	switch (s.pc) {
+		case 0x12D60: goto L_9bb02fcd50f400b8;
+		case 0x12D68: goto L_2b2e5d9a221c54fe;
+		case 0x12DC4: goto L_c711e2f881255384;
+		default: goto out;
+	}
+L_9bb02fcd50f400b8:
+	s.instructions += 2;
+	s.pc = 0x12D60; op_rchcnt(s, 0x01E00E82u);
+	if (s.halted) { s.pc = 0x12D64; goto out; }
+	s.pc = 0x12D64; op_brnz(s, 0x21000D02u);
+	if (s.pc == 0x12D68) { if (s.can_chain(cw, 0x12D68) && --budget) goto L_2b2e5d9a221c54fe; goto out; }
+	goto out;
+L_2b2e5d9a221c54fe:
+	s.instructions += 23;
+	s.pc = 0x12D68; op_stqd(s, 0x24FC0084u);
+	s.pc = 0x12D6C; op_stqd(s, 0x24FC4085u);
+	s.pc = 0x12D70; op_stqd(s, 0x24FC8086u);
+	s.pc = 0x12D74; op_stqd(s, 0x24FCC087u);
+	s.pc = 0x12D78; op_stqd(s, 0x24FD0088u);
+	s.pc = 0x12D7C; op_stqd(s, 0x24FD4089u);
+	s.pc = 0x12D80; op_stqd(s, 0x24FD808Au);
+	s.pc = 0x12D84; op_stqd(s, 0x24FDC08Bu);
+	s.pc = 0x12D88; op_stqd(s, 0x24FE008Cu);
+	s.pc = 0x12D8C; op_stqd(s, 0x24FE408Du);
+	s.pc = 0x12D90; op_stqd(s, 0x24FE808Eu);
+	s.pc = 0x12D94; op_stqd(s, 0x24FEC08Fu);
+	s.pc = 0x12D98; op_stqd(s, 0x24FF0090u);
+	s.pc = 0x12D9C; op_stqd(s, 0x24FF4091u);
+	s.pc = 0x12DA0; op_stqd(s, 0x24FF8092u);
+	s.pc = 0x12DA4; op_stqd(s, 0x24FFC093u);
+	s.pc = 0x12DA8; op_or_(s, 0x08204102u);
+	s.pc = 0x12DAC; op_ai(s, 0x1CC00102u);
+	s.pc = 0x12DB0; op_wrch(s, 0x21A00E02u);
+	if (s.halted) { s.pc = 0x12DB4; goto out; }
+	s.pc = 0x12DB4; op_nop(s, 0x00600000u);
+	s.pc = 0x12DB8; op_wrch(s, 0x21A00F03u);
+	if (s.halted) { s.pc = 0x12DBC; goto out; }
+	s.pc = 0x12DBC; op_rdch(s, 0x01A00E83u);
+	if (s.halted) { s.pc = 0x12DC0; goto out; }
+	s.pc = 0x12DC0; op_brnz(s, 0x21000103u);
+	if (s.pc == 0x12DC4) { if (s.can_chain(cw, 0x12DC4) && --budget) goto L_c711e2f881255384; goto out; }
+	goto out;
+L_c711e2f881255384:
+	s.instructions += 2;
+	s.pc = 0x12DC4; op_rdch(s, 0x01A00E83u);
+	if (s.halted) { s.pc = 0x12DC8; goto out; }
+	s.pc = 0x12DC8; op_bi(s, 0x35000000u);
+	goto out;
+out:
+	return;
+}
+void spu_aotc_561(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -23684,7 +26132,7 @@ out:
 	s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[12] = L.gpr[12]; s.gpr[13] = L.gpr[13]; s.gpr[14] = L.gpr[14]; s.gpr[15] = L.gpr[15]; s.gpr[16] = L.gpr[16]; s.gpr[18] = L.gpr[18]; s.gpr[19] = L.gpr[19]; s.gpr[21] = L.gpr[21]; s.gpr[22] = L.gpr[22]; s.gpr[23] = L.gpr[23]; s.gpr[24] = L.gpr[24]; s.gpr[26] = L.gpr[26]; s.gpr[27] = L.gpr[27];
 	s.pc = L.pc;
 }
-void spu_aotc_533(SPUThread& __restrict s) {
+void spu_aotc_562(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	SpuLocal L(s);
@@ -23805,7 +26253,7 @@ out:
 	s.gpr[0] = L.gpr[0]; s.gpr[1] = L.gpr[1]; s.gpr[2] = L.gpr[2]; s.gpr[3] = L.gpr[3]; s.gpr[4] = L.gpr[4]; s.gpr[5] = L.gpr[5]; s.gpr[6] = L.gpr[6]; s.gpr[7] = L.gpr[7]; s.gpr[8] = L.gpr[8]; s.gpr[9] = L.gpr[9]; s.gpr[10] = L.gpr[10]; s.gpr[11] = L.gpr[11]; s.gpr[80] = L.gpr[80]; s.gpr[81] = L.gpr[81]; s.gpr[82] = L.gpr[82]; s.gpr[83] = L.gpr[83]; s.gpr[84] = L.gpr[84]; s.gpr[85] = L.gpr[85]; s.gpr[86] = L.gpr[86]; s.gpr[87] = L.gpr[87];
 	s.pc = L.pc;
 }
-void spu_aotc_534(SPUThread& __restrict s) {
+void spu_aotc_563(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -23836,7 +26284,7 @@ L_6b4bc37e7aac3ab3:
 out:
 	return;
 }
-void spu_aotc_535(SPUThread& __restrict s) {
+void spu_aotc_564(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -23878,7 +26326,7 @@ L_e88bfd75447292f7:
 out:
 	return;
 }
-void spu_aotc_536(SPUThread& __restrict s) {
+void spu_aotc_565(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -24035,7 +26483,7 @@ L_9ee76d83978263b4:
 out:
 	return;
 }
-void spu_aotc_537(SPUThread& __restrict s) {
+void spu_aotc_566(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -24202,7 +26650,7 @@ L_d23da2c82a747212:
 out:
 	return;
 }
-void spu_aotc_538(SPUThread& __restrict s) {
+void spu_aotc_567(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {
@@ -24301,7 +26749,7 @@ L_a748ef7e5761ffcd:
 out:
 	return;
 }
-void spu_aotc_539(SPUThread& __restrict s) {
+void spu_aotc_568(SPUThread& __restrict s) {
 	const u64 cw = s.code_writes;
 	u32 budget = 4096;
 	switch (s.pc) {

@@ -1185,7 +1185,9 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
             Surface& sf = it->second;
             if (sf.sig_checked != g_frame) {
                 sf.sig_checked = g_frame;
+                u64 tf = prof_usec();
                 if (sf.sig_bytes && mem_fingerprint(location_to_ea(offset, false), sf.sig_bytes) != sf.mem_sig) { sf.stale = true; g_surf_epoch++; }
+                g_prof.t_miss += prof_usec() - tf;
             }
         }
         if (it != g_surfaces.end() && it->second.tex && !it->second.stale) {
@@ -1210,8 +1212,11 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
         if (!linear && size > 65536 && g_frame - e.last_change > 60 && (g_frame + key) % 8 != 0) { e.checked_frame = g_frame; return e.tex; }
     }
     u32 step = size > 65536 ? 64 : 8;
+    u64 tth = prof_usec();
     u64 hsh = hash_range(gmem(ea), size, step);
+    g_prof.t_texhash += prof_usec() - tth;
     g_prof.tex_hashed += size / step * 8;
+    (linear ? g_prof.tex_lin : size > 65536 ? g_prof.tex_big : g_prof.tex_small) += size;
     TexEntry& te = g_textures[key];
     te.checked_frame = g_frame;
     if (te.tex && te.hash == hsh) return te.tex;
@@ -2456,6 +2461,22 @@ bool report(u32 type, u32 ea) {
     return true;
 }
 
+// rsx::g_upload_words: as method() for each word of a run on one upload port
+void upload_words(u32 m, const u32* a, u32 n, bool non_inc) {
+    if (non_inc) R[m >> 2] = a[n - 1];
+    else memcpy(&R[m >> 2], a, n * 4);
+    if (m < 0x0C00) {
+        const u32 k = std::min(n, 512 * 4 - std::min(vp_load_pos, 512u * 4));
+        memcpy(&vp_words[vp_load_pos], a, k * 4);
+        vp_load_pos += k;
+        return;
+    }
+    for (u32 i = 0; i < n && vp_const_pos < 468 * 4; i++) {
+        vp_slot_ver[vp_const_pos >> 2] = ++vp_ver;
+        memcpy(&vp_consts[vp_const_pos++], &a[i], 4);
+    }
+}
+
 void method(u32 m, u32 arg) {
     m &= 0xFFFC;
     static const auto special = [] {
@@ -2471,6 +2492,7 @@ void method(u32 m, u32 arg) {
     inited = true;
     if (!g_plain_on) {
         for (u32 i = 0; i < 0x800; i++) g_plain[i] = !special[i];
+        g_upload_words = upload_words;
         g_plain_on = true;
     }
     if (m == 0x1D7C) { R[m >> 2] = arg; zpass_enable(arg & 1); return; }   // ANTI_ALIASING_CONTROL / ZPASS_PIXEL_COUNT_ENABLE
@@ -2579,9 +2601,11 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
             static u64 idle_last = 0;
             u64 idle = g_rsx_idle_us - idle_last;
             idle_last = g_rsx_idle_us;
-            LOG_I("perf vtx: hashed %.1f MB vertex + %.1f MB texture data, %.0f indices rebuilt | ms: ring wait %.1f (%.0f segments) index %.1f hash %.1f convert+upload %.1f draw call %.1f",
-                  g_prof.hashed / nf / 1e6, g_prof.tex_hashed / nf / 1e6, g_prof.idx_built / nf, g_prof.t_ringwait / nf / 1e3, g_prof.ring_segs / nf,
-                  g_prof.t_index / nf / 1e3, g_prof.t_hash / nf / 1e3, g_prof.t_conv / nf / 1e3, g_prof.t_draw / nf / 1e3);
+            LOG_I("perf vtx: hashed %.1f MB vertex + %.1f MB texture data, %.0f indices rebuilt (region grow %.0f changed %.0f, per draw %.0f) | ms: ring wait %.1f (%.0f segments) index %.1f hash %.1f convert+upload %.1f draw call %.1f",
+                  g_prof.hashed / nf / 1e6, g_prof.tex_hashed / nf / 1e6, g_prof.idx_built / nf, g_prof.ir_grow / nf, g_prof.ir_changed / nf, g_prof.idx_old / nf,
+                  g_prof.t_ringwait / nf / 1e3, g_prof.ring_segs / nf, g_prof.t_index / nf / 1e3, g_prof.t_hash / nf / 1e3, g_prof.t_conv / nf / 1e3, g_prof.t_draw / nf / 1e3);
+            LOG_I("perf tex: hash %.2f ms over MB linear %.1f small %.1f large %.1f; surface fingerprints %.2f ms", g_prof.t_texhash / nf / 1e3,
+                  g_prof.tex_lin / nf / 1e6, g_prof.tex_small / nf / 1e6, g_prof.tex_big / nf / 1e6, g_prof.t_miss / nf / 1e3);
             LOG_I("perf: %.1f fps | per frame ms: program %.1f textures %.1f (state %.1f uploads %.1f) vertices %.1f swap %.1f, fifo idle %.1f | %llu draws %llu verts",
                   nf * 1e6 / wall, g_prof.program / nf / 1e3, g_prof.textures / nf / 1e3, g_prof.t_apply / nf / 1e3, g_prof.t_upload / nf / 1e3,
                   g_prof.vertices / nf / 1e3, g_prof.other / nf / 1e3, idle / nf / 1e3, (unsigned long long)(g_prof.draws / nf), (unsigned long long)(g_prof.verts / nf));

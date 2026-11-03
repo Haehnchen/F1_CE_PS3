@@ -22,10 +22,12 @@ HLE_FUNC(cellPadGetInfo) {
     st8(p + 12 + 508, 1);              // status[0] = CELL_PAD_STATUS_CONNECTED
     RET(CELL_OK);
 }
+void quick_race_overrides();   // hle_quickrace.cpp (F1CE_QR_*)
 // CellPadData: s32 len; u16 button[64]
 HLE_FUNC(cellPadGetData) {
     u32 port = (u32)ARG(0), p = (u32)ARG(1);
     if (port != 0) { st32(p, 0); RET(CELL_OK); }
+    quick_race_overrides();
     host::PadState s = host::pad_state();
     st32(p, 24);
     u16 b[24] = {};

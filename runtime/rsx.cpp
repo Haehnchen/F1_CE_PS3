@@ -8,6 +8,7 @@
 namespace rsx {
 bool g_plain_on = false;
 bool g_plain[0x800];
+void (*g_upload_words)(u32, const u32*, u32, bool) = nullptr;
 namespace gl { void init(); void method(u32, u32); void flip(u32, u32, u32, u32); bool report(u32, u32); }
 #ifdef F1CE_VULKAN
 namespace vk { void init(); void method(u32, u32); void flip(u32, u32, u32, u32); bool report(u32, u32); }

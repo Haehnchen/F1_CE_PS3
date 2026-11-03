@@ -18,6 +18,9 @@ bool use_vulkan();    // F1CE_RENDERER=vulkan: the Vulkan renderer instead of Op
 extern u32 R[0x10000 / 4];
 extern bool g_plain_on;          // the renderer filled g_plain (it may stay off)
 extern bool g_plain[0x800];      // methods below 0x2000 that only store their value in R, for the front end's shortcut
+// the vertex program upload ports (TRANSFORM_PROGRAM 0x0B80, TRANSFORM_CONSTANT 0x1F00) in runs of words, from a renderer
+// that takes them in bulk (else null: one method call per word)
+extern void (*g_upload_words)(u32 method, const u32* args, u32 n, bool non_inc);
 void init();
 void method(u32 method, u32 arg);                               // NV4097 state / draw methods
 void flip(u32 ea, u32 pitch, u32 width, u32 height);            // present a display buffer

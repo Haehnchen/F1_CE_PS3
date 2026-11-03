@@ -291,10 +291,15 @@ FORCE_INLINE void exec_command(u32 method, bool non_inc, const u32* args, u32 co
         return t;
     }();
     const bool plain = rsx::g_plain_on;
+    const auto upload = rsx::g_upload_words;
     for (u32 i = 0; i < count; i++) {
         const u32 m = non_inc ? method : method + i * 4;
         if (plain && m < 0x2000 && rsx::g_plain[m >> 2] && !front[m >> 2]) rsx::R[m >> 2] = args[i];
-        else exec_method(m, args[i]);
+        else if (upload && (m - 0x0B80u < 0x80 || m - 0x1F00u < 0x80)) {   // vertex program words: the rest of the run at once
+            const u32 n = non_inc ? count - i : std::min(count - i, ((m & ~0x7Fu) + 0x80 - m) / 4);
+            upload(m, args + i, n, non_inc);
+            i += n - 1;
+        } else exec_method(m, args[i]);
     }
 }
 

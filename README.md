@@ -58,7 +58,7 @@ f1ce <path-to>/PS3_GAME [--trace]
 ```
 
 Or use `build-win/f1ce_launcher.exe`: it sets the display and speed options below, remembers them in
-`build-win/f1ce_launcher.ini` and starts the game from the folder above `build-win/`, without a console.
+`build-win/f1ce_launcher.ini` and starts the game from the folder above `build-win/`, without a console; its Advanced tab sets the Quick Race settings (`F1CE_QR_*` below).
 
 A 1280x720 window opens. Log in `f1ce_recomp.log`, saves in `ps3_data/` (both in the current folder).
 The console shows warnings and errors only; the log file has everything (`F1CE_LOG_CONSOLE=1` prints every line,
@@ -83,11 +83,16 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `tools/dbg_runs.sh` | runs several debug sessions in parallel up to the profile screen |
 | `tools/race_test.sh <name> [VAR=value ...]` | Quick Race test in `dbg/<name>`; quits `QUIT_AFTER` (default 10) s after the race scene appears |
 | `F1CE_QUIT_AFTER_3D=<s>` | exits that many seconds after the first frame with 800+ draws (saves the last frame) |
+| `F1CE_QR_TRACK`, `F1CE_QR_DRIVER`, `F1CE_QR_DISTANCE`, `F1CE_QR_WEATHER`, `F1CE_QR_AI`, `F1CE_QR_FUEL`, `F1CE_QR_DAMAGE`, `F1CE_QR_FAILURES`, `F1CE_QR_PENALTIES` | Quick Race settings regardless of the menu (`runtime/hle_quickrace.cpp`; the launcher's Advanced tab, "Quick Race Settings"): track folder name (`hungary`) or calendar index 0-17, driver id/surname/code (`heidfeld`, `HEI`; the team follows), distance 10/20/30/50/75/100, weather variable/sunny/cloudy/lightrain/heavyrain, AI easy/medium/hard, fuel and tyre wear off/scaled/realistic, damage/failures/penalties 0/1. Applied until the race's 3D scene, so `tools/race_test.sh` (cross only) reaches any combination; the menu keeps showing its own choices |
+| `F1CE_QR_POKE=<offset>:<hex>` | experiment: writes a word into the Quick Race settings object until the race (+0x08 and +0x18 showed no effect in single runs, +0x10 = 4 crashes; an early "+0x08 changes the grid size" came from parallel runs taking another menu path) |
+| `F1CE_MEM_DUMP=<s>,<s>,..` | saves the data segment and user memory (`mem_<s>.bin`, 16 MB at 10000000 then 192 MB at 30000000) at those input times, to find game variables by comparing snapshots |
 | `F1CE_PROFILE=1` | every few seconds: what each guest thread spends its time on (functions, HLE calls) |
 | `F1CE_HOST_PROFILE=<s>` | after s seconds, samples the SPU worker threads for 10 s: hottest host functions and addresses, and the callers of time spent in DLLs; `F1CE_HOST_PROFILE_RSX=1` samples the renderer thread instead |
-| `F1CE_SPU_PROFILE=<s>` | s seconds after the SPU workers start, samples each worker's workload and SPU pc every ms for 10 s (sees cluster code and DMA time, unlike `pc_samples`); with `F1CE_PROFILE=1` the `main-wait` line shows what the workers run while main waits for them |
+| `F1CE_SPU_PROFILE=<s>` | s seconds after the SPU workers start, samples each worker's workload and SPU pc every ms for 10 s (sees cluster code and DMA time, unlike `pc_samples`); with `F1CE_PROFILE=1` the `main-wait` line shows what the workers run while main waits for them; `F1CE_SPU_PROFILE_DUMP=<wid>` also saves the LS of a worker running that workload (`ls_w<wid>_<n>.bin`) |
 | `F1CE_SPU_DUMP_BLOCKS=<file>` | records SPU blocks that have no translation (input of `tools/spu_aot.py`) |
 | `F1CE_SPU_NOAOT=1`, `F1CE_SPU_NOCLUSTER=1` | interpret all SPU code / use single-block translations only |
+| `F1CE_SPU_NOAOT_TASK=<elf hex>` | runs the SPURS tasks of that ELF (`SPURS task ... start elf=` in the log) in the interpreter, to compare it with the translation |
+| log `SPU: n M interpreted instructions/s` | SPU code without a translation (workers and tasks) is running: record it with `F1CE_SPU_DUMP_BLOCKS` and run `tools/spu_aot.py` |
 | `F1CE_SPU_BENCH=1` | SPU interpreter benchmark and shufb self-test |
 | `F1CE_SPU_VERIFY=1` | compares every SPU block with the LS before it runs and logs mismatches (no dispatch cache, slower) |
 | `F1CE_SPU_NOIDIOM=1` | runs the table-building SPU loops as translated (`IDIOMS` in `tools/spu_aot.py`; for comparison) |
@@ -97,7 +102,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_SPU_CULL_CHECK=1/2` | every 64th transform and cull also runs on two copies of the SPU, interpreter against native, and logs differences; 2 puts NaN, infinities and huge values into the copies' input |
 | `SPU_AOT_HEAT=1 python -I tools/spu_aot.py` | builds counters per SPU block; the game writes `spu_heat.txt` every 10 s (regenerate without it afterwards) |
 | `F1CE_MAX_FRAMES_AHEAD=<n>` | frames the PPU may queue ahead of the renderer (default 1) |
-| `F1CE_TASK_DMA_LOG=1` | logs each distinct DMA of the SPURS tasks once |
+| `F1CE_TASK_DMA_LOG=1` | logs each distinct DMA of the SPURS tasks once (with the data of transfers up to 128 bytes); `=<elf hex>` only for the tasks of that ELF |
 | `F1CE_SYNC_COMPILE=1` | link shader programs on the render thread instead of the background compile thread |
 | `F1CE_DUMP_FROM=<n>`, `F1CE_DUMP_COUNT=<k>` | limit `F1CE_DUMP_FRAMES` to frames n .. n+k-1; `tools/flicker_check.py <dir>` finds flicker in such dumps |
 | `F1CE_FLIP_LOG=<first>,<count>` | per flip: displayed buffer and draws/clears per render target |
@@ -113,6 +118,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_FXAA=1` | FXAA on the final image |
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
 | `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time); a stopped car in a race stays at 30 fps (`F1CE_60FPS_NOHOLD=1` turns that off) |
+| `F1CE_RAIN_SMOOTH=0` | the rain drops on the screen as the game's water map gives them (default: read through a 3x3 tent filter, see the 2026-11-03 rain entry) |
 | `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX) |
 | `F1CE_SPURS_SPUS=<n>` | SPU worker threads (default 5; 6 works, 7 and 8 hang at boot; 3 halves the grid fps) |
 | `F1CE_SPU_DMA_DIAG=1` | the per-DMA diagnostics of the SPURS workloads (off: they cost a shared atomic on every DMA) |
@@ -699,3 +705,46 @@ banks, then waits for SPU work.
   - 6 SPU workers against 5 with these changes: 45.7 against 46.2 fps, +0.9 cores. The 6-core CPU already carries ~7.3 cores of load (renderer, main, five
     workers), so a sixth worker only shares a core. Reaching 60 on the grid needs less work in total, not more threads.
   - Scripted driving (`DRIVE=1`) ran 55-59 fps with main waiting for the SPUs ~50% of the time, but the car was on the grass again by then.
+- **Blue player car on Vulkan, Quick Race settings (2026-11-03):**
+  - The player's car was blue on Vulkan when it started last on the grid (Heidfeld, Hungary). The per-car lighting table is 32 points at integer x drawn into
+    a 32x1 main-memory target; a point on a pixel edge covers the pixel below it in OpenGL and the one before it in Vulkan, so the table came out one entry
+    to the left and car 21 read an unwritten texel (000000ff). Point lists now get a quarter-pixel viewport shift (`rsx_vk.cpp`, `apply_state`).
+    Comparing the `rsx: lighting table` lines of both backends shows such shifts.
+  - `F1CE_QR_*` (see the table) and the launcher's Advanced tab set the Quick Race track, driver, distance and Difficulty screen. Found with
+    `F1CE_MEM_DUMP` snapshots taken after each menu press: the settings object is at [0x10138748]; +0x70 holds the whole Difficulty screen as bits
+    (`hle_quickrace.cpp`). The dumps are copied and written by a thread: a slow write inside pad polling lost the scripted presses.
+  - Open: heavy rain (tested at Monaco) renders, but the rain drops on the screen show hard posterised edges over the whole image; the rain post effect
+    ("Rain And Muck", rain refraction) was never checked before. (See the next entry.)
+- **Rain (2026-11-03, Vulkan, scale 1.5, `F1CE_QR_TRACK=brazil F1CE_QR_WEATHER=heavyrain`):**
+  - Heavy rain ran at ~25 fps on the grid against ~41 dry. `F1CE_PROFILE` showed one more SPURS workload (w3, contention 1) in every sample of main
+    waiting for the SPUs, and `F1CE_SPU_PROFILE` gave it ~19% of all worker time spread over every instruction of one loop: the job (a linear
+    point-in-triangle search, LS 0x4824) had never been translated because no recording had been made in the rain. Two recordings (`dbg/spu_blocks_rain1.txt`,
+    Brazil heavy rain driving; `dbg/spu_blocks_rain2.txt`, Monaco light rain) added 384 blocks: w3 19% -> 3% of worker time, the main-wait samples
+    look like the dry ones again, and the grid went from 747 to 1146 frames in 30 s (~25 -> ~38 fps; A/B over 18 s from the race start: 26.3 -> 33.7).
+  - So that this cannot hide again, the SPURS report warns (`SPU: n M interpreted instructions/s`) when workers or tasks interpret more than 2 M
+    instructions per second (normal races: no warning; the rain task forced into the interpreter: ~190 M/s).
+  - Screen rain drops: the chain is the SPURS task `SpuRainDroplet.spu.elf` (ELF at 0x100C3580) -> a 512x288 B8 water map in main memory, double
+    buffered (io 00cc2380 / 00ce6380), each row rebuilt from rows y-2..y+2 of the other buffer plus 0xe00 bytes of state per row -> fragment program
+    8213ee750eb96053, the last pass before the interface, which moves the image by 0.04 x the slope of the map (eight taps, 1/512 and 1/288 apart) and
+    reads the display buffer it writes. The map holds trails one texel wide (of 10888 lit texels 243 have a lit horizontal neighbour) that slide down a
+    row per frame and fade ~4% per frame; their steep edges move the image by tens of pixels in hard patches. A Python model of the program on dumped
+    inputs reproduces the game's image exactly, the task gives the same map translated and interpreted (`F1CE_SPU_NOAOT_TASK`), its instructions
+    (cflts/cfltu scales, gb, rotqm*, fi/frest, ...) match the ISA and its DMA order is sound, so no emulation fault was found. Without a console or
+    RPCS3 reference in the rain, `F1CE_RAIN_SMOOTH` (default on) reads the map through a 3x3 tent filter (four bilinear taps half a texel apart, this
+    program only), which turns the patches into smooth streaks; `=0` gives the unfiltered image. Debug aids added: `F1CE_SPU_PROFILE_DUMP`,
+    `F1CE_SPU_NOAOT_TASK`, `F1CE_TASK_DMA_LOG=<elf>` with data, and the watch saves the LS of the first SPU that puts to the watched line
+    (`watch_ls.bin`). Note: main-memory textures are at EA = io + 0x31200000 (`_cellGcmInitBody` io base), not 0x32000000.
+- **All tracks, renderer front end (2026-11-03, Vulkan, scale 1.5):**
+  - SPU coverage on every track: a scripted drive at each of the 18 tracks with `F1CE_QR_TRACK` and `F1CE_SPU_DUMP_BLOCKS` (dry) found 132 blocks
+    without a translation (Spain 28, Brazil 25, Malaysia 21, Indianapolis 19, the rest 0-6), none hot enough to raise the interpreted-instructions
+    warning; added from `dbg/spu_blocks_tracks.txt`. No faults or freezes on any track.
+  - Vertex program uploads in bulk: the constants (0x1F00..0x1F7C) and microcode (0x0B80..0x0BFC) went through `exec_method` -> `rsx::method` ->
+    `vk::method` once per word. The front end now hands a whole run of such words to the renderer (`rsx::g_upload_words`, Vulkan only; OpenGL keeps
+    the per-word path). Renderer busy time on the grid (frame time minus FIFO idle) 19.3 -> 16.4 ms over three alternating pairs, grid fps
+    43.3 -> 44.7 (the grid is SPU-limited); driving ~51 fps with 2856 draws against ~50 with 2564 before.
+  - Index lists are converted with AVX2 (`convert_indices`, `index_minmax`; checked against the old loop on 200k random lists). It made no
+    measurable difference: the scalar loop was ~0.6 ns per index, and the ~2 ms of `index` time per frame is lookups, hashing and streaming of the
+    ~400k indices per frame that change every frame (lists the SPU cull job writes).
+  - Logs: `perf vtx` splits rebuilt indices into region growth, changed regions and per-draw lists; `perf tex` gives texture hash time and MB per
+    frame by kind (linear / up to 64 KB / larger) while driving: ~0.9 ms over ~2.6 / 5 / 7 MB. Vertex + texture hashing is ~1.6 ms per frame and
+    memory-bound; skipping it would need write tracking whose ordering against PPU/SPU writes is not solved, so it stays.

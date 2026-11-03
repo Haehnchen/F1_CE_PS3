@@ -35,6 +35,7 @@ set(RUNTIME_SOURCES
   runtime/hle_sys.cpp
   runtime/hle_misc.cpp
   runtime/hle_aspect.cpp
+  runtime/hle_quickrace.cpp
   runtime/hle_gcm.cpp
   runtime/hle_spurs.cpp
   runtime/hle_savedata.cpp
@@ -106,7 +107,7 @@ if(WIN32)
   add_executable(f1ce_launcher WIN32 launcher/f1ce_launcher.cpp launcher/f1ce_launcher.rc)
   target_compile_definitions(f1ce_launcher PRIVATE UNICODE _UNICODE _WIN32_WINNT=0x0A00)
   target_link_options(f1ce_launcher PRIVATE -static -municode)
-  target_link_libraries(f1ce_launcher PRIVATE shell32 ole32)
+  target_link_libraries(f1ce_launcher PRIVATE shell32 ole32 comctl32 uxtheme)
 else()
   find_package(Threads REQUIRED)
   target_link_libraries(f1ce PRIVATE Threads::Threads)
