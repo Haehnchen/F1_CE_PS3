@@ -137,7 +137,7 @@ struct SPUThread {
     static constexpr u32 LINES_PER_REGION_SHIFT = 5;
     u64 region_writes[64];
     u64 region_links[64];
-    void code_hit(u32 l) {
+    __attribute__((noinline)) void code_hit(u32 l) {   // (rare: keeps the store path of translated code short)
         code_writes++;
         line_code[l] = false;
         u32 r = l >> LINES_PER_REGION_SHIFT;

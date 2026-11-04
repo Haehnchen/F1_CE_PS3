@@ -35,6 +35,8 @@ set(RUNTIME_SOURCES
   runtime/hle_sys.cpp
   runtime/hle_misc.cpp
   runtime/hle_aspect.cpp
+  runtime/hle_cubemap.cpp
+  runtime/hle_skipfn.cpp
   runtime/hle_quickrace.cpp
   runtime/hle_gcm.cpp
   runtime/hle_spurs.cpp

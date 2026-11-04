@@ -21,6 +21,9 @@ extern bool g_plain[0x800];      // methods below 0x2000 that only store their v
 // the vertex program upload ports (TRANSFORM_PROGRAM 0x0B80, TRANSFORM_CONSTANT 0x1F00) in runs of words, from a renderer
 // that takes them in bulk (else null: one method call per word)
 extern void (*g_upload_words)(u32 method, const u32* args, u32 n, bool non_inc);
+// profiling of the FIFO front end (hle_gcm.cpp) and whole draws/clears, reported with the renderer's perf line (us, counts)
+struct FrontProf { u64 t_sem = 0, t_flip = 0, t_draw = 0, t_clear = 0, cmds = 0, words = 0, entries = 0, nops = 0, flows = 0; };
+extern FrontProf g_fe;
 void init();
 void method(u32 method, u32 arg);                               // NV4097 state / draw methods
 void flip(u32 ea, u32 pitch, u32 width, u32 height);            // present a display buffer

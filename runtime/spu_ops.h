@@ -65,7 +65,9 @@ struct SpuLocal {
           interrupts(th.interrupts) {}
     u32 pref(int r) const { return gpr[r].w[3]; }
     void set_pref(int r, u32 v) { gpr[r].pi = _mm_setzero_si128(); gpr[r].w[3] = v; }
-    void code_hit(u32 l) { t.code_hit(l); }
+    // inlined: an out-of-line call would take L's address, and L would then live in memory (every register access a
+    // load or store, ~2.5 ns per SPU instruction)
+    FORCE_INLINE void code_hit(u32 l) { t.code_hit(l); }
 };
 
 // ------------------------------------------------------------------ memory

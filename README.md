@@ -89,6 +89,7 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_PROFILE=1` | every few seconds: what each guest thread spends its time on (functions, HLE calls) |
 | `F1CE_HOST_PROFILE=<s>` | after s seconds, samples the SPU worker threads for 10 s: hottest host functions and addresses, and the callers of time spent in DLLs; `F1CE_HOST_PROFILE_RSX=1` samples the renderer thread instead |
 | `F1CE_SPU_PROFILE=<s>` | s seconds after the SPU workers start, samples each worker's workload and SPU pc every ms for 10 s (sees cluster code and DMA time, unlike `pc_samples`); with `F1CE_PROFILE=1` the `main-wait` line shows what the workers run while main waits for them; `F1CE_SPU_PROFILE_DUMP=<wid>` also saves the LS of a worker running that workload (`ls_w<wid>_<n>.bin`) |
+| `F1CE_SPU_DMA_STATS=1` | every 10 s per SPU worker: DMA and atomic commands by workload, pc and command (count per second, mean size) |
 | `F1CE_SPU_DUMP_BLOCKS=<file>` | records SPU blocks that have no translation (input of `tools/spu_aot.py`) |
 | `F1CE_SPU_NOAOT=1`, `F1CE_SPU_NOCLUSTER=1` | interpret all SPU code / use single-block translations only |
 | `F1CE_SPU_NOAOT_TASK=<elf hex>` | runs the SPURS tasks of that ELF (`SPURS task ... start elf=` in the log) in the interpreter, to compare it with the translation |
@@ -120,6 +121,8 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time); a stopped car in a race stays at 30 fps (`F1CE_60FPS_NOHOLD=1` turns that off) |
 | `F1CE_RAIN_SMOOTH=0` | the rain drops on the screen as the game's water map gives them (default: read through a 3x3 tent filter, see the 2026-11-03 rain entry) |
 | `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX) |
+| `F1CE_CUBE_30HZ=0` | with `F1CE_60FPS`: render the reflection cube map every frame (default: at most ~30-40 updates per second, as the original game at 30 fps; `runtime/hle_cubemap.cpp`); `F1CE_CUBE_SKIP=1` never renders it (measurement only) |
+| `F1CE_SKIP_FN=<hex>,..` | measurement only: these render functions return at once (2f141c static shadows, 2f1bec blurred shadows, 43f620 shadow map, 43ffa0 shadow to alpha, 30388c cars); all of them log their calls per second (`skipfn:`, `runtime/hle_skipfn.cpp`) |
 | `F1CE_SPURS_SPUS=<n>` | SPU worker threads (default 5; 6 works, 7 and 8 hang at boot; 3 halves the grid fps) |
 | `F1CE_SPU_DMA_DIAG=1` | the per-DMA diagnostics of the SPURS workloads (off: they cost a shared atomic on every DMA) |
 | `F1CE_DUMP_WINDOW=<n>` | saves the window after presentation every n-th frame (`frame_w_*`) |
@@ -137,32 +140,46 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 - [x] LV2 kernel + HLE for all 9 imported libraries
 - [x] SPU execution: interpreter + host SPURS kernel; the game's job manager and audio jobs run
 - [x] RSX: FIFO front end and OpenGL renderer; the 2D frontend renders at ~58 fps
+- [x] Vulkan renderer (`F1CE_RENDERER=vulkan`), on par with OpenGL; played by hand with no crashes reported
 - [x] SDL3 window, keyboard/gamepad input, audio output (Windows)
 - [x] Linux x86-64 cross build (headless backend; not tested, no Linux environment available)
 - [x] 3D scene of the profile screen: lighting, shadow maps, fog, post-processing chain
-- [ ] Save data (`cellSaveData*` callbacks): deferred
 - [x] Profile creation (save data), Single Player menu, Quick Race at Silverstone: the race renders
 - [x] SPURS tasksets: tasks run on SPU interpreters; event flags and queues shared with the SPU side
 - [x] Race scene: sky, crowd, lit cars
-- [x] Race performance: ~27 fps at Silverstone (was ~2 fps)
+- [x] Race performance: 30 fps cap held everywhere; with `F1CE_60FPS=1` ~54 fps on the full grid and 60 while
+      driving (Vulkan, 1080p; was ~2 fps)
 - [x] Scene brightness: matches RPCS3 (shadow compare direction fixed)
-- [ ] SDL/OpenGL backend for the Linux build
+- [x] Resolution scaling up to 4K and other aspect ratios, MSAA/FXAA, 60 fps mode, launcher
+- [x] All 18 tracks load and drive (SPU code translated for each), Quick Race settings incl. weather
+- [x] Race-start / grid freeze (SPU task STUCK mailbox, fixed 2026-10-30, confirmed by the user at Monaco)
+- [x] Mirrors too dark (fixed 2026-10-31), blue player car on Vulkan (fixed 2026-11-03)
+- [x] Heavy rain at ~25 fps (untranslated SPU job, fixed 2026-11-03: ~38 fps on the grid)
+- [x] OpenGL crash (guest memory fault) after a cold shader compile (fixed 2026-11-04)
+- [ ] Save data beyond profiles (`cellSaveData*` callbacks for progress): deferred
+- [ ] SDL/OpenGL or Vulkan backend for the Linux build (also needed for a Steam Deck test)
+- [ ] Screen rain drops: hard posterised edges in the game's water map (smoothed by `F1CE_RAIN_SMOOTH`; no PS3
+      reference to settle it)
+- [ ] Car shake at the grid with `F1CE_60FPS` reported again on 2026-11-03 (the hold engaged in that log; track and
+      moment still to be found)
 
 ## Roadmap
 
-1. **Correctness and a steady 30 fps.** The race start (full grid) runs at ~23-26 fps, limited by the PPU waiting for
-   SPU jobs (SPU workers ~88% busy): speed up the translated SPU code and the SPURS kernel paths.
+Steps 1-7 are done; 8 is in progress, 9-11 are next.
+
+1. **Correctness and a steady 30 fps.** *Done: the 30 fps cap holds on the full grid and while driving on every track
+   (SPU code translation, renderer caches; the grid was ~23-26 fps on 2026-10-25).*
 2. **Decode guest data on the GPU.** *Done 2026-10-28: vertex pulling, one index arena, texture decoding in a compute shader.* Vertex conversion (big-endian, packed formats), index list rebuilding and
    texture deswizzling run on the CPU (~15-20 ms per frame on the render thread, plus change-detection hashing):
    upload raw data and decode it in shaders / compute shaders. Also removes most of the loading stutter.
 3. **Resolution scaling (up to 4K) and anti-aliasing options.** *Done 2026-10-29: `F1CE_SCALE`, `F1CE_MSAA`, `F1CE_FXAA`.* Render targets at an internal scale factor (surfaces
    the CPU reads back stay native; copies, cube map and shadow maps scaled; post-processing offsets checked);
    MSAA 8x, FXAA/SMAA on the final image, supersampling via the scale factor. GPU-side cost only.
-4. **60 fps.** *Done 2026-10-31: `F1CE_60FPS=1`, adaptive ticks per frame.* A steady 60 still needs more CPU headroom:
-   the full grid stays at ~30 fps, driving reaches 38-46.
+4. **60 fps.** *Done 2026-10-31: `F1CE_60FPS=1`, adaptive ticks per frame.* How close it gets to a steady 60 is
+   step 8.
 5. **Vulkan backend** next to OpenGL: lower per-call driver cost, explicit pipeline caches (no stutter on new
    shaders), multithreaded command recording, better Linux support. DirectX 11 is not planned (no gain over OpenGL,
-   Windows only). *Working (2026-10-31): `runtime/rsx_vk.cpp` runs the boot, menus and a Silverstone race at scale 2 at the
+   Windows only). *Done (2026-10-31): `runtime/rsx_vk.cpp` runs the boot, menus and a Silverstone race at scale 2 at the
    30 fps cap, matching OpenGL by eye; played by hand with `F1CE_60FPS=1`, FXAA and Monaco with no crashes or glitches reported;
    never run with validation layers. It is built with
    `cmake -DF1CE_VULKAN=ON` (needs `third_party/glslang`, tag vulkan-sdk-1.4.350.1) and selected with
@@ -173,17 +190,30 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
    `F1CE_RENDERER`, `F1CE_60FPS`, ...) and start the game, replacing the shell script `launch_decomp_wwin.sh`.
 7. **Shader progress text.** *Done 2026-10-31: "Loading shaders... 42%" above the bar, on both renderers.*
 8. **Performance for 60 fps.** Make the game as fast as possible with `F1CE_60FPS=1`, aiming at a steady 60.
-   *In progress (2026-10-31): Vulkan at scale 2 drives at 46-48 fps (was 38-42), the full grid at 34-35 (was 33). The SPUs
-   are the limit: main spends ~28% in the job wait 0x551228 and the workers are ~85% busy. Later the same day: `F1CE_CUBE_FACES=2` frees the renderer, grid 32-35; idle power use cut from ~6 to ~1.7 cores in menus, see the progress log. 2026-11-01: grid 37-38, driving around 50 where it was 42-44.*
+   *In progress. Full Silverstone grid, Vulkan at 1080p: 33 (2026-10-31) -> 37-38 (11-01) -> ~46 (11-03) -> ~48 (cube
+   map at 30 Hz, 11-04) -> ~54 (translated SPU clusters keep registers in host registers, 11-04). Driving holds 60 on
+   open track. The grid is limited by the SPU work (~7.3 of the 6-core CPU's threads busy); the remaining large
+   pieces are the job manager's policy module (~30% of SPU worker time) and the shadow passes
+   (`RenderStaticShadows` and `RenderBlurredShadows` ~10% of a grid frame each, measured with `F1CE_SKIP_FN`).*
+9. **Linux backend and Steam Deck.** SDL window/input/audio and the Vulkan renderer in the Linux build (today it is
+   headless), then a test on a Deck. An 8-thread estimate on this PC (2026-10-31) gave 26-30 fps on the grid, so the
+   Deck needs less SPU work, not only a faster runtime.
+10. **Remaining visual differences.** Screen rain drops (no reference yet), suspension arms darker than in RPCS3,
+    rubber marks not checked since 2026-10-28 (see below).
+11. **Save data beyond profiles.** Deferred by request.
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
-### Known rendering issues (reported 2026-10-25, updated 2026-10-28)
+### Known rendering issues (reported 2026-10-25, updated 2026-11-04)
 
-- Suspension arms in front of the cockpit are darker than in RPCS3 (self-shadowing; the shadow maps cull front faces
-  as requested since 2026-10-28).
-- Rubber marks near the corners looked much darker than on PS3: not checked again since the 2026-10-28 fixes (needs a
-  driven lap).
+- [ ] Suspension arms in front of the cockpit are darker than in RPCS3 (self-shadowing; the shadow maps cull front
+      faces as requested since 2026-10-28).
+- [ ] Rubber marks near the corners looked much darker than on PS3: not checked again since the 2026-10-28 fixes
+      (needs a driven lap).
+- [ ] Screen rain drops in heavy rain: posterised edges (see the 2026-11-03 rain entry).
+- [x] Mirrors and cockpit panels too dark (2026-10-31).
+- [x] Crowd clothes wrong (FP flow control IFE, 2026-10-28), white heat haze (2026-10-28).
+- [x] Blue player car on Vulkan when starting last (2026-11-03).
 
 ## Progress log
 
@@ -748,3 +778,57 @@ banks, then waits for SPU work.
   - Logs: `perf vtx` splits rebuilt indices into region growth, changed regions and per-draw lists; `perf tex` gives texture hash time and MB per
     frame by kind (linear / up to 64 KB / larger) while driving: ~0.9 ms over ~2.6 / 5 / 7 MB. Vertex + texture hashing is ~1.6 ms per frame and
     memory-bound; skipping it would need write tracking whose ordering against PPU/SPU writes is not solved, so it stays.
+- **Renderer front end and per-draw checks (2026-11-04, Vulkan, scale 1.5, `F1CE_60FPS=1 F1CE_60FPS_NOHOLD=1`, Silverstone grid):**
+  - New log line `perf front`: whole draws, their attribute setup and parameter/pass part, clears, flips, semaphore waits, and the commands,
+    words and slow-path entries of the FIFO front end per frame. On the grid: ~155k commands / ~500k words per frame, draws 10.5 ms, front end
+    ~3.8 ms. ~37k of the commands were NOPs, and each ended the run of plain commands, so the next command took the slow path (47k entries
+    per frame); NOPs now stay in the run (1.3k entries). GET is written at the end of a run and before SEMAPHORE_ACQUIRE / flip (`sync_get`),
+    not after every command (it shares a cache line with PUT, which the PPU writes), and the front end's position for the list watcher is a
+    plain store instead of a seq_cst one.
+  - Vertex program hash per draw kept until the VP words change (`g_vp_gen`): program 1.5 -> 1.3 ms.
+  - Change checks of data that has not changed for 60 frames: vertex regions over 16 KB and textures of 16-64 KB compare a word per 256 bytes
+    on 7 frames of 8 (full check on the 8th, staggered); textures over 64 KB get a full check every 32 frames and a word per KB every 4 frames
+    (before: a full check every 8 frames, ~60 MB of track textures at the grid). Data streamed into the same memory rewrites nearly every line,
+    so the sparse words catch it within 4 frames. Vertex hash 1.0 -> 0.7 ms, texture hash 1.0 -> 0.6 ms per frame.
+  - Tried and dropped (no measurable change): a direct-mapped lookup in front of `g_idx_regions`, prefetching command words. The vertex data
+    still hashed every frame (~6 MB) is ~1500 regions of ~4 KB rewritten recently, checked at every draw.
+  - Renderer busy time on the grid 15.7 -> 14.3 ms over three alternating pairs (every pair better); grid fps unchanged (~46, SPU-limited:
+    FIFO idle ~6.5 ms per frame). 70 s drive with no errors and the same warnings as before. At the race start (60 fps) the render thread
+    waits up to ~4 ms per frame in SEMAPHORE_ACQUIRE for the game: that is waiting, not renderer work.
+- **SPU work on the grid, reflection cube map at 30 Hz (2026-11-04, Vulkan, scale 1.5, `F1CE_60FPS=1 F1CE_60FPS_NOHOLD=1`, Silverstone grid):**
+  - Where the worker time goes (rdtsc per dispatch, a diagnostic build only): ~30% in the job manager's policy module, ~66% in job code. The jobs
+    call PM services ~250k times per second per worker (DMA list builders 0x2D48, waits 0x1580/0x1968, the LS buffer allocator 0x1670, job end
+    0x2AB0), and the PM's interrupt handler (0x0A90, registers saved by code it writes on its stack, then the prefetch of the next job) runs once
+    per job: ~6000 PM instructions per job, ~2700 jobs per frame in w1/w2. Both parts run at ~2.5 ns per SPU instruction; the PM is busy, not
+    polling (its grab-loop spin is <1%), and block rebuilds cost ~1.2%.
+  - Tried and dropped (dispatches fell 16-18%, fps unchanged in alternating runs): self-loops through indirect branches in single-block
+    translations (the morton copy 0be98/0beb8), and inlining leaf calls (`brsl` to a one-block function returning through its link register)
+    in cluster code. A fast dispatch costs ~7 ns; the cost is the instructions themselves, about 43 million SPU instructions per grid frame.
+  - The reflection cube map (`foaDynamicCubeMap::Render`, 0x2F0D14, once per frame, all six faces, ~500 draws plus their cull and transform
+    jobs) is ~20% of a grid frame: never rendering it (`F1CE_CUBE_SKIP=1`) gives 55 fps against 44. The game renders it every frame, so 30
+    updates per second at its 30 fps. With `F1CE_60FPS` a frame that starts less than 25 ms after the last update now keeps the previous
+    faces, and the main view's wait for the faces' job fences (0x2F0390, six `0x551228` waits) is skipped with it (the earlier hang came from
+    that wait on fences of a pass that never ran). At 60 fps that is exactly 30 updates per second, below ~40 fps every frame. Hooks in
+    `tools/recomp.py` HOOKS, `runtime/hle_cubemap.cpp`; `F1CE_CUBE_30HZ=0` turns it off. Grid 45.1 -> 48.4 fps over three alternating pairs
+    (every pair better); a 70 s drive ran to the finish with no errors, reflections look the same. The faces are drawn inside the scene
+    render 0x43B528, so three faces per frame (even frame times) would need that function taken apart.
+  - `tools/recomp.py` now rewrites only the generated files whose text changed (a new hook rebuilds two PPU files, not 48).
+  - New diagnostic `F1CE_SPU_DMA_STATS=1`. Next leads: a native job manager PM (the largest piece of SPU time left, but the game's own job
+    API, interrupt-driven prefetch and allocator would have to be reproduced exactly), and the shadow map passes (~700 draws).
+- **OpenGL start-up crash, SPU register allocation (2026-11-04, evening; Vulkan, scale 1.5, `F1CE_60FPS=1 F1CE_60FPS_NOHOLD=1`, Silverstone grid):**
+  - The OpenGL "guest memory fault after a cold shader compile" (seen once on 2026-11-01) came back in a run that had to compile 169
+    programs (51 s). OpenGL builds its program database on the RSX thread at the first command, and the PPU throttle in `timer_usleep`
+    gives up after 15 s: the game then rewrote the first frame's command lists under the waiting RSX. The throttle now waits without a
+    limit while that phase runs (`g_rsx_starting`). Cold test (`F1CE_SHADER_SALT=x F1CE_NO_PRELOAD=1`, 933 programs, 185 s): the PPU
+    waited 181 s and the race started normally.
+  - Translated SPU clusters were meant to keep the SPU registers in host registers (`SpuLocal`), but the store path called
+    `SpuLocal::code_hit` out of line, which took the context's address: every register access was a stack load or store and the pc
+    was stored at every instruction. `code_hit` is now inlined into a call on the thread (`SPUThread::code_hit`, out of line). Grid
+    ~50 -> ~54.3 fps over three alternating pairs (every pair better); a 70 s drive had no errors and held 60 fps on the straights.
+  - Tried and reverted: running clusters with channel instructions on local registers too (registers copied around each channel
+    instruction, 32 more clusters): ~54.5 -> ~49 fps. Those clusters (mostly the job manager's) are entered often for short runs,
+    and the copies in and out cost more than they save.
+  - Shadow passes priced with the new `F1CE_SKIP_FN` (measurement only): skipping `RenderStaticShadows` (0x2F141C, one shadow map,
+    ~160 draws) gives ~55 fps against ~50, skipping `RenderBlurredShadows` (0x2F1BEC, two maps of ~270 draws; the sun shadows of
+    cars and the start gantry) ~56. The static map cannot simply be kept for a frame as the cube map is: its target (0x03060000)
+    is drawn over by the blurred pass in the same frame.

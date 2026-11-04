@@ -458,7 +458,8 @@ SYS(timer_usleep) {
     if (!no_throttle && rsx_refs_behind() > 2) {
         u64 start = time_usec();
         // up to 15 s: at the race start the RSX can take seconds for the loading list (hundreds of textures)
-        while (rsx_refs_behind() > 2 && time_usec() - start < 15000000) sleep_usec(200);
+        // (no limit while the renderer compiles its start-up shaders on the RSX thread)
+        while (rsx_refs_behind() > 2 && (time_usec() - start < 15000000 || g_rsx_starting)) sleep_usec(200);
         static u32 n = 0;
         if (n++ < 20) LOG_I("PPU throttled %llu us: RSX behind (refs %d)", (unsigned long long)(time_usec() - start), rsx_refs_behind());
     }

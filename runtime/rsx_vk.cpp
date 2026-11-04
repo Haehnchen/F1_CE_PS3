@@ -1023,12 +1023,19 @@ void precompile_programs() {
     LOG_I("rsx: program database: %zu pipelines ready in %.1f s (%u failed)", progs.size(), (time_usec() - t0) / 1e6, failed);
 }
 
+u32 g_vp_gen = 1;   // bumped by every write to vp_words: the vertex program hash of the last draw stays valid until then
 Program* get_program(std::vector<float>& fp_consts) {
     u32 vp_start = reg(0x1EA0) & 511;
-    u32 vp_len = 0;
-    while (vp_start + vp_len < 512 && !(vp_words[(vp_start + vp_len) * 4 + 3] & 1)) vp_len++;
-    vp_len++;
-    u64 vh = hash_words(&vp_words[vp_start * 4], vp_len * 4);
+    static u32 memo_gen = 0, memo_start = 0, vp_len = 0;
+    static u64 vh = 0;
+    if (memo_gen != g_vp_gen || memo_start != vp_start) {
+        vp_len = 0;
+        while (vp_start + vp_len < 512 && !(vp_words[(vp_start + vp_len) * 4 + 3] & 1)) vp_len++;
+        vp_len++;
+        vh = hash_words(&vp_words[vp_start * 4], vp_len * 4);
+        memo_gen = g_vp_gen;
+        memo_start = vp_start;
+    }
     u32 fp_ctl = reg(0x08E4);
     u32 fp_ea = location_to_ea(fp_ctl & ~3u, (fp_ctl & 3) == 2);
     u32 shader_control = reg(0x1D60);
@@ -1111,7 +1118,7 @@ constexpr u32 RING_SEG = 8u << 20;
 #include "rsx_draw_shared.inl"
 
 // ------------------------------------------------------------------ textures
-struct TexEntry { Img* tex = nullptr; u64 hash = 0; u32 w = 0, h = 0, fmt = 0; u64 checked_frame = ~0ull, last_change = 0; };
+struct TexEntry { Img* tex = nullptr; u64 hash = 0, sentinel = 0; u32 w = 0, h = 0, fmt = 0; u64 checked_frame = ~0ull, last_change = 0; };
 std::unordered_map<u64, TexEntry> g_textures;
 VkPipeline g_tex_cs = 0;
 bool g_tex_gpu = false;
@@ -1209,7 +1216,23 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
     if (auto it = g_textures.find(key); it != g_textures.end() && it->second.tex) {
         TexEntry& e = it->second;
         if (e.checked_frame == g_frame) return e.tex;
-        if (!linear && size > 65536 && g_frame - e.last_change > 60 && (g_frame + key) % 8 != 0) { e.checked_frame = g_frame; return e.tex; }
+        // Textures that have not changed for 60 frames are not read in full every frame (~60 MB of track textures at the
+        // grid): over 64 KB a full check every 32 frames (staggered), a word per KB every 4 frames in between and nothing
+        // on the others; 16-64 KB a word per 256 bytes on 7 frames of 8. A texture streamed into the same memory rewrites
+        // nearly every line, so the sparse words see it.
+        if (!linear && size > 16384 && g_frame - e.last_change > 60) {
+            const bool big = size > 65536;
+            const u64 phase = (g_frame + key) % (big ? 32 : 8);
+            if (phase != 0) {
+                if (big && phase % 4 != 0) { e.checked_frame = g_frame; return e.tex; }
+                if (e.sentinel) {
+                    u64 tth = prof_usec();
+                    bool same = (hash_range(gmem(ea), size, big ? 1024 : 256) | 1) == e.sentinel;
+                    g_prof.t_texhash += prof_usec() - tth;
+                    if (same) { e.checked_frame = g_frame; return e.tex; }
+                }
+            }
+        }
     }
     u32 step = size > 65536 ? 64 : 8;
     u64 tth = prof_usec();
@@ -1219,6 +1242,7 @@ Img* upload_texture(u32 unit, bool* is_surface, int* depth_func) {
     (linear ? g_prof.tex_lin : size > 65536 ? g_prof.tex_big : g_prof.tex_small) += size;
     TexEntry& te = g_textures[key];
     te.checked_frame = g_frame;
+    te.sentinel = !linear && size > 16384 ? hash_range(gmem(ea), size, size > 65536 ? 1024 : 256) | 1 : 0;
     if (te.tex && te.hash == hsh) return te.tex;
     te.last_change = g_frame;
     te.hash = hsh;
@@ -1615,8 +1639,11 @@ void draw(bool indexed) {
     u64 ti0 = prof_usec();
     DrawGeom geom;
     if (!gather_indices(indexed, geom)) return;
-    g_prof.t_index += prof_usec() - ti0;
+    u64 tat = prof_usec();
+    g_prof.t_index += tat - ti0;
     setup_attrs_gpu(geom.min_v, geom.max_v, dp.va);
+    u64 tun = prof_usec();
+    g_prof.t_pre += tun - tat;
 
     bool cube_face = g_cube_faces.count(target->offset) != 0;
     bool encode = (reg(0x1FD8) & 1) && reads_gamma && !reads_raw_target && !cube_face;
@@ -1664,6 +1691,7 @@ void draw(bool indexed) {
     }
     begin_pass(target);
     u64 ta0 = prof_usec();
+    g_prof.t_bind += ta0 - tun;
     apply_state(target, topo);
     g_prof.t_apply += prof_usec() - ta0;
     if (g_dyn.pipe != p->pipe[cls]) { vkCmdBindPipeline(g_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, p->pipe[cls]); g_dyn.pipe = p->pipe[cls]; }
@@ -2469,6 +2497,7 @@ void upload_words(u32 m, const u32* a, u32 n, bool non_inc) {
         const u32 k = std::min(n, 512 * 4 - std::min(vp_load_pos, 512u * 4));
         memcpy(&vp_words[vp_load_pos], a, k * 4);
         vp_load_pos += k;
+        g_vp_gen++;
         return;
     }
     for (u32 i = 0; i < n && vp_const_pos < 468 * 4; i++) {
@@ -2507,6 +2536,7 @@ void method(u32 m, u32 arg) {
     if (m >> 13) { method_2d(m >> 13, m & 0x1FFF, arg); return; }
     if (m >= 0x0B80 && m < 0x0C00) {
         if (vp_load_pos < 512 * 4) vp_words[vp_load_pos++] = arg;
+        g_vp_gen++;
         return;
     }
     if (m >= 0x1F00 && m < 0x1F80) {
@@ -2519,15 +2549,17 @@ void method(u32 m, u32 arg) {
     switch (m) {
         case 0x1E9C: vp_load_pos = (arg & 511) * 4; break;
         case 0x1EFC: vp_const_pos = (arg % 468) * 4; break;
-        case 0x1D94: clear(arg); break;
+        case 0x1D94: { u64 t = prof_usec(); clear(arg); g_fe.t_clear += prof_usec() - t; break; }
         case 0x1808:
             if (arg) {
                 g_prim = arg;
                 g_array_ranges.clear();
                 g_index_ranges.clear();
             } else {
+                u64 t = prof_usec();
                 if (!g_index_ranges.empty()) draw(true);
                 else if (!g_array_ranges.empty()) draw(false);
+                g_fe.t_draw += prof_usec() - t;
                 g_array_ranges.clear();
                 g_index_ranges.clear();
             }
@@ -2611,6 +2643,10 @@ void flip(u32 ea, u32 pitch, u32 width, u32 height) {
                   g_prof.vertices / nf / 1e3, g_prof.other / nf / 1e3, idle / nf / 1e3, (unsigned long long)(g_prof.draws / nf), (unsigned long long)(g_prof.verts / nf));
             LOG_I("perf vertex heap: %.1f MB in use, %zu raw regions, %u failed allocations, %zu blocks pending; %llu pipelines built so far",
                   g_heap.used / 1048576.0, g_raw_regions.size(), g_heap.failed, g_heap.pending.size(), (unsigned long long)g_compiled.load());
+            LOG_I("perf front: ms draw calls %.2f (attributes %.2f params+pass %.2f) clears %.2f flip %.2f semaphore waits %.2f | %.0f commands %.0f words, %.0f slow entries (%.0f nops %.0f flow)",
+                  g_fe.t_draw / nf / 1e3, g_prof.t_pre / nf / 1e3, g_prof.t_bind / nf / 1e3, g_fe.t_clear / nf / 1e3, g_fe.t_flip / nf / 1e3,
+                  g_fe.t_sem / nf / 1e3, g_fe.cmds / nf, g_fe.words / nf, g_fe.entries / nf, g_fe.nops / nf, g_fe.flows / nf);
+            g_fe = {};
             g_prof = {};
             window_start = now;
         }

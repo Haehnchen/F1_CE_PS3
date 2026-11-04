@@ -2437,7 +2437,11 @@ static void gl_init_once() {
     ring_init();
     heap_init();
     iarena_init();
+    // the PPU throttle gives up after 15 s; a cold program database takes longer and the game then rewrites the
+    // command lists of frame 1 under the waiting RSX (guest memory fault), so it waits for the whole phase
+    g_rsx_starting = true;
     precompile_programs();
+    g_rsx_starting = false;
     host::input_clock_reset();
     if (g_preloaded.empty()) start_preload();   // no database yet: the binaries of earlier sessions, in the background
     else if (FILE* uf = fopen((shader_cache_dir() + "/used.txt").c_str(), "r")) {   // (keys already listed)

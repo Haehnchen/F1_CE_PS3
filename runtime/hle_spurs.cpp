@@ -132,6 +132,33 @@ u64 run_workload(SPUThread& spu, u32 wid, const Workload& w) {
         return false;
     };
     // diagnostics: atomic traffic of jobs that run for very long (spin detection)
+    // F1CE_SPU_DMA_STATS=1: per worker thread, every 10 s, the DMA sites (workload, pc, command) by count and bytes
+    static const bool dma_stats = getenv("F1CE_SPU_DMA_STATS") != nullptr;
+    if (dma_stats) spu.on_dma = [wid](SPUThread& s, u32 cmd, u32, u32, u32 size) {
+        struct St { u64 n = 0, bytes = 0; };
+        thread_local std::unordered_map<u64, St> st;
+        thread_local u64 next = time_usec() + 10000000;
+        u32 c8 = cmd & 0xFF;
+        St& e = st[(u64)wid << 32 | (s.pc & 0x3FFFC) << 8 | c8];
+        e.n++;
+        e.bytes += (c8 & 0xF4) == 0x44 || (c8 & 0xF4) == 0x24 ? 0 : size;
+        if (time_usec() < next) return;
+        next = time_usec() + 10000000;
+        std::vector<std::pair<u64, u64>> v;
+        u64 total = 0;
+        for (auto& [k, x] : st) { v.push_back({x.n, k}); total += x.n; }
+        std::sort(v.rbegin(), v.rend());
+        std::string out;
+        for (size_t i = 0; i < v.size() && i < 24; i++) {
+            char b[64];
+            const St& x = st[v[i].second];
+            snprintf(b, sizeof(b), " w%u:%05x:%02x %.0f/s %.0fB", (u32)(v[i].second >> 32), (u32)(v[i].second >> 8) & 0x3FFFF,
+                     (u32)v[i].second & 0xFF, x.n / 10.0, x.n ? (double)x.bytes / x.n : 0.0);
+            out += b;
+        }
+        LOG_I("dma stats %s (%.0f/s):%s", s.name.c_str(), total / 10.0, out.c_str());
+        st.clear();
+    };
     static const bool dma_diag = getenv("F1CE_SPU_DMA_DIAG") != nullptr;   // (a shared counter on every DMA: costly)
     if (dma_diag) spu.on_dma = [wid](SPUThread& s, u32 cmd, u32 lsa, u32 ea, u32 size) {
         static std::atomic<int> budget{60};
@@ -189,7 +216,7 @@ void spu_profiler(u32 n) {
             total++;
             by_wid[wid]++;
             if (wid >= 0 && t) by_pc[(u32)wid << 20 | (t->pc & 0x3FFFC)]++;
-            if (wid == dump_wid && t && dumps < 4 && time_usec() >= next_dump) {
+            if (dump_wid >= 0 && wid == dump_wid && t && dumps < 4 && time_usec() >= next_dump) {
                 std::vector<u8> copy(t->ls, t->ls + 0x40000);
                 char name[64];
                 snprintf(name, sizeof(name), "ls_w%d_%d.bin", wid, dumps++);

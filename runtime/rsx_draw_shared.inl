@@ -45,6 +45,7 @@ struct RawRegion {
     u32 off = ~0u, bytes = 0;   // heap block
     u32 base_ea = 0, stride = 0, elem = 0, first = 0, count = 0;
     u64 hash = 0, checked_frame = ~0ull, last_frame = 0, seen_frame = 0, last_change = 0;
+    u64 sentinel = 0;   // sparse hash (one word per KB) taken with the last full hash of a large region; 0: none
 };
 std::unordered_map<u64, RawRegion> g_raw_regions;
 // direct-mapped in front of the map: ~18000 lookups per frame, the map's nodes are scattered (cleared when entries go)
@@ -174,8 +175,22 @@ void setup_attrs_gpu(u32 min_v, u32 max_v, int* va) {
                 // small regions that changed recently (ring buffers rewritten between draws) are checked every draw
                 bool small = re.count * stride <= 16384 && g_frame - re.last_change < 60;
                 if (small || re.checked_frame != g_frame) {
-                    u64 h = hash_of(base_ea + re.first * stride, region_bytes(re.count));
-                    if (h != re.hash) { upload(re.first, re.count); re.hash = h; g_prof.conv_changed += re.count; re.last_change = g_frame; }
+                    const u32 n = region_bytes(re.count), ea = base_ea + re.first * stride;
+                    // Meshes over 16 KB that have not changed for 60 frames: on 7 frames of 8 (staggered) only a word per 256 bytes
+                    // is compared (the full checks read ~6 MB per frame, memory-bound); a mesh streamed into the buffer
+                    // rewrites nearly every line, so the sparse words see it in the same frame, anything else within 8.
+                    bool sparse_ok = false;
+                    if (n > 16384 && re.sentinel && g_frame - re.last_change > 60 && (g_frame + (key >> 7)) % 8 != 0) {
+                        u64 th = prof_usec();
+                        sparse_ok = (hash_range(gmem(ea), n, 256) | 1) == re.sentinel;
+                        g_prof.t_hash += prof_usec() - th;
+                        g_prof.hashed += n / 32;
+                    }
+                    if (!sparse_ok) {
+                        u64 h = hash_of(ea, n);
+                        if (h != re.hash) { upload(re.first, re.count); re.hash = h; g_prof.conv_changed += re.count; re.last_change = g_frame; }
+                        re.sentinel = n > 16384 ? hash_range(gmem(ea), n, 256) | 1 : 0;
+                    }
                     re.checked_frame = g_frame;
                 }
             } else if (re.off == ~0u && re.seen_frame && re.seen_frame != g_frame) {

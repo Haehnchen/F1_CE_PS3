@@ -243,11 +243,17 @@ void defer_st32(u32 addr, u32 val) {
 
 u32 g_front_ref = 0;   // the last reference value the front end executed (list snapshots age by it)
 
+u32 g_my_get = ~0u;   // the GET value the front end last wrote
+void set_get(u32 v) { st32(g.control_addr + 4, v); g_my_get = v; }
+// GET at the command being run, before one that may wait for the PPU (runs of commands write it only at their end)
+void sync_get() { if (g_my_get != g_cur_get) set_get(g_cur_get); }
+
 void exec_method(u32 method, u32 arg) {
     switch (method) {
         case 0x0050: defer_st32(g.control_addr + 8, arg); g_front_ref = arg; break;   // NV406E_SET_REFERENCE
         case 0x0064: rsx_state.sem_offset_406e = arg; break;           // NV406E_SEMAPHORE_OFFSET
         case 0x0068: {                                                  // NV406E_SEMAPHORE_ACQUIRE
+            sync_get();
             flush_pending();   // the game may wait for our earlier releases before releasing this one
             u32 a = label_ptr(rsx_state.sem_offset_406e);
             u64 start = time_usec();
@@ -260,6 +266,7 @@ void exec_method(u32 method, u32 arg) {
                 std::this_thread::yield();
             }
             g_sem_hist[g_sem_pos++ % 16] = {'A', a, arg, (u32)(time_usec() - start), g_cur_get, before};
+            rsx::g_fe.t_sem += time_usec() - start;
             break;
         }
         case 0x006C:   // NV406E_SEMAPHORE_RELEASE
@@ -278,7 +285,7 @@ void exec_method(u32 method, u32 arg) {
             st32(a + 12, 0);
             break;
         }
-        case GCM_FLIP_COMMAND: do_flip(arg); break;
+        case GCM_FLIP_COMMAND: { sync_get(); u64 t = prof_usec(); do_flip(arg); rsx::g_fe.t_flip += prof_usec() - t; break; }
         default: rsx::method(method, arg); break;
     }
 }
@@ -560,8 +567,14 @@ void verify_thread() {
     }
 }
 
-u32 g_my_get = ~0u;   // the GET value the front end last wrote
-void set_get(u32 v) { st32(g.control_addr + 4, v); g_my_get = v; }
+
+u32 g_nop_run = 0;   // NOPs in a row (a long run is a list the front end reached before it was written)
+FORCE_INLINE void count_nop(u32 get) {
+    if (++g_nop_run == 256) {
+        auto [lg, lc] = g_hist[(g_hist_pos + 31) % 32];
+        LOG_W("RSX: long NOP run from %08x (put=%08x); last command %08x @%08x", get - 255 * 4, ld32(g.control_addr), lc, lg);
+    }
+}
 
 void rsx_thread() {
     place_thread(0);
@@ -598,7 +611,8 @@ void rsx_thread() {
         }
         u32 cmd = fifo_word(get);
         g_cur_get = get;
-        g_front_get = get;
+        g_front_get.store(get, std::memory_order_release);   // (a plain store: seq_cst was an xchg per command)
+        rsx::g_fe.entries++;
         if (cmd) g_hist[g_hist_pos++ % 32] = {get, cmd};
         if (verify && cmd && !g_cur_snap) {
             u32 vp = g_verify_pos.load(std::memory_order_relaxed);
@@ -658,6 +672,7 @@ void rsx_thread() {
             }
         }
         if ((cmd & 3) || (cmd & 0xE0000003) == 0x20000000 || cmd == 0x00020000) {
+            rsx::g_fe.flows++;
             g_flow_hist[g_flow_pos++ % 48] = {(u32)(time_usec() / 1000), get, cmd, put, ld32(g.control_addr + 8)};
             flush_pending();
         }
@@ -681,18 +696,14 @@ void rsx_thread() {
             set_get(ret);
             continue;
         }
-        static u32 nop_run = 0;
         if (cmd == 0) {   // nop
+            rsx::g_fe.nops++;
             flush_pending();
-            if (++nop_run == 256) {
-                auto [lg, lc] = g_hist[(g_hist_pos + 31) % 32];
-                LOG_W("RSX: long NOP run from %08x (put=%08x); last command %08x @%08x", get - 255 * 4,
-                      ld32(g.control_addr), lc, lg);
-            }
+            count_nop(get);
             set_get(get + 4);
             continue;
         }
-        nop_run = 0;
+        g_nop_run = 0;
         u32 method = cmd & 0xFFFC, count = (cmd >> 18) & 0x7FF;
         bool non_inc = cmd & 0x40000000;
         static u32 args[2048];   // fetched before the pending writes of earlier commands are made visible
@@ -703,33 +714,50 @@ void rsx_thread() {
             for (u32 i = 0; i < count; i++) args[i] = fifo_word(get + 4 + i * 4);
         flush_pending();
         exec_command(method, non_inc, args, count);
+        rsx::g_fe.cmds++;
+        rsx::g_fe.words += count;
         get += 4 + count * 4;
         set_get(get);
         if (!ap || verify) continue;
         // Register writes in a row: the checks above are about flow commands and list copies, so a run of plain commands
-        // from one source only needs to stop where those could matter: at PUT, at any flow command or NOP, at the end
-        // of the source, when the reference moved (a copy may go stale) or when a copy appeared.
+        // and NOPs (~37k per race frame, each one used to end the run) from one source only needs to stop where those
+        // could matter: at PUT, at any flow command, at the end of the source, when the reference moved (a copy may go
+        // stale) or when a copy appeared. GET is written at the end of the run (and before the commands that can wait
+        // for the PPU, see sync_get): it shares a cache line with PUT, and a store per command bounced that line between
+        // the PPU and render threads.
         const u32 ref = g_front_ref, snap_gen = g_snap_gen.load(std::memory_order_relaxed);
         u32 avail = fifo_avail(get);
         ap += count;
-        for (u32 burst = 64; --burst && get != put && avail; ) {
+        for (u32 burst = 256; --burst && get != put && avail; ) {
             cmd = __builtin_bswap32(*ap);
-            if (!cmd || (cmd & 3) || (cmd & 0xE0000003) == 0x20000000 || cmd == 0x00020000) break;
+            if (!cmd) {
+                rsx::g_fe.nops++;
+                flush_pending();
+                count_nop(get);
+                get += 4;
+                ap++;
+                avail--;
+                continue;
+            }
+            if ((cmd & 3) || (cmd & 0xE0000003) == 0x20000000 || cmd == 0x00020000) break;
             count = (cmd >> 18) & 0x7FF;
             if (count + 1 > avail || g_front_ref != ref || g_snap_gen.load(std::memory_order_relaxed) != snap_gen) break;
+            g_nop_run = 0;
             method = cmd & 0xFFFC;
             non_inc = cmd & 0x40000000;
             g_cur_get = get;
-            g_front_get = get;
+            g_front_get.store(get, std::memory_order_release);
             g_hist[g_hist_pos++ % 32] = {get, cmd};
             for (u32 i = 0; i < count; i++) args[i] = __builtin_bswap32(ap[i + 1]);
             flush_pending();
             exec_command(method, non_inc, args, count);
+            rsx::g_fe.cmds++;
+            rsx::g_fe.words += count;
             get += 4 + count * 4;
-            set_get(get);
             ap += count + 1;
             avail -= count + 1;
         }
+        set_get(get);
     }
 }
 

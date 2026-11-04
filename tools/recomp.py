@@ -23,7 +23,10 @@ from ppc import (RA, RB, RC, RD, RS, SIMM, UIMM, DS, BO, BI, BD, LI, AA, LK, CRF
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "generated"
 CHUNK = 400
-HOOKS = {0x3FB310: "camera_projection_hook"}   # camera projection and frustum, see runtime/hle_aspect.cpp
+HOOKS = {0x3FB310: "camera_projection_hook",   # camera projection and frustum, see runtime/hle_aspect.cpp
+         0x2F0D14: "cube_render_hook", 0x2F3B34: "cube_render2_hook", 0x2F0390: "cube_wait_hook",   # hle_cubemap.cpp
+         0x2F141C: "skip_2f141c_hook", 0x2F1BEC: "skip_2f1bec_hook", 0x43F620: "skip_43f620_hook",   # hle_skipfn.cpp
+         0x43FFA0: "skip_43ffa0_hook", 0x30388C: "skip_30388c_hook"}
 SPIN_LOOPS = {0x551228, 0x5513BC}   # the job manager's waits: they only poll counters the SPUs write
 
 LOAD_INT = {  # mnemonic: (size, signed, update, indexed)
@@ -682,15 +685,19 @@ class Recompiler:
     # ---------------------------------------------------------- output
     def run(self):
         OUT.mkdir(exist_ok=True)
-        for old in OUT.glob("ppu_*.cpp"):
-            old.unlink()
+        stale = {p.name for p in OUT.glob("ppu_*.cpp")}
+        def write(name, text):   # unchanged files keep their time stamp (no rebuild)
+            stale.discard(name)
+            p = OUT / name
+            if not p.exists() or p.read_text() != text:
+                p.write_text(text)
         names = []
         chunk, n = [], 0
         for i, (s, e) in enumerate(self.bounds):
             chunk.append(FuncGen(self, s, e).generate())
             names.append((s, f"sub_{s:08X}"))
             if len(chunk) == CHUNK or i == len(self.bounds) - 1:
-                (OUT / f"ppu_{n:03d}.cpp").write_text('#include "ppu_funcs.h"\n\n' + "\n\n".join(chunk) + "\n")
+                write(f"ppu_{n:03d}.cpp", '#include "ppu_funcs.h"\n\n' + "\n\n".join(chunk) + "\n")
                 chunk, n = [], n + 1
         stub_names = []
         for s, imp in sorted(self.stubs.items()):
@@ -699,7 +706,7 @@ class Recompiler:
         decls = ['#pragma once', '#include "ppu_runtime.h"', ""]
         decls += [f"PPU_DECL({nm});" for _, nm in names]
         decls += [f"PPU_DECL({nm});" for _, nm, _ in stub_names]
-        (OUT / "ppu_funcs.h").write_text("\n".join(decls) + "\n")
+        write("ppu_funcs.h", "\n".join(decls) + "\n")
 
         # stubs call into the HLE dispatcher by import index
         imp_index = {id(imp): i for i, imp in enumerate(self.elf.imports)}
@@ -713,14 +720,16 @@ class Recompiler:
             stub_src.append(f'\t{{ "{imp.library}", "{imp.name}", 0x{imp.nid:08X}u, 0x{imp.stub_slot:X}u }},')
         stub_src.append("};")
         stub_src.append(f"const u32 g_import_count = {len(self.elf.imports)};")
-        (OUT / "ppu_imports.cpp").write_text("\n".join(stub_src) + "\n")
+        write("ppu_imports.cpp", "\n".join(stub_src) + "\n")
 
         table = ['#include "ppu_funcs.h"', "", "const FuncEntry g_func_table[] = {"]
         table += [f"\t{{ 0x{s:X}u, {nm} }}," for s, nm in names]
         table += [f"\t{{ 0x{s:X}u, {nm} }}," for s, nm, _ in stub_names]
         table.append("};")
         table.append(f"const u32 g_func_count = {len(names) + len(stub_names)};")
-        (OUT / "ppu_table.cpp").write_text("\n".join(table) + "\n")
+        write("ppu_table.cpp", "\n".join(table) + "\n")
+        for name in stale:
+            (OUT / name).unlink()
 
         rep = [f"functions: {len(self.bounds)} (+{len(stub_names)} import stubs), split starts added: {self.report['split']}",
                f"jump tables resolved: {len(self.jump_tables)}",

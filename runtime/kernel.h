@@ -62,6 +62,7 @@ void log_msg(LogLevel lv, const char* fmt, ...) __attribute__((format(printf, 2,
 extern bool g_log_trace;
 [[noreturn]] void fatal(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 s32 rsx_refs_behind();   // hle_gcm.cpp: how far the PPU is ahead of the RSX (reference steps)
+extern std::atomic<bool> g_rsx_starting;   // rsx.cpp: the renderer runs its start-up phase on the RSX thread (OpenGL shaders)
 
 // ------------------------------------------------------------------ memory
 namespace mem {
