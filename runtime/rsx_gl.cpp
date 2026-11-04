@@ -112,6 +112,7 @@ struct Surface {
 constexpr u32 MAIN_SURFACE_KEY = 0x80000000;   // g_surfaces key bit for main-memory colour buffers
 struct DepthSurface {
     u32 offset = 0, width = 0, height = 0;
+    float scale_x = 1, scale_y = 1;   // (those of the colour targets it is used with)
     GLuint tex = 0;
     u64 write_seq = 0;   // g_write_seq of the last draw/clear that wrote it
 };
@@ -180,8 +181,8 @@ Surface* get_surface(u32 offset, u32 w, u32 h, u32 fmt) {
     if (!s.tex) {
         g_surf_epoch++;
         s.offset = offset; s.width = w; s.height = h; s.format = fmt;
-        s.scale_x = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_x();
-        s.scale_y = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_y();
+        s.scale_x = (offset & MAIN_SURFACE_KEY) ? 1 : target_scale_x(w, h);
+        s.scale_y = (offset & MAIN_SURFACE_KEY) ? 1 : target_scale_y(w, h);
         glGenTextures(1, &s.tex);
         bind_tex2d(s.tex);
         glTexImage2D(GL_TEXTURE_2D, 0, 0x8C43 /*GL_SRGB8_ALPHA8*/, (GLsizei)(scaled(w, s.scale_x)), (GLsizei)(scaled(h, s.scale_y)), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -270,16 +271,17 @@ bool resolve_all_ms() {
 
 DepthSurface* get_depth(u32 offset, u32 w, u32 h) {
     DepthSurface& d = g_depths[offset];
-    if (d.tex && (d.width < w || d.height < h)) {
+    if (d.tex && (d.width < w || d.height < h || d.scale_x != target_scale_x(w, h) || d.scale_y != target_scale_y(w, h))) {
         delete_tex(&d.tex);
         d.tex = 0;
     }
     if (!d.tex) {
         g_surf_epoch++;
         d.offset = offset; d.width = w; d.height = h;
+        d.scale_x = target_scale_x(w, h); d.scale_y = target_scale_y(w, h);
         glGenTextures(1, &d.tex);
         bind_tex2d(d.tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)(scaled(w, res_scale_x())), (GLsizei)(scaled(h, res_scale_y())), 0, GL_DEPTH_STENCIL,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)(scaled(w, d.scale_x)), (GLsizei)(scaled(h, d.scale_y)), 0, GL_DEPTH_STENCIL,
                      GL_UNSIGNED_INT_24_8, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

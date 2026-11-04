@@ -1,10 +1,11 @@
 // Reflection cube map (foaDynamicCubeMap). The game renders all six faces every frame: at 30 fps that is 30 updates per
 // second. With F1CE_60FPS the pass would run 60 times per second and costs ~20% of a grid frame (its culling and
-// transform jobs on the SPUs, ~500 draws). So in that mode a frame starting less than ~25 ms after the last update keeps
-// the previous faces (the cube's render target is not reused in between): reflections refresh at 30 Hz at 60 fps, as in
-// the original game, and every frame below ~40 fps. The main view's wait for the faces' job fences (0x2F0390) is skipped
-// with the pass, since the fences would then be the previous frame's. F1CE_CUBE_30HZ=0 renders every frame;
-// F1CE_CUBE_SKIP=1 (experiment) never renders it. Hooks in tools/recomp.py HOOKS.
+// transform jobs on the SPUs, ~500 draws). So a frame starting less than 3/4 of the update interval after the last
+// update keeps the previous faces (the cube's render target is not reused in between). F1CE_CUBE_HZ=<n> sets the
+// updates per second (default 30 with F1CE_60FPS, as the original game at 30 fps, and no limit without it; 0: every
+// frame); at 30 per second reflections refresh every other frame at 60 fps and every frame below ~40 fps. The main
+// view's wait for the faces' job fences (0x2F0390) is skipped with the pass, since the fences would then be the
+// previous frame's. F1CE_CUBE_SKIP=1 (experiment) never renders it. Hooks in tools/recomp.py HOOKS.
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
@@ -13,8 +14,11 @@
 
 namespace {
 const bool g_never = getenv("F1CE_CUBE_SKIP") != nullptr;
-const bool g_limit = getenv("F1CE_60FPS") && !(getenv("F1CE_CUBE_30HZ") && !strcmp(getenv("F1CE_CUBE_30HZ"), "0"));
-constexpr u64 MIN_INTERVAL_US = 25000;
+const u64 g_interval = [] {
+    const char* e = getenv("F1CE_CUBE_HZ");
+    const int hz = e ? atoi(e) : getenv("F1CE_60FPS") ? 30 : 0;
+    return hz > 0 ? (u64)(750000 / hz) : 0;
+}();
 u64 g_last_render = 0;
 bool g_skipped = false;   // the last pass was skipped: its fence wait goes too
 u32 g_renders = 0, g_skips = 0;
@@ -33,7 +37,7 @@ void report(u64 now) {
 bool cube_render_hook(PPUContext&) {
     const u64 now = time_usec();
     report(now);
-    g_skipped = g_never || (g_limit && now - g_last_render < MIN_INTERVAL_US);
+    g_skipped = g_never || (g_interval && now - g_last_render < g_interval);
     if (g_skipped) { g_skips++; return true; }
     g_last_render = now;
     g_renders++;

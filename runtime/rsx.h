@@ -8,6 +8,8 @@ extern u64 g_last_frame_draws;   // draws of the frame shown last
 float res_scale_x();
 float res_scale_y();
 bool res_scaled();
+float target_scale_x(u32 w, u32 h);    // of a local render target of that guest size (shadow maps: F1CE_SHADOW_RES)
+float target_scale_y(u32 w, u32 h);
 void video_mode(u8* id, u8* aspect);   // what cellVideoOutGetState reports
 bool wide_frame();                     // this frame shows the 3D scene at the format's own aspect ratio
 double present_aspect(u32 w, u32 h);   // of the image of a w x h guest surface on screen

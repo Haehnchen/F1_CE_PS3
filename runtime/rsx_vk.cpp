@@ -443,6 +443,7 @@ struct Surface {
 };
 struct DepthSurface {
     u32 offset = 0, width = 0, height = 0;
+    float scale_x = 1, scale_y = 1;   // (those of the colour targets it is used with)
     Img* tex = nullptr;
     u64 write_seq = 0;
 };
@@ -497,8 +498,8 @@ Surface* get_surface(u32 offset, u32 w, u32 h, u32 fmt) {
     if (!s.tex) {
         g_surf_epoch++;
         s.offset = offset; s.width = w; s.height = h; s.format = fmt;
-        s.scale_x = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_x();
-        s.scale_y = (offset & MAIN_SURFACE_KEY) ? 1 : res_scale_y();
+        s.scale_x = (offset & MAIN_SURFACE_KEY) ? 1 : target_scale_x(w, h);
+        s.scale_y = (offset & MAIN_SURFACE_KEY) ? 1 : target_scale_y(w, h);
         s.tex = make_image(scaled(w, s.scale_x), scaled(h, s.scale_y), 1, COLOR_FMT, SURF_USAGE);
         clear_new(s.tex);
         LOG_I("rsx: surface %08x %ux%u fmt %x", offset, w, h, fmt);
@@ -579,7 +580,7 @@ void sampled(Img* im) {
 
 DepthSurface* get_depth(u32 offset, u32 w, u32 h) {
     DepthSurface& d = g_depths[offset];
-    if (d.tex && (d.width < w || d.height < h)) {
+    if (d.tex && (d.width < w || d.height < h || d.scale_x != target_scale_x(w, h) || d.scale_y != target_scale_y(w, h))) {
         sampled(d.tex);
         destroy_image(d.tex);
         d.tex = nullptr;
@@ -587,7 +588,8 @@ DepthSurface* get_depth(u32 offset, u32 w, u32 h) {
     if (!d.tex) {
         g_surf_epoch++;
         d.offset = offset; d.width = w; d.height = h;
-        d.tex = make_image(scaled(w, res_scale_x()), scaled(h, res_scale_y()), 1, g_depth_fmt, ZETA_USAGE);
+        d.scale_x = target_scale_x(w, h); d.scale_y = target_scale_y(w, h);
+        d.tex = make_image(scaled(w, d.scale_x), scaled(h, d.scale_y), 1, g_depth_fmt, ZETA_USAGE);
         clear_new(d.tex);
         LOG_I("rsx: depth surface %08x %ux%u", offset, w, h);
     }

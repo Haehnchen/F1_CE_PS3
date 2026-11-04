@@ -120,8 +120,9 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 | `F1CE_VSYNC=1/0/-1` | wait for the display's vblank (default) / off / adaptive: late frames tear instead of waiting |
 | `F1CE_60FPS=1` | up to 60 fps with the game speed unchanged (ticks per frame follow the frame time); a stopped car in a race stays at 30 fps (`F1CE_60FPS_NOHOLD=1` turns that off) |
 | `F1CE_RAIN_SMOOTH=0` | the rain drops on the screen as the game's water map gives them (default: read through a 3x3 tent filter, see the 2026-11-03 rain entry) |
-| `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX) |
-| `F1CE_CUBE_30HZ=0` | with `F1CE_60FPS`: render the reflection cube map every frame (default: at most ~30-40 updates per second, as the original game at 30 fps; `runtime/hle_cubemap.cpp`); `F1CE_CUBE_SKIP=1` never renders it (measurement only) |
+| `F1CE_CUBE_FACES=1..6` | reflection cube map faces rendered per frame, in turn (default 6, as on the RSX; saves renderer time only, not the SPU jobs) |
+| `F1CE_CUBE_HZ=<n>` | reflection cube map updates per second at most (default 30 with `F1CE_60FPS`, as the original game at 30 fps, else every frame; 0: every frame; `runtime/hle_cubemap.cpp`); `F1CE_CUBE_SKIP=1` never renders it (measurement only) |
+| `F1CE_SHADOW_RES=<k>` | shadow maps at k times their original 1024x2048 (0.5 = lighter on the GPU, 2 = sharper); default: they follow `F1CE_SCALE` like every render target |
 | `F1CE_SKIP_FN=<hex>,..` | measurement only: these render functions return at once (2f141c static shadows, 2f1bec blurred shadows, 43f620 shadow map, 43ffa0 shadow to alpha, 30388c cars); all of them log their calls per second (`skipfn:`, `runtime/hle_skipfn.cpp`) |
 | `F1CE_SPURS_SPUS=<n>` | SPU worker threads (default 5; 6 works, 7 and 8 hang at boot; 3 halves the grid fps) |
 | `F1CE_SPU_DMA_DIAG=1` | the per-DMA diagnostics of the SPURS workloads (off: they cost a shared atomic on every DMA) |
@@ -158,8 +159,8 @@ Keyboard: arrows = d-pad, **Z** = ✕, **X** = ◯, **A** = □, **S** = △, **
 - [x] OpenGL crash (guest memory fault) after a cold shader compile (fixed 2026-11-04)
 - [ ] Save data beyond profiles (`cellSaveData*` callbacks for progress): deferred
 - [ ] SDL/OpenGL or Vulkan backend for the Linux build (also needed for a Steam Deck test)
-- [ ] Screen rain drops: hard posterised edges in the game's water map (smoothed by `F1CE_RAIN_SMOOTH`; no PS3
-      reference to settle it)
+- [x] Screen rain drops (smoothed by `F1CE_RAIN_SMOOTH`) and the suspension arms: the user judged both faithful to the
+      original on 2026-11-04 (RPCS3 is brighter overall)
 - [ ] Car shake at the grid with `F1CE_60FPS` reported again on 2026-11-03 (the hold engaged in that log; track and
       moment still to be found)
 
@@ -198,19 +199,19 @@ Steps 1-7 are done; 8 is in progress, 9-11 are next.
 9. **Linux backend and Steam Deck.** SDL window/input/audio and the Vulkan renderer in the Linux build (today it is
    headless), then a test on a Deck. An 8-thread estimate on this PC (2026-10-31) gave 26-30 fps on the grid, so the
    Deck needs less SPU work, not only a faster runtime.
-10. **Remaining visual differences.** Screen rain drops (no reference yet), suspension arms darker than in RPCS3,
-    rubber marks not checked since 2026-10-28 (see below).
+10. **Remaining visual differences.** Rubber marks not checked since 2026-10-28 (see below). *Screen rain drops and the
+    suspension arms were judged faithful by the user on 2026-11-04.*
 11. **Save data beyond profiles.** Deferred by request.
 
 All of these become options (environment variables or a config file) with the original behaviour as default.
 
 ### Known rendering issues (reported 2026-10-25, updated 2026-11-04)
 
-- [ ] Suspension arms in front of the cockpit are darker than in RPCS3 (self-shadowing; the shadow maps cull front
-      faces as requested since 2026-10-28).
+- [x] Suspension arms in front of the cockpit darker than in RPCS3: faithful to the game, RPCS3 is brighter overall
+      (user, 2026-11-04).
 - [ ] Rubber marks near the corners looked much darker than on PS3: not checked again since the 2026-10-28 fixes
       (needs a driven lap).
-- [ ] Screen rain drops in heavy rain: posterised edges (see the 2026-11-03 rain entry).
+- [x] Screen rain drops in heavy rain: faithful with `F1CE_RAIN_SMOOTH` (user, 2026-11-04; see the 2026-11-03 rain entry).
 - [x] Mirrors and cockpit panels too dark (2026-10-31).
 - [x] Crowd clothes wrong (FP flow control IFE, 2026-10-28), white heat haze (2026-10-28).
 - [x] Blue player car on Vulkan when starting last (2026-11-03).
@@ -832,3 +833,21 @@ banks, then waits for SPU work.
     ~160 draws) gives ~55 fps against ~50, skipping `RenderBlurredShadows` (0x2F1BEC, two maps of ~270 draws; the sun shadows of
     cars and the start gantry) ~56. The static map cannot simply be kept for a frame as the cube map is: its target (0x03060000)
     is drawn over by the blurred pass in the same frame.
+- **Launcher options for weaker PCs: reflection updates, shadow resolution (2026-11-04, night; Vulkan, scale 1.5,
+  `F1CE_60FPS=1 F1CE_60FPS_NOHOLD=1`, Silverstone grid):**
+  - `F1CE_CUBE_HZ=<n>` replaces `F1CE_CUBE_30HZ`: reflection updates per second (default unchanged: 30 with `F1CE_60FPS`). The rule is
+    the same as before for any rate: a frame that starts less than 3/4 of the interval after the last update keeps the previous faces.
+  - Shadow maps: the three maps of a frame are drawn by `RenderShadowMap` (0x43F620): the static scenery into 0x03060000 (cleared), then
+    in `RenderBlurredShadows` the same list of ~270 casters into 0x03860000 and over the static map (no clear between). The blurred pass
+    also contains the screen-space passes (the receivers write a shadow mask into the main target, it is copied to 0x02190000, blurred and
+    composited). Skipping `RenderBlurredShadows` whole on every other frame made the shadows vanish on those frames; skipping only the
+    three `RenderShadowMap` calls keeps them: the receivers read the maps of the previous update and, while driving at ~6 ticks per frame
+    (frame dumps), the shadows of the scenery stayed in place, so the matrices the receivers use belong to the maps. Moving cars' shadows
+    lag by up to one update. As `F1CE_SHADOW_HZ=<n>` this gave on the grid (pairs alternating) default 52.0 / 51.4, 30 updates/s
+    55.4 / 58.7, plus `F1CE_CUBE_HZ=15` and `F1CE_SHADOW_RES=0.5` 58.8 / 58.8, but the user saw the shadows under the cars blink
+    at 30 updates/s and below: removed (2026-11-05).
+  - `F1CE_SHADOW_RES=<k>`: the shadow maps (the only 1024x2048 targets) at a fixed multiple of their original size instead of the
+    internal resolution; their depth buffers take the same scale (`DepthSurface::scale_x/y`, recreated when it changes). Checked at 0.5
+    on Vulkan and 2 on OpenGL: the gantry shadow is in place, softer or sharper.
+  - Launcher, General tab: "Reflection updates" (replaces "Reflection faces per frame", which saved renderer time only) and "Shadow
+    map resolution".
